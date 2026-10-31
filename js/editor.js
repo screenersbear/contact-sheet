@@ -10,7 +10,8 @@ import {
   SLIDE_W, MAX_SLIDES, MIN_FRAME, RATIOS, RATIO_ORDER, LAYOUT_KEYS, SAFE_TOP, SAFE_BOTTOM,
   slideH, isStory, pageWord, newFrame, defaultCrop, placement, clampedCrop, cssTransform, rotatedCrop,
   anchorSlide, insertSlide, removeSlide, moveSlide, copySlideLayout, changeRatio, slideBox, borderBands,
-  snapTargets, nearest, templateFromProject,
+  snapTargets, nearest, templateFromProject, SLIDE_LAYOUTS, layoutRects, applySlideLayout, layoutOfSlide,
+  framesWithinSlide,
 } from './model.js';
 import {
   getProject, saveProject, saveProjectThumb, photosForProject, deleteUnlistedPhotos,
@@ -170,6 +171,7 @@ export async function mountEditor(view, id) {
           <div class="sel" data-sel hidden>
             ${['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((h) => `<span class="handle h-${h}" data-h="${h}"></span>`).join('')}
           </div>
+          <button type="button" class="ws-add" data-act="add-slide" aria-label="Add a slide">${ICONS.plus}</button>
         </div>
       </div>
       <div class="ed-adjust" data-adjust hidden>
@@ -195,6 +197,7 @@ export async function mountEditor(view, id) {
   const selEl = $('[data-sel]');
   const adjustEl = $('[data-adjust]');
   const zoomInput = $('[data-zoom]');
+  const addBtn = $('.ws-add');
   const trayEl = $('[data-tray]');
   const toolsEl = $('[data-tools]');
 
@@ -202,10 +205,14 @@ export async function mountEditor(view, id) {
   function wsSize() {
     return { w: ws.clientWidth || 360, h: ws.clientHeight || 480 };
   }
+  // Grey kept right of the last slide for the add-a-slide button.
+  const addRoom = () => (p.slides < MAX_SLIDES ? 72 : 0);
+
   function fitZ(mode) {
     const { w, h } = wsSize();
     const across = mode === 'all' ? p.slides : 1;
-    return Math.max(0.02, Math.min((w - 48) / (across * SLIDE_W), (h - 76) / H()));
+    const room = mode === 'all' ? addRoom() : 0;
+    return Math.max(0.02, Math.min((w - 48 - room) / (across * SLIDE_W), (h - 76) / H()));
   }
   const minZ = () => fitZ('all') * 0.85;
   const maxZ = () => fitZ('one') * 4;
@@ -215,9 +222,13 @@ export async function mountEditor(view, id) {
     const sw = SLIDE_W * z;
     const total = p.slides * sw;
     const sh = H() * z;
-    margX = total <= w - 48 ? (w - total) / 2 : Math.max(24, (w - sw) / 2);
+    const room = addRoom();
+    margX = total + room <= w - 48 ? (w - total - room) / 2 : Math.max(24, (w - sw) / 2);
     margY = Math.max(34, (h - sh) / 2);
-    inner.style.width = `${total + 2 * margX}px`;
+    inner.style.width = `${total + 2 * margX + room}px`;
+    addBtn.hidden = !room;
+    addBtn.style.left = `${margX + total + 16}px`;
+    addBtn.style.top = `${margY + sh / 2 - 22}px`;
     inner.style.height = `${Math.max(h, sh + 2 * margY)}px`;
     strip.style.left = `${margX}px`;
     strip.style.top = `${margY}px`;
@@ -732,6 +743,7 @@ export async function mountEditor(view, id) {
               <button type="button" class="slide-thumb r-${p.ratio.replace(':', 'x')}" data-go="${i}" aria-label="Show ${word} ${i + 1}"></button>
               <span class="slide-name">${word} ${i + 1}</span>
               <span class="slide-acts">
+                <button type="button" class="mini-btn" data-layout="${i}" aria-label="Change the layout">${ICONS.grid}</button>
                 <button type="button" class="mini-btn" data-up="${i}" aria-label="Move earlier"${i === 0 ? ' disabled' : ''}>${ICONS.up}</button>
                 <button type="button" class="mini-btn" data-down="${i}" aria-label="Move later"${i === n - 1 ? ' disabled' : ''}>${ICONS.down}</button>
                 <button type="button" class="mini-btn" data-copy="${i}" aria-label="Copy the layout"${n >= MAX_SLIDES ? ' disabled' : ''}>${ICONS.copy}</button>
@@ -739,7 +751,7 @@ export async function mountEditor(view, id) {
               </span>
             </li>`).join('')}
         </ol>
-        <p class="field-hint">Copy makes a new ${pageWord(p)} with the same empty frames. A photo that crosses a seam moves with the ${pageWord(p)} it starts on.</p>
+        <p class="field-hint">The grid button picks a new layout for that ${pageWord(p)}. Copy makes a new ${pageWord(p)} with the same empty frames. A photo that crosses a seam moves with the ${pageWord(p)} it starts on.</p>
         <div class="sheet-footer">
           <button type="button" class="modal-cta primary" data-add${n >= MAX_SLIDES ? ' disabled' : ''}>${n >= MAX_SLIDES ? `${MAX_SLIDES} is the most` : `+ Add a ${pageWord(p)}`}</button>
         </div>`;
@@ -764,16 +776,89 @@ export async function mountEditor(view, id) {
         else showSlide(Number(d.go));
         return;
       }
+      if (d.layout !== undefined || d.add !== undefined) {
+        const k = d.layout !== undefined ? +d.layout : null;
+        pickLayout(k).then((l) => {
+          if (!l || destroyed || !s.overlay.isConnected) return;
+          if (k === null) addSlideWith(l);
+          else apply(applySlideLayout(p, k, l));
+          if (sel && !frameById(sel)) sel = null;
+          changed();
+        });
+        return;
+      }
       if (d.up !== undefined) apply(moveSlide(p, +d.up, +d.up - 1));
       else if (d.down !== undefined) apply(moveSlide(p, +d.down, +d.down + 1));
       else if (d.copy !== undefined) apply(copySlideLayout(p, +d.copy));
       else if (d.del !== undefined) apply(removeSlide(p, +d.del));
-      else if (d.add !== undefined) apply(insertSlide(p, p.slides));
       else return;
       if (sel && !frameById(sel)) sel = null;
       changed();
     });
     draw();
+  }
+
+  // ---------- Layouts for one slide ----------
+
+  // A drawing of what `layout` would make on slide k of q.
+  function layoutSvg(q, k, layout) {
+    const Hh = slideH(q);
+    const rects = layoutRects(q, k, layout)
+      .map((r) => `<rect x="${r.x - k * SLIDE_W}" y="${r.y}" width="${r.w}" height="${r.h}" class="lay-frame"/>`)
+      .join('');
+    return `<svg class="lay-svg" viewBox="0 0 ${SLIDE_W} ${Hh}" aria-hidden="true"><rect width="${SLIDE_W}" height="${Hh}" fill="${esc(q.background)}" class="lay-slide"/>${rects}<rect width="${SLIDE_W}" height="${Hh}" class="lay-edge"/></svg>`;
+  }
+
+  // Resolves with the chosen layout, or null. k is the slide to change, or
+  // null for a new slide at the end.
+  function pickLayout(k) {
+    const isNew = k === null;
+    const word = pageWord(p);
+    const q = isNew ? insertSlide(p, p.slides) : p;
+    const at = isNew ? p.slides : k;
+    const options = [];
+    if (isNew && framesWithinSlide(p, p.slides - 1).length) options.push(layoutOfSlide(p, p.slides - 1));
+    options.push(...SLIDE_LAYOUTS);
+    const hasPhotos = !isNew && framesWithinSlide(p, k).some((f) => f.photoId);
+    return new Promise((resolve) => {
+      let chosen = null;
+      const s = openSheet({
+        title: isNew ? `New ${word}` : `${word} ${k + 1} layout`,
+        className: 'sheet-wide',
+        body: `
+          ${hasPhotos ? `<p class="sheet-message">Its photos move into the new frames, in order.</p>` : ''}
+          <div class="layout-grid">
+            ${options.map((o, n) => `<button type="button" class="layout-opt" data-n="${n}">${layoutSvg(q, at, o)}<span>${esc(o.name)}</span></button>`).join('')}
+          </div>
+          <p class="field-hint">${p.padding ? 'The space around and between photos is your Slide border, set in Layout.' : 'Photos touch edge to edge. For space around and between them, set a Slide border in Layout.'}</p>`,
+        onClose: () => resolve(chosen),
+      });
+      s.body.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-n]');
+        if (!b) return;
+        chosen = options[Number(b.dataset.n)];
+        s.close();
+      });
+    });
+  }
+
+  function addSlideWith(layout) {
+    apply(insertSlide(p, p.slides));
+    apply(applySlideLayout(p, p.slides - 1, layout));
+  }
+
+  async function addSlide() {
+    if (p.slides >= MAX_SLIDES) return;
+    const layout = await pickLayout(null);
+    if (!layout || destroyed || p.slides >= MAX_SLIDES) return;
+    addSlideWith(layout);
+    sel = null;
+    photoMode = false;
+    if (zoomFit === 'all') fitTo('all');
+    else fitIfNeeded();
+    render();
+    if (zoomFit !== 'all') showSlide(p.slides - 1);
+    commit();
   }
 
   function openLayout() {
@@ -944,6 +1029,7 @@ export async function mountEditor(view, id) {
         saveSoon.flush();
         openExport(p, photos);
       } else if (a === 'add-frame') addFrame();
+      else if (a === 'add-slide') addSlide();
       else if (a === 'slides') openSlides();
       else if (a === 'layout') openLayout();
       else if (a === 'format') openFormat();
@@ -1100,6 +1186,8 @@ export async function mountEditor(view, id) {
 
   function onDown(e) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // The add-a-slide button is an ordinary button: let its click through.
+    if (e.target.closest('.ws-add')) return;
     try {
       ws.setPointerCapture(e.pointerId);
     } catch {}
@@ -1118,18 +1206,19 @@ export async function mountEditor(view, id) {
       g = { ...base, type: 'resize', id: f.id, h: handle.dataset.h, start: { x: f.x, y: f.y, w: f.w, h: f.h }, targets: snapTargets(p, f.id, { safeZone: showSafe }) };
       return;
     }
-    if (f) {
-      const wasSel = sel === f.id;
-      if (photoMode && wasSel && f.photoId) {
+    // Only the selected frame moves. Dragging any other frame scrolls the
+    // strip like the grey does, so looking around never knocks a photo out
+    // of place; a tap selects it.
+    if (f && sel === f.id) {
+      if (photoMode && f.photoId) {
         const pl = placement(f, photos[f.photoId]);
-        g = { ...base, type: 'photo', id: f.id, wasSel, crop0: { ...f.crop, cx: pl.cx, cy: pl.cy } };
+        g = { ...base, type: 'photo', id: f.id, wasSel: true, crop0: { ...f.crop, cx: pl.cx, cy: pl.cy } };
         return;
       }
-      if (!wasSel) select(f.id);
-      g = { ...base, type: 'move', id: f.id, wasSel, start: { x: f.x, y: f.y, w: f.w, h: f.h }, targets: snapTargets(p, f.id, { safeZone: showSafe }) };
+      g = { ...base, type: 'move', id: f.id, wasSel: true, start: { x: f.x, y: f.y, w: f.w, h: f.h }, targets: snapTargets(p, f.id, { safeZone: showSafe }) };
       return;
     }
-    g = { ...base, type: 'pan', sl: ws.scrollLeft, st: ws.scrollTop, samples: [{ t: performance.now(), x: e.clientX, y: e.clientY }] };
+    g = { ...base, type: 'pan', frameId: f ? f.id : null, sl: ws.scrollLeft, st: ws.scrollTop, samples: [{ t: performance.now(), x: e.clientX, y: e.clientY }] };
   }
 
   function onMove(e) {
@@ -1143,7 +1232,9 @@ export async function mountEditor(view, id) {
     if (e.pointerId !== g.pid) return;
     const dx = e.clientX - g.x0;
     const dy = e.clientY - g.y0;
-    if (!g.moved && Math.hypot(dx, dy) < (g.mouse ? 3 : 7)) return;
+    // A finger has to travel a little further to move a photo than to
+    // scroll, so a tap never nudges one.
+    if (!g.moved && Math.hypot(dx, dy) < (g.mouse ? 3 : g.type === 'pan' ? 7 : 10)) return;
     g.moved = true;
     if (g.type === 'pan') {
       ws.scrollLeft = g.sl - dx;
@@ -1207,17 +1298,19 @@ export async function mountEditor(view, id) {
       return;
     }
     if (e.type !== 'pointerup') return;
-    // A tap.
-    if (was.type === 'pan') {
+    // A tap: on the grey it deselects, on a frame it selects that frame.
+    if (was.type === 'resize') return;
+    const id = was.type === 'pan' ? was.frameId : was.id;
+    if (!id) {
       deselect();
       return;
     }
-    if (was.type === 'resize') return;
     const now = performance.now();
-    const double = lastTap.id === was.id && now - lastTap.t < 380;
-    lastTap = double ? { id: null, t: 0 } : { id: was.id, t: now };
-    const f = frameById(was.id);
+    const double = lastTap.id === id && now - lastTap.t < 380;
+    lastTap = double ? { id: null, t: 0 } : { id, t: now };
+    const f = frameById(id);
     if (!f) return;
+    if (!was.wasSel) select(id);
     if (double || (was.wasSel && !f.photoId)) openSwap(f.id);
   }
 

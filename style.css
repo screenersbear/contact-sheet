@@ -696,10 +696,29 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 .slide-row { display: flex; align-items: center; gap: 10px; border: 3px solid var(--ink); padding: 6px; }
 .slide-thumb { height: 72px; flex-shrink: 0; padding: 0; border: none; background: var(--line); }
 .slide-thumb canvas { width: 100%; height: 100%; display: block; }
-.slide-name { flex: 1; min-width: 0; font-family: var(--font-title); font-size: 15px; text-transform: uppercase; }
-.slide-acts { display: flex; gap: 4px; }
-.slide-acts .mini-btn { width: 36px; height: 36px; }
+.slide-name { flex: 1; min-width: 0; font-family: var(--font-title); font-size: 14px; text-transform: uppercase; }
+.slide-acts { display: flex; gap: 3px; }
+.slide-acts .mini-btn { width: 32px; height: 36px; }
 .slide-acts .mini-btn svg { width: 18px; height: 18px; }
+
+.layout-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.layout-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 6px;
+  border: 3px solid var(--ink);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-align: center;
+}
+.layout-opt .lay-svg { height: 84px; max-height: none; width: auto; max-width: 100%; }
+@media (min-width: 600px) { .layout-grid { grid-template-columns: repeat(4, 1fr); } }
 
 .grid-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-bottom: 12px; }
 .grid-tile { aspect-ratio: 3 / 4; background: var(--line); overflow: hidden; }
@@ -707,7 +726,7 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 
 /* ---------- Editor ---------- */
 
-body[data-route="edit"] { overflow: hidden; }
+body[data-route="edit"] { overflow: hidden; background: var(--surface); }
 body[data-route="edit"] .tabbar { display: none; }
 body[data-route="edit"] #app { padding: 0; max-width: none; }
 
@@ -867,6 +886,24 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 .guide.v { top: -14px; bottom: -14px; width: 1px; margin-left: -0.5px; }
 .guide.h { left: -14px; right: -14px; height: 1px; margin-top: -0.5px; }
 
+.ws-add {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: #fff;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  letter-spacing: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  touch-action: manipulation;
+}
+.ws-add svg { width: 24px; height: 24px; }
+
 .ws-labels { position: absolute; inset: 0; pointer-events: none; }
 .ws-label {
   position: absolute;
@@ -912,7 +949,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px 8px 16px;
+  padding: 6px 12px 6px 16px;
   background: var(--surface);
   border-top: 3px solid var(--ink);
 }
@@ -923,16 +960,16 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 .tray {
   flex-shrink: 0;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
-  padding: 8px 10px;
+  padding: 6px 8px;
   background: var(--surface);
   border-top: 3px solid var(--ink);
 }
 .tray-add {
   flex-shrink: 0;
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -943,11 +980,11 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   color: var(--on-accent);
   border: 2px solid var(--navy);
   font-family: var(--font-title);
-  font-size: 11px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
-.tray-add svg { width: 22px; height: 22px; }
+.tray-add svg { width: 20px; height: 20px; }
 .tray-list {
   flex: 1;
   min-width: 0;
@@ -961,8 +998,8 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 .tray-item {
   position: relative;
   flex-shrink: 0;
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
   padding: 0;
   border: none;
   background: var(--line);
@@ -984,14 +1021,15 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   justify-content: center;
 }
 .tray-used svg { width: 13px; height: 13px; }
-.tray-hint { margin: 0; font-size: 13px; line-height: 1.3; color: var(--text-dim); }
+.tray-hint { margin: 0; font-size: 12px; line-height: 1.25; color: var(--text-dim); }
 
 .ed-tools {
   flex-shrink: 0;
   display: flex;
   background: var(--surface);
   border-top: 3px solid var(--ink);
-  padding: 4px 0 calc(4px + env(safe-area-inset-bottom));
+  /* Close to the home bar, the way iPhone apps' own tab bars sit. */
+  padding: 2px 0 max(4px, calc(env(safe-area-inset-bottom) - 14px));
 }
 .tool {
   flex: 1;
@@ -1000,8 +1038,8 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 7px 1px;
+  gap: 2px;
+  padding: 6px 1px 4px;
   border: none;
   background: none;
   color: var(--text);
@@ -1010,7 +1048,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
-.tool-icon svg { width: 22px; height: 22px; display: block; }
+.tool-icon svg { width: 21px; height: 21px; display: block; }
 .tool-label { white-space: nowrap; }
 .tool:disabled { opacity: 0.3; cursor: default; }
 .tool.is-on::before {
@@ -1059,7 +1097,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   z-index: 200;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
-body[data-route="edit"] .toast { bottom: calc(170px + env(safe-area-inset-bottom)); }
+body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom)); }
 .toast.show { animation: slideUp 0.2s ease; }
 .toast-action {
   border: 2px solid var(--accent);
