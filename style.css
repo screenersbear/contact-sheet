@@ -1,8 +1,8 @@
 /* Contact Sheet: the Documenting Fictions look, copied here so the two apps
-   can change on their own. Three colours (white, "berry blade black" navy,
-   "mango yellow"), square corners, Arial Black titles in capitals, Courier
-   for everything else. Dark mode keeps the same three, using deeper shades
-   of the navy for the page and surfaces.
+   can change on their own. Three colours (white, "berry blade black" #bf0b83
+   magenta, "mango yellow"), square corners, Arial Black titles in capitals,
+   Courier for everything else. Dark mode keeps the same three, with deep
+   slate shades for the page and surfaces.
 
    The one exception is the editing canvas: the area around the slides and
    anything drawn over photos (seams, guides, selection) is grey, white or
@@ -10,23 +10,23 @@
 
 :root {
   --focus-glow: color-mix(in srgb, var(--accent) 45%, transparent);
-  --navy: #313d45;
+  --navy: #bf0b83;
   --yellow: #ffd103;
 
   --bg: #ffffff;
   --surface: #ffffff;
-  --text: #313d45;
-  --text-dim: rgba(49, 61, 69, 0.72);
+  --text: #bf0b83;
+  --text-dim: rgba(191, 11, 131, 0.85);
   /* Chrome: heading bars, borders, fills. Separate from --text so dark mode
      can lift it while text stays readable. */
-  --ink: #313d45;
+  --ink: #bf0b83;
   --on-ink: #ffffff;
   --accent: #ffd103;
-  --on-accent: #313d45;
-  --hero: #313d45;
+  --on-accent: #bf0b83;
+  --hero: #bf0b83;
   --line: #d9d9d9;
   --field: #ffffff;
-  --overlay: rgba(49, 61, 69, 0.9);
+  --overlay: rgba(191, 11, 131, 0.9);
   --danger: #b3261e;
 
   /* The editing canvas: neutral greys only. */
@@ -47,7 +47,7 @@
     --text-dim: rgba(246, 246, 243, 0.7);
     --ink: #4a5b67;
     --on-ink: #ffffff;
-    --hero: #313d45;
+    --hero: #bf0b83;
     --line: rgba(255, 255, 255, 0.18);
     --field: #1d252a;
     --overlay: rgba(12, 16, 19, 0.86);
@@ -66,7 +66,7 @@
   --text-dim: rgba(246, 246, 243, 0.7);
   --ink: #4a5b67;
   --on-ink: #ffffff;
-  --hero: #313d45;
+  --hero: #bf0b83;
   --line: rgba(255, 255, 255, 0.18);
   --field: #1d252a;
   --overlay: rgba(12, 16, 19, 0.86);

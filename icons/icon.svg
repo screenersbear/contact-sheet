@@ -3,9 +3,9 @@
     <clipPath id="light"><path d="M84 370L165 280L215 322L300 228L428 370Z"/><circle cx="365" cy="205" r="28"/></clipPath>
   </defs>
   <rect width="512" height="512" fill="#ffd103"/>
-  <rect x="84" y="142" width="344" height="228" fill="#313d45"/>
+  <rect x="84" y="142" width="344" height="228" fill="#bf0b83"/>
   <path d="M84 370L165 280L215 322L300 228L428 370Z" fill="#ffd103"/>
   <circle cx="365" cy="205" r="28" fill="#ffd103"/>
   <path d="M195 142h8v228h-8zM309 142h8v228h-8z" fill="#ffd103"/>
-  <path d="M195 142h8v228h-8zM309 142h8v228h-8z" fill="#313d45" clip-path="url(#light)"/>
+  <path d="M195 142h8v228h-8zM309 142h8v228h-8z" fill="#bf0b83" clip-path="url(#light)"/>
 </svg>
