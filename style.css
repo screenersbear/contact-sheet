@@ -180,7 +180,7 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
   margin: 0;
   font-size: 1em;
   font-weight: 900;
-  color: #fff;
+  color: var(--accent);
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
