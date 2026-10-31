@@ -171,9 +171,9 @@ export async function mountEditor(view, id) {
           <div class="sel" data-sel hidden>
             ${['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((h) => `<span class="handle h-${h}" data-h="${h}"></span>`).join('')}
           </div>
-          <button type="button" class="ws-add" data-act="add-slide" aria-label="Add a slide">${ICONS.plus}</button>
         </div>
       </div>
+      <button type="button" class="ws-add" data-act="add-slide" aria-label="Add a slide">${ICONS.plus}</button>
       <div class="ed-adjust" data-adjust hidden>
         <span class="ed-adjust-label">Zoom</span>
         <input type="range" min="1" max="5" step="0.01" value="1" data-zoom aria-label="Photo zoom" />
@@ -205,14 +205,10 @@ export async function mountEditor(view, id) {
   function wsSize() {
     return { w: ws.clientWidth || 360, h: ws.clientHeight || 480 };
   }
-  // Grey kept right of the last slide for the add-a-slide button.
-  const addRoom = () => (p.slides < MAX_SLIDES ? 72 : 0);
-
   function fitZ(mode) {
     const { w, h } = wsSize();
     const across = mode === 'all' ? p.slides : 1;
-    const room = mode === 'all' ? addRoom() : 0;
-    return Math.max(0.02, Math.min((w - 48 - room) / (across * SLIDE_W), (h - 76) / H()));
+    return Math.max(0.02, Math.min((w - 48) / (across * SLIDE_W), (h - 76) / H()));
   }
   const minZ = () => fitZ('all') * 0.85;
   const maxZ = () => fitZ('one') * 4;
@@ -222,19 +218,27 @@ export async function mountEditor(view, id) {
     const sw = SLIDE_W * z;
     const total = p.slides * sw;
     const sh = H() * z;
-    const room = addRoom();
-    margX = total + room <= w - 48 ? (w - total - room) / 2 : Math.max(24, (w - sw) / 2);
+    margX = total <= w - 48 ? (w - total) / 2 : Math.max(24, (w - sw) / 2);
     margY = Math.max(34, (h - sh) / 2);
-    inner.style.width = `${total + 2 * margX + room}px`;
-    addBtn.hidden = !room;
-    addBtn.style.left = `${margX + total + 16}px`;
-    addBtn.style.top = `${margY + sh / 2 - 22}px`;
+    inner.style.width = `${total + 2 * margX}px`;
     inner.style.height = `${Math.max(h, sh + 2 * margY)}px`;
     strip.style.left = `${margX}px`;
     strip.style.top = `${margY}px`;
     strip.style.width = `${total}px`;
     strip.style.height = `${sh}px`;
     strip.style.background = p.background;
+    placeAdd();
+  }
+
+  // The add-a-slide button stays in the bottom-right corner of the grey, so
+  // it never scrolls out of reach and stays clear of the seams. It lives
+  // outside the scroller, so the strip scrolls under it.
+  function placeAdd() {
+    addBtn.hidden = p.slides >= MAX_SLIDES;
+    if (addBtn.hidden) return;
+    const { w, h } = wsSize();
+    addBtn.style.left = `${ws.offsetLeft + w - 44 - 14}px`;
+    addBtn.style.top = `${ws.offsetTop + h - 44 - 14}px`;
   }
 
   function setZoom(nz, cx, cy) {
@@ -464,7 +468,7 @@ export async function mountEditor(view, id) {
       tool('slides', ICONS.slides, isStory(p) ? 'Stories' : 'Slides'),
       tool('layout', ICONS.layout, 'Layout'),
       tool('format', ICONS.format, 'Format'),
-      isStory(p) ? tool('safe', ICONS.safe, 'Safe zone', { on: showSafe }) : tool('grid', ICONS.grid, 'Grid'),
+      isStory(p) ? tool('safe', ICONS.safe, 'Safe zone', { on: showSafe }) : '',
       p.slides > 1 ? tool('zoom', all ? ICONS.zoomOut : ICONS.zoomIn, all ? 'See all' : 'Zoom in') : tool('zoom', ICONS.zoomIn, 'Fit'),
     ].join('');
   }
@@ -676,6 +680,11 @@ export async function mountEditor(view, id) {
     const f = frameById(fid);
     if (!f) return;
     const list = p.photoIds.filter((pid) => photos[pid]);
+    // Nothing in the draft to choose from yet: go straight to the camera roll.
+    if (!list.length) {
+      pickFiles({ multiple: false }).then((files) => files.length && importInto(files, fid));
+      return;
+    }
     const s = openSheet({
       title: f.photoId ? 'Swap photo' : 'Add a photo',
       body: `
@@ -964,11 +973,13 @@ export async function mountEditor(view, id) {
       options: [
         { key: 'rename', label: 'Rename', detail: 'Also names the exported files.' },
         { key: 'template', label: 'Save as template', detail: 'Keeps the layout, not the photos.' },
+        ...(isStory(p) ? [] : [{ key: 'grid', label: 'Grid preview', detail: 'How the first slide looks in your profile grid.' }]),
         ...(unused.length ? [{ key: 'clear', label: 'Remove unused photos', detail: `${unused.length} in the tray, not in a frame.` }] : []),
       ],
     });
     if (key === 'rename') rename();
     else if (key === 'template') saveAsTemplate();
+    else if (key === 'grid') openGrid();
     else if (key === 'clear') {
       p.photoIds = p.photoIds.filter((pid) => usedIds().has(pid));
       renderTray();
@@ -1033,7 +1044,6 @@ export async function mountEditor(view, id) {
       else if (a === 'slides') openSlides();
       else if (a === 'layout') openLayout();
       else if (a === 'format') openFormat();
-      else if (a === 'grid') openGrid();
       else if (a === 'safe') toggleSafe();
       else if (a === 'zoom') fitTo(p.slides > 1 && z > fitZ('all') * 1.05 ? 'all' : 'one');
       else if (a === 'adjust') {
@@ -1186,8 +1196,6 @@ export async function mountEditor(view, id) {
 
   function onDown(e) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    // The add-a-slide button is an ordinary button: let its click through.
-    if (e.target.closest('.ws-add')) return;
     try {
       ws.setPointerCapture(e.pointerId);
     } catch {}
