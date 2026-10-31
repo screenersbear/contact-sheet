@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <clipPath id="light"><path d="M84 370L165 280L215 322L300 228L428 370Z"/><circle cx="365" cy="205" r="28"/></clipPath>
+    <clipPath id="slides"><path d="M72 181h112v150H72zM200 181h112v150H200zM328 181h112v150H328z"/></clipPath>
   </defs>
-  <rect width="512" height="512" fill="#bf0b83"/>
-  <rect x="84" y="142" width="344" height="228" fill="#ffffff"/>
-  <path d="M84 370L165 280L215 322L300 228L428 370Z" fill="#bf0b83"/>
-  <circle cx="365" cy="205" r="28" fill="#bf0b83"/>
-  <path d="M195 142h8v228h-8zM309 142h8v228h-8z" fill="#bf0b83"/>
-  <path d="M195 142h8v228h-8zM309 142h8v228h-8z" fill="#ffffff" clip-path="url(#light)"/>
+  <rect width="512" height="512" fill="#ffd103"/>
+  <path d="M72 181h112v150H72zM200 181h112v150H200zM328 181h112v150H328z" fill="#ffffff"/>
+  <g clip-path="url(#slides)" fill="#bf0b83">
+    <path d="M72 331V290L140 236L196 282L290 206L380 290L410 268L440 292V331Z"/>
+    <circle cx="404" cy="222" r="18"/>
+  </g>
 </svg>
