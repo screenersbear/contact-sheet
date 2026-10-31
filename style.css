@@ -155,40 +155,39 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
   pointer-events: none;
 }
 
+/* fitBrandTitle() in app.js sets this row's font size so the logo and title
+   fill the header's width; both are sized in em from it. */
 .brand-row {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: baseline;
+  gap: 0.35em;
   margin-bottom: 18px;
+  font-size: 28px;
 }
 .brand-row:last-child { margin-bottom: 0; }
 
+/* The magenta tile melts into the header, so crop to the white photo
+   (84,142 to 428,370 of the 512 icon) at the title's cap height. */
 .brand-logo-wrap {
-  width: 48px;
-  height: 48px;
+  width: 1.08em;
+  height: 0.716em;
   flex-shrink: 0;
   overflow: hidden;
 }
 
-.brand-logo { width: 100%; height: 100%; display: block; }
+.brand-logo { width: 1.608em; height: 1.608em; margin: -0.446em 0 0 -0.264em; display: block; }
 
 .brand-title {
+  flex: 1;
+  min-width: 0;
   margin: 0;
-  font-size: 22px;
+  font-size: 1em;
   font-weight: 900;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  line-height: 1.05;
-}
-
-.hero-date {
-  margin: 4px 0 0;
   color: #fff;
-  font-size: 14px;
-  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1.1;
 }
 
 .shine-sweep { position: relative; overflow: hidden; }
@@ -1194,7 +1193,7 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
     justify-content: space-between;
     gap: 24px;
   }
-  .hero-band .brand-row { margin-bottom: 0; }
+  .hero-band .brand-row { margin-bottom: 0; flex: 1; min-width: 0; }
   .hero-band .hero-cta { width: auto; min-width: 260px; }
 
   .tabbar {

@@ -119,10 +119,7 @@ async function renderHome(token) {
     <section class="hero-band">
       <div class="brand-row">
         <div class="brand-logo-wrap"><img class="brand-logo" src="icons/icon.svg" alt="" /></div>
-        <div>
-          <h1 class="brand-title">Contact Sheet</h1>
-          <p class="hero-date">Feed posts and Stories from your photos</p>
-        </div>
+        <h1 class="brand-title">Contact Sheet</h1>
       </div>
       <button type="button" class="hero-cta shine-sweep" data-act="new">+ New post</button>
     </section>
@@ -140,6 +137,22 @@ async function renderHome(token) {
           <button type="button" class="modal-cta primary" data-act="new">Start a new post</button>
         </div>`}
     </section>`;
+  fitBrandTitle();
+}
+
+// The logo and title fill the header's width. Measured rather than set in
+// CSS, since phones without Arial Black fall back to a narrower Helvetica.
+// Everything in the row is in em, so it all scales with one font size.
+function fitBrandTitle() {
+  const row = view.querySelector('.brand-row');
+  const t = row?.querySelector('.brand-title');
+  if (!t) return;
+  row.style.fontSize = '100px';
+  const text = document.createRange();
+  text.selectNodeContents(t);
+  const natural = text.getBoundingClientRect().right - row.getBoundingClientRect().left;
+  const size = (100 * row.clientWidth) / natural;
+  row.style.fontSize = `${Math.min(64, Math.floor(size * 0.995 * 10) / 10)}px`;
 }
 
 async function draftMenu(id) {
@@ -316,6 +329,7 @@ async function route() {
 }
 
 window.addEventListener('hashchange', route);
+window.addEventListener('resize', fitBrandTitle);
 route();
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
