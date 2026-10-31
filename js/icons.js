@@ -1,0 +1,29 @@
+// Line icons, drawn on a 24 x 24 grid in the current text colour.
+const svg = (d, extra = '') =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${extra}>${d}</svg>`;
+
+export const ICONS = {
+  back: svg('<path d="M15 5l-7 7 7 7"/>'),
+  undo: svg('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>'),
+  redo: svg('<path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>'),
+  more: svg('<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>'),
+  addFrame: svg('<rect x="3" y="4" width="18" height="16"/><path d="M12 8.5v7M8.5 12h7"/>'),
+  slides: svg('<rect x="2" y="6" width="6" height="12"/><rect x="9" y="6" width="6" height="12"/><rect x="16" y="6" width="6" height="12"/>'),
+  layout: svg('<rect x="3" y="3" width="18" height="18"/><rect x="7" y="7" width="10" height="10"/>'),
+  format: svg('<rect x="6" y="3" width="12" height="18"/><path d="M3 8V3h3M21 16v5h-3"/>'),
+  grid: svg('<rect x="3" y="3" width="18" height="18"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>'),
+  safe: svg('<rect x="6" y="2" width="12" height="20"/><path d="M6 6h12M6 17h12"/>'),
+  zoomOut: svg('<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M7.5 10.5h6"/>'),
+  zoomIn: svg('<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M7.5 10.5h6M10.5 7.5v6"/>'),
+  adjust: svg('<path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/>'),
+  rotate: svg('<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>'),
+  swap: svg('<path d="M4 8h14l-4-4M20 16H6l4 4"/>'),
+  photo: svg('<rect x="3" y="5" width="18" height="14"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/>'),
+  fit: svg('<rect x="3" y="6" width="18" height="12"/><path d="M8 12h8M8 12l2-2M8 12l2 2M16 12l-2-2M16 12l-2 2"/>'),
+  copy: svg('<rect x="8" y="8" width="13" height="13"/><path d="M16 8V3H3v13h5"/>'),
+  trash: svg('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/>'),
+  plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  up: svg('<path d="M6 15l6-6 6 6"/>'),
+  down: svg('<path d="M6 9l6 6 6-6"/>'),
+  check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>', ' stroke-width="3"'),
+};
