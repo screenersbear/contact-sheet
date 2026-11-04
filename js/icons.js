@@ -23,6 +23,7 @@ export const ICONS = {
   copy: svg('<rect x="8" y="8" width="13" height="13"/><path d="M16 8V3H3v13h5"/>'),
   trash: svg('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/>'),
   plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  x: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
   up: svg('<path d="M6 15l6-6 6 6"/>'),
   down: svg('<path d="M6 9l6 6 6-6"/>'),
   check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>', ' stroke-width="3"'),

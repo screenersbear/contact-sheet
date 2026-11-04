@@ -904,6 +904,23 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 .ws-add svg { width: 24px; height: 24px; }
 
 .ws-labels { position: absolute; inset: 0; pointer-events: none; }
+.ws-del {
+  position: relative;
+  flex: none;
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--canvas-label);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+.ws-del::before { content: ''; position: absolute; inset: -8px -6px; }
+.ws-del svg { width: 17px; height: 17px; }
 .ws-label {
   position: absolute;
   height: 20px;
@@ -917,6 +934,9 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   letter-spacing: 1px;
   color: var(--canvas-label);
 }
+.ws-label > span { overflow: hidden; text-overflow: clip; }
+/* Padding on the left as wide as the trash keeps the words centred. */
+.ws-label.has-del { display: flex; align-items: center; justify-content: center; gap: 4px; padding-left: 30px; overflow: visible; }
 
 /* Selection: white with a dark edge, readable on any photo. */
 .sel { position: absolute; pointer-events: none; outline: 2px solid #fff; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.45); }
@@ -942,6 +962,30 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 .h-sw { left: -8px; bottom: -8px; cursor: nesw-resize; }
 .h-w { left: -8px; top: calc(50% - 7px); cursor: ew-resize; }
 .sel.is-small .h-n, .sel.is-small .h-s, .sel.is-small .h-e, .sel.is-small .h-w { display: none; }
+/* The x that takes the photo out sits on the top-right corner, in place of
+   that corner's handle. White and black only, like the rest of the canvas. */
+.sel-x {
+  display: none;
+  position: absolute;
+  right: -13px;
+  top: -13px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  background: #fff;
+  color: #222;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  touch-action: manipulation;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.sel-x::before { content: ''; position: absolute; inset: -9px; }
+.sel-x svg { width: 14px; height: 14px; stroke-width: 3; }
+.sel.has-photo .sel-x { display: flex; }
+.sel.has-photo .h-ne { display: none; }
 
 .ed-adjust {
   flex-shrink: 0;

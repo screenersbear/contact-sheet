@@ -170,6 +170,7 @@ export async function mountEditor(view, id) {
           </div>
           <div class="sel" data-sel hidden>
             ${['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((h) => `<span class="handle h-${h}" data-h="${h}"></span>`).join('')}
+            <button type="button" class="sel-x" data-act="take-out" aria-label="Take the photo out">${ICONS.x}</button>
           </div>
         </div>
       </div>
@@ -200,6 +201,7 @@ export async function mountEditor(view, id) {
   const addBtn = $('.ws-add');
   const trayEl = $('[data-tray]');
   const toolsEl = $('[data-tools]');
+  ws.addEventListener('scroll', () => { if (sel) placeX(); }, { passive: true });
 
   // ---------- Zoom and layout ----------
   function wsSize() {
@@ -393,7 +395,11 @@ export async function mountEditor(view, id) {
     const word = isStory(p) ? 'Story' : 'Slide';
     let html = '';
     for (let i = 0; i < p.slides; i++) {
-      html += `<span class="ws-label" style="left:${margX + i * sw}px;top:${margY - 24}px;width:${sw}px">${sw >= 90 ? `${word} ${i + 1}` : i + 1}</span>`;
+      // The trash sits right after the label, away from the frame's corner x.
+      const del = p.slides > 1 && sw >= 60
+        ? `<button type="button" class="ws-del" data-act="del-slide" data-k="${i}" aria-label="Delete ${word.toLowerCase()} ${i + 1}">${ICONS.trash}</button>`
+        : '';
+      html += `<div class="ws-label${del ? ' has-del' : ''}" style="left:${margX + i * sw}px;top:${margY - 24}px;width:${sw}px"><span>${sw >= 90 ? `${word} ${i + 1}` : i + 1}</span>${del}</div>`;
     }
     labelsEl.innerHTML = html;
   }
@@ -407,7 +413,22 @@ export async function mountEditor(view, id) {
     selEl.style.width = `${f.w * z}px`;
     selEl.style.height = `${f.h * z}px`;
     selEl.classList.toggle('is-photo', photoMode);
+    selEl.classList.toggle('has-photo', !!f.photoId);
     selEl.classList.toggle('is-small', f.w * z < 70 || f.h * z < 70);
+    placeX();
+  }
+
+  // The x sits on the frame's top-right corner, but slides along the top edge
+  // to stay on screen when a wide frame runs past the right side.
+  function placeX() {
+    const f = selFrame();
+    const x = selEl.querySelector('.sel-x');
+    if (!f || !x) return;
+    const left = margX + f.x * z;
+    const right = left + f.w * z;
+    const edge = ws.scrollLeft + ws.clientWidth - 20;
+    const over = Math.max(0, Math.min(right - edge, f.w * z - 30));
+    x.style.right = `${-13 + over}px`;
   }
 
   function showGuides(gx, gy) {
@@ -586,6 +607,31 @@ export async function mountEditor(view, id) {
     photoMode = false;
     render();
     commit();
+  }
+
+  // The x on a selected photo: the frame stays, the photo goes back to the tray.
+  function takeOut() {
+    const f = selFrame();
+    if (!f || !f.photoId) return;
+    f.photoId = null;
+    f.crop = defaultCrop();
+    photoMode = false;
+    render();
+    commit();
+    toast('The photo is back in the tray', { action: { label: 'Undo', run: undo } });
+  }
+
+  function deleteSlide(k) {
+    if (p.slides <= 1) return;
+    apply(removeSlide(p, k));
+    if (sel && !frameById(sel)) {
+      sel = null;
+      photoMode = false;
+    }
+    fitIfNeeded();
+    render();
+    commit();
+    toast(`${isStory(p) ? 'Story' : 'Slide'} ${k + 1} deleted`, { action: { label: 'Undo', run: undo } });
   }
 
   function deleteSel() {
@@ -1063,6 +1109,8 @@ export async function mountEditor(view, id) {
       else if (a === 'frame-more') frameMore();
       else if (a === 'delete') deleteSel();
       else if (a === 'add-photos') addPhotos();
+      else if (a === 'take-out') takeOut();
+      else if (a === 'del-slide') deleteSlide(Number(b.dataset.k));
       return;
     }
     const t = e.target.closest('.tray-item');
@@ -1094,7 +1142,7 @@ export async function mountEditor(view, id) {
     const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
     const d0 = Math.hypot(a.x - b.x, a.y - b.y) || 1;
     const f = g && g.id && frameById(g.id);
-    if (f && f.photoId && sel === f.id && (g.type === 'move' || g.type === 'photo' || g.type === 'resize')) {
+    if (f && f.photoId && sel === f.id && (g.type === 'photo' || g.type === 'resize')) {
       if (g.start) Object.assign(f, g.start);
       placeFrame(f);
       placeSel();
@@ -1137,19 +1185,6 @@ export async function mountEditor(view, id) {
     f.crop = clampedCrop(f, ph);
     placeFrame(f);
     if (photoMode) zoomInput.value = String(zoom);
-  }
-
-  function moveFrame(f, dxu, dyu, noSnap) {
-    let x = g.start.x + dxu;
-    let y = g.start.y + dyu;
-    const tol = SNAP_PX / z;
-    const sx = noSnap ? null : nearest([x, x + f.w / 2, x + f.w], g.targets.xs, tol);
-    const sy = noSnap ? null : nearest([y, y + f.h / 2, y + f.h], g.targets.ys, tol);
-    if (sx) x += sx.d;
-    if (sy) y += sy.d;
-    f.x = Math.round(x);
-    f.y = Math.round(y);
-    showGuides(sx && sx.line, sy && sy.line);
   }
 
   function resizeFrame(f, dxu, dyu, noSnap) {
@@ -1196,6 +1231,8 @@ export async function mountEditor(view, id) {
 
   function onDown(e) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // Buttons on the canvas (the photo's x, a slide's delete) take their own taps.
+    if (e.target.closest('button')) return;
     try {
       ws.setPointerCapture(e.pointerId);
     } catch {}
@@ -1214,19 +1251,15 @@ export async function mountEditor(view, id) {
       g = { ...base, type: 'resize', id: f.id, h: handle.dataset.h, start: { x: f.x, y: f.y, w: f.w, h: f.h }, targets: snapTargets(p, f.id, { safeZone: showSafe }) };
       return;
     }
-    // Only the selected frame moves. Dragging any other frame scrolls the
-    // strip like the grey does, so looking around never knocks a photo out
-    // of place; a tap selects it.
-    if (f && sel === f.id) {
-      if (photoMode && f.photoId) {
-        const pl = placement(f, photos[f.photoId]);
-        g = { ...base, type: 'photo', id: f.id, wasSel: true, crop0: { ...f.crop, cx: pl.cx, cy: pl.cy } };
-        return;
-      }
-      g = { ...base, type: 'move', id: f.id, wasSel: true, start: { x: f.x, y: f.y, w: f.w, h: f.h }, targets: snapTargets(p, f.id, { safeZone: showSafe }) };
+    // Frames stay where the layout put them. Dragging the selected frame
+    // moves its photo inside it; dragging anything else scrolls the strip,
+    // so looking around never knocks a photo out of place. A tap selects.
+    if (f && sel === f.id && f.photoId) {
+      const pl = placement(f, photos[f.photoId]);
+      g = { ...base, type: 'photo', id: f.id, wasSel: true, crop0: { ...f.crop, cx: pl.cx, cy: pl.cy } };
       return;
     }
-    g = { ...base, type: 'pan', frameId: f ? f.id : null, sl: ws.scrollLeft, st: ws.scrollTop, samples: [{ t: performance.now(), x: e.clientX, y: e.clientY }] };
+    g = { ...base, type: 'pan', frameId: f ? f.id : null, wasSel: !!f && sel === f.id, sl: ws.scrollLeft, st: ws.scrollTop, samples: [{ t: performance.now(), x: e.clientX, y: e.clientY }] };
   }
 
   function onMove(e) {
@@ -1253,8 +1286,7 @@ export async function mountEditor(view, id) {
     }
     const f = frameById(g.id);
     if (!f) return;
-    if (g.type === 'move') moveFrame(f, dx / z, dy / z, e.altKey);
-    else if (g.type === 'resize') resizeFrame(f, dx / z, dy / z, e.altKey);
+    if (g.type === 'resize') resizeFrame(f, dx / z, dy / z, e.altKey);
     else if (g.type === 'photo') panPhoto(f, dx / z, dy / z);
     placeFrame(f);
     placeSel();
@@ -1452,15 +1484,18 @@ export async function mountEditor(view, id) {
     } else if (e.key === 'Escape') {
       deselect();
     } else if (sel && e.key.startsWith('Arrow')) {
+      // Arrows nudge the photo inside its frame; frames stay put.
       e.preventDefault();
       const f = selFrame();
+      if (!f.photoId) return;
       const n = e.shiftKey ? 10 : 1;
-      if (e.key === 'ArrowLeft') f.x -= n;
-      if (e.key === 'ArrowRight') f.x += n;
-      if (e.key === 'ArrowUp') f.y -= n;
-      if (e.key === 'ArrowDown') f.y += n;
+      const dx = e.key === 'ArrowLeft' ? -n : e.key === 'ArrowRight' ? n : 0;
+      const dy = e.key === 'ArrowUp' ? -n : e.key === 'ArrowDown' ? n : 0;
+      const ph = photos[f.photoId];
+      const pl = placement(f, ph);
+      f.crop = { ...f.crop, cx: pl.cx - dx / (pl.s * pl.rw), cy: pl.cy - dy / (pl.s * pl.rh) };
+      f.crop = clampedCrop(f, ph);
       placeFrame(f);
-      placeSel();
       commitSoon();
     }
   }
