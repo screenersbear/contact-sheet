@@ -9,7 +9,7 @@ import { addPhoto } from './db.js';
 import { loadImage, canvasToBlob } from './util.js';
 
 const PREVIEW_MAX = 1600;
-const THUMB_MAX = 240;
+const THUMB_MAX = 480; // sharp in the bigger tray and picker
 
 // Draws `src` at w x h, halving first while it's more than twice as big, so
 // a 24 megapixel photo shrinks smoothly instead of turning to grain.

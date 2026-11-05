@@ -654,11 +654,35 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
   padding: 0;
   margin: 0 0 16px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   gap: 8px;
 }
 .order-grid li { position: relative; }
 .order-grid img { width: 100%; display: block; object-fit: cover; border: 1px solid var(--line); }
+/* Export: tap to leave an image out, hold and drag to move it. */
+.order-grid.is-pick li { cursor: pointer; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.order-grid.is-pick img { pointer-events: none; -webkit-user-drag: none; }
+.order-num:empty { display: none; }
+.order-off {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 3px 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.order-grid li.is-off img, .order-ghost.is-off img { opacity: 0.3; }
+.order-grid li.is-off .order-off, .order-ghost.is-off .order-off { display: block; }
+.order-grid li.is-placeholder { opacity: 0.2; }
+.order-ghost { position: fixed; left: 0; top: 0; z-index: 400; margin: 0; padding: 0; list-style: none; pointer-events: none; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35); }
+.order-ghost img { width: 100%; display: block; object-fit: cover; }
 .order-num {
   position: absolute;
   left: 0;
@@ -681,14 +705,32 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 .r-9x16 { aspect-ratio: 9 / 16; }
 
 .pick-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  display: flex;
+  align-items: flex-start;
   gap: 6px;
   margin-bottom: 16px;
 }
-.pick-photo { aspect-ratio: 1; padding: 0; border: none; background: var(--line); position: relative; }
-.pick-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pick-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.pick-photo { display: block; width: 100%; padding: 0; border: none; background: var(--line); position: relative; -webkit-touch-callout: none; }
+.pick-photo img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
 .pick-photo.is-current { outline: 4px solid var(--accent); outline-offset: -4px; }
+.pick-photo.is-picked { outline: 4px solid var(--magenta); outline-offset: -4px; }
+.pick-num {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--magenta);
+  color: #fff;
+  font-family: var(--font-title);
+  font-size: 14px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.pick-photo.is-picked .pick-num { display: flex; }
 
 .slide-list { list-style: none; padding: 0; margin: 0 0 10px; display: flex; flex-direction: column; gap: 8px; }
 .slide-row { display: flex; align-items: center; gap: 10px; border: 3px solid var(--ink); padding: 6px; }
@@ -807,6 +849,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   overscroll-behavior: none;
   -webkit-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none;
   scrollbar-width: thin;
 }
 .ws-inner { position: relative; }
@@ -845,6 +888,8 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 .fr-plus svg { width: 26px; height: 26px; display: block; }
 .fr-hint { display: none; font-size: 12px; font-weight: 700; line-height: 1.25; max-width: 150px; }
 .fr.is-roomy .fr-hint { display: block; }
+.fr.is-lifted { opacity: 0.4; }
+.drag-ghost.is-lift { width: 88px; height: 88px; }
 .fr.is-target::after {
   content: '';
   position: absolute;
@@ -1002,17 +1047,19 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 
 .tray {
   flex-shrink: 0;
+  position: relative;
+  z-index: 3;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
-  padding: 6px 8px;
+  padding: 8px;
   background: var(--surface);
   border-top: 3px solid var(--ink);
 }
 .tray-add {
   flex-shrink: 0;
-  width: 52px;
-  height: 52px;
+  width: 72px;
+  height: 72px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1027,28 +1074,41 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
-.tray-add svg { width: 20px; height: 20px; }
+.tray-add svg { width: 24px; height: 24px; }
+/* The list reaches up over the canvas (see-through, and taps pass through)
+   so a swelling photo has room to grow without making the tray taller. */
 .tray-list {
   flex: 1;
   min-width: 0;
+  position: relative;
   display: flex;
+  align-items: flex-end;
   gap: 6px;
+  margin-top: -36px;
+  padding: 36px 2px 0;
   overflow-x: auto;
+  overflow-y: hidden;
   touch-action: pan-x;
   scrollbar-width: none;
+  pointer-events: none;
 }
 .tray-list::-webkit-scrollbar { display: none; }
 .tray-item {
   position: relative;
   flex-shrink: 0;
-  width: 52px;
-  height: 52px;
+  width: 72px;
+  height: 72px;
   padding: 0;
   border: none;
   background: var(--line);
   touch-action: pan-x;
   -webkit-touch-callout: none;
+  pointer-events: auto;
+  transform-origin: 50% 100%;
+  transition: transform 0.22s ease-out;
 }
+.tray.is-swell .tray-item { transition: transform 0.06s linear; }
+.tray-hint { pointer-events: auto; align-self: center; }
 .tray-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; -webkit-user-drag: none; }
 .tray-item.is-used img { opacity: 0.5; }
 .tray-used {
