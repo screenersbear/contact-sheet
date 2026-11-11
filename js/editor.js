@@ -15,13 +15,13 @@ import {
   framesWithinSlide, spreadOf, spreadCount, keepInSpreads,
 } from './model.js';
 import {
-  getProject, saveProject, saveProjectThumb, photosForProject, deleteUnlistedPhotos,
+  getProject, saveProject, saveProjectThumb, photosForProject, deleteUnlistedPhotos, deleteProject,
   listTemplates, saveTemplate, askToPersist,
 } from './db.js';
 import { importFiles, pickFiles } from './photos.js';
 import { previewCanvas } from './render.js';
 import { openExport } from './export.js';
-import { openSheet, choiceSheet, promptSheet, toast, sheetIsOpen } from './ui.js';
+import { openSheet, choiceSheet, promptSheet, confirmSheet, toast, sheetIsOpen } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, clamp, debounce, canvasToBlob, loadImage } from './util.js';
 import { OUT, RIM, GAP, PEEK, bookSize, bookLeft } from './frame.js';
@@ -95,6 +95,7 @@ export async function mountEditor(view, id) {
   let touched = null; // the page last tapped, when both are in view
   let dropTarget = null;
   let destroyed = false;
+  let gone = false; // deleted: nothing may save it again
 
   const H = () => slideH(p);
   const frameById = (fid) => p.frames.find((f) => f.id === fid);
@@ -121,7 +122,7 @@ export async function mountEditor(view, id) {
   let hist = [snapshot()];
   let hi = 0;
 
-  const saveSoon = debounce(() => saveProject(p).then((r) => (p.updatedAt = r.updatedAt)).catch(() => toast('Could not save. Is your storage full?')), 400);
+  const saveSoon = debounce(() => gone || saveProject(p).then((r) => (p.updatedAt = r.updatedAt)).catch(() => toast('Could not save. Is your storage full?')), 400);
   const thumbSoon = debounce(makeThumb, 1500);
 
   function commit() {
@@ -1329,6 +1330,7 @@ export async function mountEditor(view, id) {
         { key: 'template', label: 'Save as template', detail: 'Keeps the layout, not the photos.' },
         ...(isStory(p) || isPrint(p) ? [] : [{ key: 'grid', label: 'Grid preview', detail: 'How the first slide looks in your profile grid.' }]),
         ...(unused.length ? [{ key: 'clear', label: 'Remove unused photos', detail: `${unused.length} in the tray, not in a frame.` }] : []),
+        { key: 'delete', label: 'Delete chapter', detail: 'It and its photos go from this device.', danger: true },
       ],
     });
     if (key === 'rename') rename();
@@ -1341,7 +1343,23 @@ export async function mountEditor(view, id) {
       p.photoIds = p.photoIds.filter((pid) => usedIds().has(pid));
       renderTray();
       commit();
-    }
+    } else if (key === 'delete') deleteChapter();
+  }
+
+  async function deleteChapter() {
+    const ok = await confirmSheet({
+      title: 'Delete chapter?',
+      message: `<b>${esc(p.name)}</b> and its photos will be deleted from this device. Photos in your camera roll stay where they are.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok || destroyed) return;
+    gone = true;
+    commitSoon.cancel();
+    saveSoon.cancel();
+    thumbSoon.cancel();
+    await deleteProject(p.id);
+    location.hash = '#/contents';
   }
 
   async function rename() {
@@ -2070,8 +2088,10 @@ export async function mountEditor(view, id) {
 
   return function destroy() {
     destroyed = true;
-    commitSoon.flush();
-    saveSoon.flush();
+    if (!gone) {
+      commitSoon.flush();
+      saveSoon.flush();
+    }
     thumbSoon.cancel();
     ro.disconnect();
     stopInertia();

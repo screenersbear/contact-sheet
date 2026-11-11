@@ -1,7 +1,7 @@
 // The notebook: floating shut on white with its two tabs, then open at the
 // Table of contents. Routes: #/ (shut), #/contents. Each draft is a chapter.
-import { listProjects, deleteProject } from './db.js';
-import { choiceSheet, confirmSheet, openSheet, sheetIsOpen } from './ui.js';
+import { listProjects } from './db.js';
+import { choiceSheet, openSheet, sheetIsOpen } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, shortDate, isIOS, isStandalone } from './util.js';
 import { pageWord } from './model.js';
@@ -279,7 +279,6 @@ export function mountBook(view, startMode, onNew) {
             <span class="toc-meta">${p.slides} ${esc(pageWord(p, p.slides !== 1))} · ${esc(shortDate(p.updatedAt))}</span>
           </span>
         </a>
-        <button type="button" class="toc-x" data-del="${esc(p.id)}" aria-label="Delete ${esc(p.name)}">${ICONS.x}</button>
       </div>`;
   }
 
@@ -516,21 +515,6 @@ export function mountBook(view, startMode, onNew) {
       } catch {}
       showTip = false;
       drawPages();
-      return;
-    }
-    const del = e.target.closest('[data-del]');
-    if (del) {
-      const name = del.closest('.toc-row').querySelector('.toc-name').textContent;
-      const ok = await confirmSheet({
-        title: 'Delete chapter?',
-        message: `<b>${esc(name)}</b> and its photos will be deleted from this device. Photos in your camera roll stay where they are.`,
-        confirmLabel: 'Delete',
-        danger: true,
-      });
-      if (ok) {
-        await deleteProject(del.dataset.del);
-        drawToc();
-      }
       return;
     }
     if (e.target.closest('.nb-toc')) return;
