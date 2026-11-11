@@ -848,22 +848,30 @@ export async function mountEditor(view, id) {
     if (failed.length) toast(`${failed.length === 1 ? 'One photo' : `${failed.length} photos`} could not be opened. JPEG and PNG work everywhere.`, { ms: 5000 });
     const queue = added.map((r) => r.id);
     const targets = [].concat(targetIds || []).map((id) => frameById(id)).filter(Boolean);
-    if (targets.length) for (const f of targets) { if (queue.length) putPhoto(f, queue.shift()); }
-    else for (const f of emptyFrames()) if (queue.length) putPhoto(f, queue.shift());
+    for (const f of targets) if (queue.length) putPhoto(f, queue.shift());
+    const fillEmpty = () => {
+      if (!targets.length) for (const f of emptyFrames()) if (queue.length) putPhoto(f, queue.shift());
+    };
+    const open = targets.length ? 0 : emptyFrames().length;
+    const extra = queue.length - open;
     render();
-    if (queue.length && p.slides < MAX_SLIDES) {
-      const room = Math.min(queue.length, MAX_SLIDES - p.slides);
+    if (extra > 0 && p.slides < MAX_SLIDES) {
+      // Nothing is placed until this is answered, so keeping them in the
+      // tray leaves the pages exactly as they were.
+      const room = Math.min(extra, MAX_SLIDES - p.slides);
       const word = pageWord(p, room !== 1);
+      const photosLine = queue.length === 1 ? 'One photo' : `${queue.length} photos`;
       const key = await choiceSheet({
         title: 'More photos than frames',
-        message: `${queue.length === 1 ? 'One photo is' : `${queue.length} photos are`} in the tray without a frame.`,
+        message: open ? `${photosLine}, ${open === 1 ? 'one empty frame' : `${open} empty frames`}.` : `${photosLine} without a frame.`,
         options: [
-          { key: 'slides', label: `Add ${room} ${word}`, detail: `One photo on each new ${pageWord(p)}.` },
-          { key: 'tray', label: 'Keep them in the tray', detail: 'Place them yourself later.' },
+          { key: 'slides', label: `Add ${room} ${word}`, detail: open ? `Fills the empty frames, then one photo on each new ${pageWord(p)}.` : `One photo on each new ${pageWord(p)}.` },
+          { key: 'tray', label: 'Keep them in the tray', detail: 'Nothing goes on the pages yet.' },
         ],
       });
       if (key === 'slides' && !destroyed) {
-        for (let n = 0; n < room; n++) {
+        fillEmpty();
+        for (let n = 0; n < room && queue.length; n++) {
           apply(insertSlide(p, p.slides));
           const b = slideBox(p, p.slides - 1);
           p.frames.push(newFrame(b.x, b.y, b.w, b.h, queue.shift()));
@@ -871,6 +879,9 @@ export async function mountEditor(view, id) {
         fitIfNeeded();
         render();
       }
+    } else {
+      fillEmpty();
+      render();
     }
     commit();
   }

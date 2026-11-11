@@ -49,8 +49,9 @@ function chooseTemplate(ratio) {
     const s = openSheet({ title: 'Templates', className: 'sheet-templates', onClose: () => resolve(made) });
     let list = [];
     async function draw() {
-      // "Story full bleed" is one full frame, the same as Blank.
-      list = (await listTemplates()).filter((t) => t.starterKey !== 'story');
+      // "Story full bleed" is one full frame, the same as Blank. "Full bleed"
+      // was retired, but devices that already have it still store it.
+      list = (await listTemplates()).filter((t) => t.starterKey !== 'story' && t.starterKey !== 'full-bleed');
       const blank = { ...blankLayout(ratio), name: 'Blank' };
       const card = (t, id) => {
         const shaped = inRatio(t, ratio);

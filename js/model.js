@@ -78,7 +78,6 @@ export function starterTemplates() {
   const base = { background: DEFAULT_BG, padding: 0, seamsOpen: false, borderWidth: 0, borderColor: '#ffffff', starter: true };
   const B = 60;
   return [
-    { ...base, starterKey: 'full-bleed', name: 'Full bleed', ratio: '3:4', slides: 3, frames: [full(0), full(1), full(2)] },
     {
       ...base,
       starterKey: 'white-border',
