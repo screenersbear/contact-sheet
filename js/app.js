@@ -190,6 +190,14 @@ window.addEventListener('hashchange', route);
 if (startsOnFirstPage() && (location.hash || '#/') === '#/') history.replaceState(null, '', '#/contents');
 route();
 
+// Always upright, quietly. The manifest asks for it once the app is
+// installed; where a browser allows a lock, this holds it. iPhone home-screen
+// apps honour neither, and nothing is shown about it.
+try {
+  const o = screen.orientation;
+  if (o && o.lock) o.lock('portrait').catch(() => {});
+} catch {}
+
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
