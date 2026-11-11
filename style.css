@@ -949,7 +949,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   height: 44px;
   border-radius: 50%;
   border: none;
-  background: #fff;
+  background: var(--paper);
   color: var(--navy);
   display: flex;
   align-items: center;
@@ -1312,12 +1312,17 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
   --magenta: #313d45;
   --text: #313d45;
   --text-dim: rgba(49, 61, 69, 0.66);
-  --surface: #fff;
-  --bg: #fff;
+  /* A very soft grey behind everything (less light than white, and it still
+     reads as white), and paper one shade lighter: the notebook's pages, the
+     sheets, fields and buttons on them. White lettering stays white, and so
+     do marks drawn over photos and anything that shows the export itself. */
+  --bg: #f3f3f3;
+  --paper: #fafafa;
+  --surface: var(--paper);
   --line: #d6dadd;
-  --field: #fff;
+  --field: var(--paper);
   --overlay: rgba(49, 61, 69, 0.42);
-  --canvas: #fff;
+  --canvas: var(--bg);
   --canvas-label: #313d45;
   --font-hand: "Mansalva", "Bradley Hand", "Noteworthy", cursive;
   --font-title: var(--font-hand);
@@ -1342,18 +1347,18 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
 }
 html.is-short { --nb-b: 10px; }
 /* The handwriting has one weight: no smeared fake bold. */
-html { background: #fff; font-synthesis: none; -webkit-font-synthesis: none; }
+html { background: var(--bg); font-synthesis: none; -webkit-font-synthesis: none; }
 /* For a moment as the iPhone app opens (ui.js): taller than the screen, so
    iOS measures the screen again. */
 html.ios-nudge body { min-height: calc(var(--screen-h, 100vh) + 160px); overflow: visible; }
 
-body[data-route="book"] { overflow: hidden; background: #fff; }
+body[data-route="book"] { overflow: hidden; background: var(--bg); }
 body[data-route="book"] #app { padding: 0; max-width: none; }
 
 .nb {
   position: fixed;
   inset: 0;
-  background: #fff;
+  background: var(--bg);
   perspective: 1100px;
   perspective-origin: 50% 28%;
   overflow: hidden;
@@ -1441,7 +1446,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   letter-spacing: 0;
 }
 .opt-gap { margin-top: 18px; }
-.sheet .modal-cta.secondary { background: #fff; color: var(--text); font-family: var(--font-body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; border: 1px solid var(--text); border-radius: 8px; }
+.sheet .modal-cta.secondary { background: var(--paper); color: var(--text); font-family: var(--font-body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; border: 1px solid var(--text); border-radius: 8px; }
 .choice-heading { margin-top: 10px; }
 .opt-book {
   width: 48px;
@@ -1556,7 +1561,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .opt-shape i.is-circle { border-radius: 50%; }
 .opt-shape i.is-square { border-radius: 5%; }
 .opt-shape i.is-rect { width: 66px; height: 44px; margin: 6px 0; border-radius: 3px; }
-.crop-stage { position: relative; overflow: hidden; touch-action: none; background: #fff; }
+.crop-stage { position: relative; overflow: hidden; touch-action: none; background: var(--paper); }
 .crop-stage canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .crop-hole {
   position: absolute;
@@ -1611,7 +1616,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   right: 1.2%;
   width: 26%;
   border-radius: 0 calc(var(--W) * 0.034) calc(var(--W) * 0.034) 0;
-  background: #fff;
+  background: var(--paper);
 }
 .nb-stack i:nth-child(even) { background: #e4e4e4; }
 /* The sides that only show once the notebook is turned: the spine, and the
@@ -1623,7 +1628,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   left: 1px;
   right: 1.2%;
   height: calc(var(--W) * 0.1904);
-  background: repeating-linear-gradient(to bottom, #fff 0, #fff calc(var(--W) * 0.0112), #e4e4e4 calc(var(--W) * 0.0112), #e4e4e4 calc(var(--W) * 0.0224));
+  background: repeating-linear-gradient(to bottom, var(--paper) 0, var(--paper) calc(var(--W) * 0.0112), #e4e4e4 calc(var(--W) * 0.0112), #e4e4e4 calc(var(--W) * 0.0224));
 }
 .nb-box.is-top { top: 0.9%; transform-origin: 50% 0; transform: translateZ(-3px) rotateX(-90deg); }
 .nb-box.is-bottom { bottom: 0.9%; transform-origin: 50% 100%; transform: translateZ(-3px) rotateX(90deg); }
@@ -1686,7 +1691,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-toc {
   position: absolute;
   inset: 0;
-  background: #fff;
+  background: var(--bg);
   opacity: 0;
   transition: opacity 0.22s;
 }
@@ -1760,7 +1765,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   height: 100%;
   aspect-ratio: 1;
   border-radius: 3px;
-  background: #fff;
+  background: var(--paper);
   box-shadow: inset 0 0 0 1px var(--line);
   display: block;
   overflow: hidden;
@@ -1777,8 +1782,8 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 /* The open notebook around the pages in the editor. */
 /* Pinned by its edges, not 100dvh: on iOS 26 100dvh stops a status bar short
    of the bottom of the screen. Everything sits inside the notebook's frame. */
-.editor { --ed-in: 20px; height: auto; padding: calc(var(--nb-t) + var(--nb-rim)) 0 calc(var(--nb-b) + var(--nb-rim)); background: #fff; }
-body[data-route="edit"] { background: #fff; }
+.editor { --ed-in: 20px; height: auto; padding: calc(var(--nb-t) + var(--nb-rim)) 0 calc(var(--nb-b) + var(--nb-rim)); background: var(--bg); }
+body[data-route="edit"] { background: var(--bg); }
 .ws { z-index: 1; background: none; scrollbar-width: none; }
 .ws::-webkit-scrollbar { display: none; }
 .ws-inner { overflow: hidden; }
@@ -1861,12 +1866,12 @@ body[data-route="edit"] { background: #fff; }
   pointer-events: auto;
   touch-action: manipulation;
 }
-.ed-name.is-over button { background: #fff; }
+.ed-name.is-over button { background: var(--paper); }
 .ed-name span { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
 /* Turning the page. */
 .flip { position: absolute; z-index: 2; perspective: 1500px; pointer-events: none; }
-.flip-page { position: absolute; top: 0; bottom: 0; overflow: hidden; background: #fff; }
+.flip-page { position: absolute; top: 0; bottom: 0; overflow: hidden; background: var(--paper); }
 .flip-page canvas { display: block; width: 100%; height: 100%; }
 .flip-under { width: 50%; }
 .flip-under.is-left { left: 0; }
@@ -1890,10 +1895,10 @@ body[data-route="edit"] { background: #fff; }
 .flip-front { transform: translateZ(calc(var(--t) / 2)); }
 .flip-back { transform: rotateY(180deg) translateZ(calc(var(--t) / 2)); }
 /* The page's thickness: thin paper edges joining its two faces. */
-.flip-edge { position: absolute; display: block; background: repeating-linear-gradient(90deg, #fff 0 1px, #d4d4d4 1px 2px); }
+.flip-edge { position: absolute; display: block; background: repeating-linear-gradient(90deg, var(--paper) 0 1px, #d4d4d4 1px 2px); }
 .flip-edge.is-out { top: 0; bottom: 0; left: calc(100% - var(--t) / 2); width: var(--t); transform: rotateY(90deg); }
 .flip-edge.is-top,
-.flip-edge.is-bottom { left: 0; right: 0; height: var(--t); background: repeating-linear-gradient(180deg, #fff 0 1px, #d4d4d4 1px 2px); transform: rotateX(90deg); }
+.flip-edge.is-bottom { left: 0; right: 0; height: var(--t); background: repeating-linear-gradient(180deg, var(--paper) 0 1px, #d4d4d4 1px 2px); transform: rotateX(90deg); }
 .flip-edge.is-top { top: calc(var(--t) / -2); }
 .flip-edge.is-bottom { bottom: calc(var(--t) / -2); }
 .flip-shade { position: absolute; inset: 0; background: linear-gradient(90deg, #000, rgba(0, 0, 0, 0.25)); opacity: 0; }
@@ -1924,7 +1929,7 @@ body[data-route="edit"] { background: #fff; }
 .tool-sm { flex: 0 0 34px; justify-content: center; padding: 6px 0; }
 .tray-hint { color: var(--text); }
 .tray-add {
-  background: #fff;
+  background: var(--paper);
   color: var(--text);
   border: 1.5px solid var(--text);
   border-radius: 6px;
@@ -1933,22 +1938,22 @@ body[data-route="edit"] { background: #fff; }
   text-transform: none;
   letter-spacing: 0;
 }
-.ws-add { background: #fff; color: var(--text); border: 1.5px solid var(--text); box-shadow: none; }
+.ws-add { background: var(--paper); color: var(--text); border: 1.5px solid var(--text); box-shadow: none; }
 /* While a photo is moved: the frame's middle lines, shown when it catches. */
 .guide.in-frame { background: var(--text); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85); }
 
 /* Sheets: white paper and thin lines. */
 .sheet { border-top: none; }
-.sheet-header { background: #fff; border-bottom: 1px solid var(--line); }
+.sheet-header { background: var(--paper); border-bottom: 1px solid var(--line); }
 .sheet-header h2 { color: var(--text); text-transform: none; letter-spacing: 0; font-weight: 400; }
 .choice, .tpl-card { border: 1px solid var(--text); border-radius: 8px; }
 .choice-label, .row-name { text-transform: none; font-weight: 500; letter-spacing: 0; }
 .lay-sky { fill: #e2e6e9; }
 .btn { font-family: var(--font-body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; border-width: 1px; border-color: var(--text); border-radius: 8px; }
-.btn.primary { background: #fff; color: var(--text); border-width: 1.5px; border-color: var(--text); }
+.btn.primary { background: var(--paper); color: var(--text); border-width: 1.5px; border-color: var(--text); }
 .order-note { background: none; color: var(--text-dim); border: none; padding: 0 0 4px; font-family: var(--font-body); font-size: 14px; letter-spacing: 0; text-transform: none; }
 .order-note b { color: var(--text); font-family: inherit; font-weight: 600; text-transform: none; }
-.sheet .primary { background: #fff; color: var(--text); font-family: var(--font-body); font-weight: 600; letter-spacing: 0; text-transform: none; border: 1.5px solid var(--text); border-radius: 8px; }
+.sheet .primary { background: var(--paper); color: var(--text); font-family: var(--font-body); font-weight: 600; letter-spacing: 0; text-transform: none; border: 1.5px solid var(--text); border-radius: 8px; }
 
 /* The PDF preview: the whole screen on a phone, a big panel on a computer. */
 .sheet.sheet-pdf { max-width: none; height: var(--vv-height, 100svh); max-height: none; }
