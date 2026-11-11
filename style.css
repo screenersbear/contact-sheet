@@ -121,8 +121,8 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 #app {
   max-width: 560px;
   margin: 0 auto;
-  min-height: 100dvh;
-  padding: env(safe-area-inset-top) 16px calc(32px + env(safe-area-inset-bottom));
+  min-height: var(--turn-h, 100dvh);
+  padding: var(--sa-t) 16px calc(32px + var(--sa-b));
   background: var(--bg);
 }
 
@@ -133,11 +133,11 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 
 .hero-band {
   background: var(--hero);
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-top: calc(-1 * env(safe-area-inset-top));
+  width: var(--turn-w, 100vw);
+  margin-left: calc(50% - var(--turn-w, 100vw) / 2);
+  margin-top: calc(-1 * var(--sa-t));
   margin-bottom: 20px;
-  padding: calc(env(safe-area-inset-top) + 20px) max(16px, calc(50vw - 264px)) 20px;
+  padding: calc(var(--sa-t) + 20px) max(16px, calc(var(--turn-w, 100vw) / 2 - 264px)) 20px;
   border-bottom: 4px solid var(--accent);
   position: relative;
 }
@@ -150,7 +150,7 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
   left: 0;
   right: 0;
   bottom: 100%;
-  height: 100vh;
+  height: var(--turn-h, 100vh);
   background: var(--hero);
   pointer-events: none;
 }
@@ -507,7 +507,7 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: none;
-  padding: 16px 20px calc(env(safe-area-inset-bottom) + 20px);
+  padding: 16px 20px calc(var(--sa-b) + 20px);
 }
 .sheet-header h2 {
   margin: 0;
@@ -563,7 +563,7 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
   bottom: 0;
   background: var(--surface);
   margin: 12px -20px 0;
-  padding: 8px 20px calc(env(safe-area-inset-bottom) + 16px);
+  padding: 8px 20px calc(var(--sa-b) + 16px);
   border-top: 3px solid var(--ink);
 }
 
@@ -763,7 +763,7 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
   text-align: center;
 }
 .layout-opt .lay-svg { height: 84px; max-height: none; width: auto; max-width: 100%; }
-@media (min-width: 600px) { .layout-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 600px) { :where(html:not(.is-turned)) .layout-grid { grid-template-columns: repeat(4, 1fr); } }
 
 .grid-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-bottom: 12px; }
 .grid-tile { aspect-ratio: 3 / 4; background: var(--line); overflow: hidden; }
@@ -789,7 +789,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   align-items: center;
   gap: 0;
   background: var(--hero);
-  padding: calc(env(safe-area-inset-top) + 6px) 8px 6px 4px;
+  padding: calc(var(--sa-t) + 6px) 8px 6px 4px;
   border-bottom: 4px solid var(--accent);
 }
 .ed-icon {
@@ -1166,7 +1166,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   background: var(--surface);
   border-top: 3px solid var(--ink);
   /* Close to the home bar, the way iPhone apps' own tab bars sit. */
-  padding: 2px 0 max(4px, calc(env(safe-area-inset-bottom) - 14px));
+  padding: 2px 0 max(4px, calc(var(--sa-b) - 14px));
 }
 .tool {
   flex: 1;
@@ -1217,7 +1217,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  bottom: calc(24px + var(--sa-b));
   transform: translateX(-50%);
   width: calc(100% - 32px);
   max-width: 528px;
@@ -1234,7 +1234,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   z-index: 200;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
-body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom)); }
+body[data-route="edit"] .toast { bottom: calc(136px + var(--sa-b)); }
 .toast.show { animation: slideUp 0.2s ease; }
 .toast-action {
   border: 2px solid var(--accent);
@@ -1252,28 +1252,28 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
 /* ---------- Wider screens ---------- */
 
 @media (min-width: 600px) {
-  .sheet-overlay { align-items: center; padding: 24px; }
-  .sheet { max-height: calc(var(--vv-height, 100vh) * 0.88); border: 3px solid var(--ink); border-top: 4px solid var(--accent); }
-  .sheet-small { max-width: 460px; }
-  .sheet-export { max-width: 640px; }
+  :where(html:not(.is-turned)) .sheet-overlay { align-items: center; padding: 24px; }
+  :where(html:not(.is-turned)) .sheet { max-height: calc(var(--vv-height, 100vh) * 0.88); border: 3px solid var(--ink); border-top: 4px solid var(--accent); }
+  :where(html:not(.is-turned)) .sheet-small { max-width: 460px; }
+  :where(html:not(.is-turned)) .sheet-export { max-width: 640px; }
 }
 
 @media (min-width: 700px) {
-  .ed-tools, .tray { justify-content: center; }
-  .tool { flex: 0 0 96px; font-size: 11px; letter-spacing: 0.8px; }
-  .tray-list { flex: 0 1 auto; }
+  :where(html:not(.is-turned)) .ed-tools, :where(html:not(.is-turned)) .tray { justify-content: center; }
+  :where(html:not(.is-turned)) .tool { flex: 0 0 96px; font-size: 11px; letter-spacing: 0.8px; }
+  :where(html:not(.is-turned)) .tray-list { flex: 0 1 auto; }
 }
 
 /* Desktop: content gets room. */
 @media (min-width: 900px) {
-  #app {
+  :where(html:not(.is-turned)) #app {
     max-width: 920px;
     padding: 0 32px 64px;
   }
 
   /* Edge to edge across the window, content still lined up with the
      column below. 100% here is the column's own width. */
-  .hero-band {
+  :where(html:not(.is-turned)) .hero-band {
     width: 100vw;
     margin-left: calc(50% - 50vw);
     padding: 28px calc((100vw - 100%) / 2) 24px;
@@ -1282,13 +1282,13 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
     justify-content: space-between;
     gap: 24px;
   }
-  .hero-band .brand-row { margin-bottom: 0; flex: 1; min-width: 0; }
-  .hero-band .hero-cta { width: auto; min-width: 260px; }
+  :where(html:not(.is-turned)) .hero-band .brand-row { margin-bottom: 0; flex: 1; min-width: 0; }
+  :where(html:not(.is-turned)) .hero-band .hero-cta { width: auto; min-width: 260px; }
 
-  .toast { bottom: 24px; }
-  body[data-route="edit"] .toast { left: 50%; bottom: 190px; }
+  :where(html:not(.is-turned)) .toast { bottom: 24px; }
+  :where(html:not(.is-turned)) body[data-route="edit"] .toast { left: 50%; bottom: 190px; }
 
-  .card-list:has(> .draft-card), .card-list:has(> .tpl-card) { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); }
+  :where(html:not(.is-turned)) .card-list:has(> .draft-card), :where(html:not(.is-turned)) .card-list:has(> .tpl-card) { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); }
 }
 
 /* ---------- The notebook ---------- */
@@ -1341,8 +1341,10 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
 
 /* The notebook's frame, the same in the contents and every chapter. */
 :root {
-  --nb-t: max(env(safe-area-inset-top), 10px);
-  --nb-b: max(calc(env(safe-area-inset-bottom) + 2px), 10px);
+  --sa-t: env(safe-area-inset-top);
+  --sa-b: env(safe-area-inset-bottom);
+  --nb-t: max(var(--sa-t), 10px);
+  --nb-b: max(calc(var(--sa-b) + 2px), 10px);
   --nb-rim: 10px;
 }
 html.is-short { --nb-b: 10px; }
@@ -1351,6 +1353,31 @@ html { background: var(--bg); font-synthesis: none; -webkit-font-synthesis: none
 /* For a moment as the iPhone app opens (ui.js): taller than the screen, so
    iOS measures the screen again. */
 html.ios-nudge body { min-height: calc(var(--screen-h, 100vh) + 160px); overflow: visible; }
+/* A sideways iPhone (js/upright.js): the page is laid out at its upright
+   size and drawn a quarter turn round, so it stays the way up it is in your
+   hand. The phone's top edge keeps the top's room and the bottom a home bar's
+   worth, as upright. */
+html.is-turned {
+  --sa-t: max(env(safe-area-inset-left), env(safe-area-inset-right));
+  --sa-b: min(max(env(safe-area-inset-left), env(safe-area-inset-right)), 34px);
+  --nb-b: max(calc(var(--sa-b) + 2px), 10px);
+  overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+html.is-turned body {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--turn-w);
+  height: var(--turn-h);
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  transform-origin: 0 0;
+}
+html.is-turned-l body { transform: translateY(var(--turn-w)) rotate(-90deg); }
+html.is-turned-r body { transform: translateX(var(--turn-h)) rotate(90deg); }
 
 body[data-route="book"] { overflow: hidden; background: var(--bg); }
 body[data-route="book"] #app { padding: 0; max-width: none; }
@@ -1537,7 +1564,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-stick-bar {
   position: absolute;
   left: 50%;
-  bottom: calc(env(safe-area-inset-bottom) + 14px);
+  bottom: calc(var(--sa-b) + 14px);
   width: 200px;
   margin-left: -100px;
   text-align: center;
@@ -1957,10 +1984,10 @@ body[data-route="edit"] { background: var(--bg); }
 
 /* The PDF preview: the whole screen on a phone, a big panel on a computer. */
 .sheet.sheet-pdf { max-width: none; height: var(--vv-height, 100svh); max-height: none; }
-.sheet-pdf .sheet-header { padding-top: calc(14px + env(safe-area-inset-top)); }
+.sheet-pdf .sheet-header { padding-top: calc(14px + var(--sa-t)); }
 .sheet-pdf .sheet-body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 @media (min-width: 600px) {
-  .sheet.sheet-pdf { max-width: 900px; height: calc(var(--vv-height, 100vh) * 0.92); }
+  :where(html:not(.is-turned)) .sheet.sheet-pdf { max-width: 900px; height: calc(var(--vv-height, 100vh) * 0.92); }
 }
 .pdfv-notice { flex-shrink: 0; width: 100%; margin: 0; padding: 10px 16px; border: none; background: var(--surface); color: var(--text); font-size: 14px; line-height: 1.3; text-align: left; letter-spacing: 0; text-transform: none; }
 .pdfv-notice b { font-weight: 600; }
@@ -1975,7 +2002,7 @@ body[data-route="edit"] { background: var(--bg); }
 .pdfv-mark.is-blurry { outline-color: var(--danger); }
 .pdfv-mark.is-flash { animation: pdfv-flash 0.5s ease 3; }
 @keyframes pdfv-flash { 50% { opacity: 0; } }
-.pdfv-foot { flex-shrink: 0; padding: 8px 16px calc(env(safe-area-inset-bottom) + 10px); background: var(--surface); }
+.pdfv-foot { flex-shrink: 0; padding: 8px 16px calc(var(--sa-b) + 10px); background: var(--surface); }
 .pdfv-row { display: flex; align-items: center; gap: 8px; }
 .pdfv-count { flex: 1; font-size: 15px; color: var(--text); }
 .pdfv-thumb { width: 48px; height: 48px; flex-shrink: 0; object-fit: cover; }

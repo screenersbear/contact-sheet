@@ -31,6 +31,9 @@ if (vv) {
 // screen and scrolled a pixel and back (the fix proven in Callback). Never
 // while typing.
 const iPhoneApp = /iPhone|iPod/.test(navigator.userAgent) && (navigator.standalone === true || matchMedia('(display-mode: standalone)').matches);
+// Sideways, the page is drawn turned back upright (upright.js) at a size of
+// its own, so there's no screen edge to fix.
+const turned = () => html.classList.contains('is-turned');
 const typing = () => !!document.activeElement && document.activeElement.matches('input, textarea, [contenteditable]');
 let probe = null;
 // How far short of the screen's real bottom iOS has its bottom edge, in px
@@ -40,7 +43,7 @@ export function screenGap(full = 0) {
   if (!probe) {
     probe = document.createElement('div');
     probe.setAttribute('aria-hidden', 'true');
-    probe.style.cssText = 'position: fixed; left: 0; bottom: 0; width: 1px; height: 0; visibility: hidden; pointer-events: none; padding-top: var(--test-safe-top, env(safe-area-inset-top));';
+    probe.style.cssText = 'position: fixed; left: 0; bottom: 0; width: 1px; height: 0; visibility: hidden; pointer-events: none; padding-top: var(--test-safe-top, var(--sa-t));';
     document.body.appendChild(probe);
   }
   const portrait = Math.abs(window.innerWidth - screen.width) < 2;
@@ -59,7 +62,7 @@ let nudging = false;
 export function nudgeScreen(tries = 5, full = 0) {
   return new Promise((done) => {
     const go = (left) => {
-      if (!left || !screenGap(full) || typing()) {
+      if (!left || turned() || !screenGap(full) || typing()) {
         nudging = false;
         done(screenGap(full));
         return;
@@ -85,7 +88,9 @@ export function nudgeScreen(tries = 5, full = 0) {
 }
 if (iPhoneApp) {
   const soon = (ms) => setTimeout(() => {
+    if (turned()) return;
     nudgeScreen().then((gap) => {
+      if (turned()) return;
       html.classList.toggle('is-short', gap > 0);
       window.dispatchEvent(new Event('resize'));
     });
