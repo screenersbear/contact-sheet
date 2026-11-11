@@ -1580,7 +1580,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   box-shadow: var(--book-shadow);
   transform: scaleX(-1);
 }
-/* The page edge (see .nb-open > span::after), drawn at the size it ends up
+/* The page's edge (see .nb-open > span::after), drawn at the size it ends up
    on screen. The inside of the cover has its outer edge on the left. */
 .nb-block,
 .nb-inside { --ex: calc(var(--rx) / 10); --ey: calc(var(--ry) / 10); }
@@ -1788,15 +1788,16 @@ body[data-route="edit"] { background: #fff; }
   border-image: var(--book-block) 46 46 46 1 fill / var(--nb-rim) var(--nb-rim) var(--nb-rim) 0 stretch;
 }
 .nb-open > span:first-of-type { transform: scaleX(-1); }
-/* The page's outer edge: a line down it that curves into the top and bottom
-   of the frame, with the notebook's colour in the thin space behind it and in
-   the corners. The frame's coloured band is the outer 24/46 of --nb-rim (the
-   rest of the rim is page), so its inner edge is 4.8px out from here. The box
-   is the page inside the line, its top and bottom 1px under the band so the
-   fill hides the art's soft inner edge; the line and the fill are rings of
-   shadow round it (a border would be rounded to whole pixels in the 3D book),
-   cut off at the top, bottom and spine. --ex and --ey are one screen pixel
-   across and down; the 3D book sets its own. */
+/* The page's outer edge: the paper simply ends there, its corners curving
+   into the top and bottom of the frame. Behind it, in the thin space down the
+   side and in the corners, the notebook's colour is a shade darker next to the
+   paper and fades back to the solid colour towards the notebook's edge. The
+   frame's coloured band is the outer 24/46 of --nb-rim (the rest of the rim is
+   page), so its inner edge is 4.8px out from here. The box is the paper, its
+   top and bottom 1px under the band so the fill hides the art's soft inner
+   edge; the shade and the fill are rings of shadow round it, cut off at the
+   top, bottom and spine. --ex and --ey are one screen pixel across and down;
+   the 3D book sets its own. */
 .nb-open > span { --ex: 1px; --ey: 1px; }
 .nb-open > span::after,
 .nb-block::after,
@@ -1808,11 +1809,11 @@ body[data-route="edit"] { background: #fff; }
   left: 0;
   right: 0;
   border-radius: 0 calc(var(--ex) * 20) calc(var(--ex) * 20) 0 / 0 calc(var(--ey) * 20) calc(var(--ey) * 20) 0;
-  box-shadow: 0 0 0 calc(var(--ex) * 2) var(--text), 0 0 0 calc((var(--ex) + var(--ey)) * 30) var(--book-rim);
+  box-shadow: 0 0 calc(var(--ex) * 4) calc(var(--ex) * 1) rgba(0, 0, 0, 0.3), 0 0 0 calc((var(--ex) + var(--ey)) * 30) var(--book-rim);
   clip-path: inset(0 calc(var(--ex) * -5.8) 0 0);
   pointer-events: none;
 }
-/* Turning pages get the same round outer corners, so the edge shows past them. */
+/* Turning pages get the same round outer corners. */
 .flip-under.is-left,
 .flip-back { border-radius: 20px 0 0 20px; }
 .flip-under.is-right,
