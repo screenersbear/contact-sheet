@@ -1,5 +1,6 @@
-// The editor: one horizontal strip of slides, frames that can sit anywhere
-// on it (across seams too), the photo tray and the tools.
+// The editor: slides are the pages of a notebook, two to a spread, with one
+// strip behind them and frames that can sit across the spine of a spread.
+// Moving past a spread turns the page. Below are the photo tray and the tools.
 //
 // The strip is plain HTML: each frame is a box holding an <img> of the
 // photo's editing copy, placed with the same maths the export uses
@@ -11,7 +12,7 @@ import {
   slideH, isStory, pageWord, newFrame, defaultCrop, placement, clampedCrop, cssTransform, rotatedCrop,
   anchorSlide, insertSlide, removeSlide, moveSlide, copySlideLayout, slideBox, borderBands,
   snapTargets, nearest, templateFromProject, SLIDE_LAYOUTS, layoutRects, applySlideLayout, layoutOfSlide,
-  framesWithinSlide,
+  framesWithinSlide, spreadOf, spreadCount, keepInSpreads,
 } from './model.js';
 import {
   getProject, saveProject, saveProjectThumb, photosForProject, deleteUnlistedPhotos,
@@ -25,6 +26,9 @@ import { ICONS } from './icons.js';
 import { esc, clamp, debounce, canvasToBlob, loadImage } from './util.js';
 
 const SNAP_PX = 9;
+const EDGE_X = 16; // how much notebook shows around the pages
+const EDGE_Y = 14;
+const FLIP_MS = 620;
 const SAFE_KEY = 'contact-sheet-safe-zone';
 const SNAP_KEYS = ['name', ...LAYOUT_KEYS, 'frames', 'photoIds'];
 
@@ -81,13 +85,28 @@ export async function mountEditor(view, id) {
   } catch {}
   let margX = 24;
   let margY = 32;
+  let pageLeft = 24; // where the spread's left page starts
+  let spread = 0; // the two pages lying open
+  let flipping = false;
+  let touched = null; // the page last tapped, when both are in view
   let dropTarget = null;
   let destroyed = false;
 
   const H = () => slideH(p);
   const frameById = (fid) => p.frames.find((f) => f.id === fid);
   const selFrame = () => (sel ? frameById(sel) : null);
-  const apply = (next) => Object.assign(p, next);
+  // No frame may run across a page flip; a trimmed photo keeps its place.
+  function holdSpreads() {
+    if (!keepInSpreads(p)) return;
+    p.frames.forEach((f) => {
+      if (f.photoId && photos[f.photoId]) f.crop = clampedCrop(f, photos[f.photoId]);
+    });
+  }
+  const apply = (next) => {
+    Object.assign(p, next);
+    holdSpreads();
+  };
+  holdSpreads();
 
   // ---------- History and saving ----------
   const snapshot = () => {
@@ -148,18 +167,9 @@ export async function mountEditor(view, id) {
   // ---------- DOM ----------
   view.innerHTML = `
     <div class="editor" data-editor>
-      <header class="ed-top">
-        <button type="button" class="ed-icon ed-back" data-act="back" aria-label="Back to drafts">${ICONS.back}</button>
-        <button type="button" class="ed-title" data-act="rename" aria-label="Rename">
-          <span class="ed-name" data-name></span><span class="ed-sub" data-sub></span>
-        </button>
-        <button type="button" class="ed-icon" data-act="undo" aria-label="Undo">${ICONS.undo}</button>
-        <button type="button" class="ed-icon" data-act="redo" aria-label="Redo">${ICONS.redo}</button>
-        <button type="button" class="ed-icon" data-act="more" aria-label="More">${ICONS.more}</button>
-        <button type="button" class="btn primary ed-export" data-act="export">Export</button>
-      </header>
       <div class="ws" data-ws>
         <div class="ws-inner" data-inner>
+          <div class="nb-open" data-nb><span></span><span></span></div>
           <div class="ws-labels" data-labels></div>
           <div class="strip" data-strip>
             <div class="strip-frames" data-frames></div>
@@ -168,6 +178,7 @@ export async function mountEditor(view, id) {
             <div class="strip-safe" data-safe></div>
             <div class="strip-guides" data-guides></div>
           </div>
+          <div class="nb-gutter" data-gutter></div>
           <div class="sel" data-sel hidden>
             ${['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((h) => `<span class="handle h-${h}" data-h="${h}"></span>`).join('')}
             <button type="button" class="sel-x" data-act="take-out" aria-label="Take the photo out">${ICONS.x}</button>
@@ -195,6 +206,8 @@ export async function mountEditor(view, id) {
   const safeEl = $('[data-safe]');
   const guidesEl = $('[data-guides]');
   const labelsEl = $('[data-labels]');
+  const nbEl = $('[data-nb]');
+  const gutterEl = $('[data-gutter]');
   const selEl = $('[data-sel]');
   const adjustEl = $('[data-adjust]');
   const zoomInput = $('[data-zoom]');
@@ -209,8 +222,8 @@ export async function mountEditor(view, id) {
   }
   function fitZ(mode) {
     const { w, h } = wsSize();
-    const across = mode === 'all' ? p.slides : 1;
-    return Math.max(0.02, Math.min((w - 48) / (across * SLIDE_W), (h - 76) / H()));
+    const across = mode === 'all' ? 2 : 1;
+    return Math.max(0.02, Math.min((w - 2 * EDGE_X - 8) / (across * SLIDE_W), (h - 2 * (EDGE_Y + 30)) / H()));
   }
   const minZ = () => fitZ('all') * 0.85;
   const maxZ = () => fitZ('one') * 4;
@@ -220,15 +233,29 @@ export async function mountEditor(view, id) {
     const sw = SLIDE_W * z;
     const total = p.slides * sw;
     const sh = H() * z;
-    margX = total <= w - 48 ? (w - total) / 2 : Math.max(24, (w - sw) / 2);
-    margY = Math.max(34, (h - sh) / 2);
-    inner.style.width = `${total + 2 * margX}px`;
+    const both = 2 * sw;
+    spread = clamp(spread, 0, spreadCount(p) - 1);
+    pageLeft = both + 2 * EDGE_X <= w ? (w - both) / 2 : Math.max(EDGE_X + 6, (w - sw) / 2);
+    margX = pageLeft - spread * both;
+    margY = Math.max(EDGE_Y + 28, (h - sh) / 2);
+    inner.style.width = `${both + 2 * pageLeft}px`;
     inner.style.height = `${Math.max(h, sh + 2 * margY)}px`;
     strip.style.left = `${margX}px`;
     strip.style.top = `${margY}px`;
     strip.style.width = `${total}px`;
     strip.style.height = `${sh}px`;
     strip.style.background = p.background;
+    // Only the two pages lying open show.
+    const a = spread * both;
+    const b = Math.min(total, a + both);
+    strip.style.clipPath = `inset(0 ${total - b}px 0 ${a}px)`;
+    nbEl.style.left = `${pageLeft - EDGE_X}px`;
+    nbEl.style.top = `${margY - EDGE_Y}px`;
+    nbEl.style.width = `${both + 2 * EDGE_X}px`;
+    nbEl.style.height = `${sh + 2 * EDGE_Y}px`;
+    gutterEl.style.left = `${pageLeft + sw}px`;
+    gutterEl.style.top = `${margY - EDGE_Y}px`;
+    gutterEl.style.height = `${sh + 2 * EDGE_Y}px`;
     placeAdd();
   }
 
@@ -258,34 +285,170 @@ export async function mountEditor(view, id) {
     renderTools();
   }
 
+  const firstPage = () => spread * 2;
+  const lastPage = () => Math.min(p.slides - 1, spread * 2 + 1);
+
   function visibleSlide() {
+    if (zoomFit === 'all' && touched !== null && spreadOf(touched) === spread && touched < p.slides) return touched;
     const { w } = wsSize();
     const k = Math.floor((ws.scrollLeft + w / 2 - margX) / (SLIDE_W * z));
-    return clamp(k, 0, p.slides - 1);
+    return clamp(k, firstPage(), lastPage());
   }
 
+  // Where the scroller sits to centre a page of the open spread.
+  function pageX(k) {
+    const { w } = wsSize();
+    return clamp(pageLeft + ((k % 2) + 0.5) * SLIDE_W * z - w / 2, 0, Math.max(0, inner.offsetWidth - w));
+  }
+
+  function scrollToX(x, ms = 260) {
+    stopInertia();
+    const from = ws.scrollLeft;
+    const t0 = performance.now();
+    const step = (now) => {
+      const t = clamp((now - t0) / ms, 0, 1);
+      ws.scrollLeft = from + (x - from) * (1 - (1 - t) ** 3);
+      inertia = t < 1 ? requestAnimationFrame(step) : 0;
+    };
+    inertia = requestAnimationFrame(step);
+  }
+
+  // Goes to a page: turns to its spread if it is on another one.
   function showSlide(k) {
-    ws.scrollLeft = margX + (k + 0.5) * SLIDE_W * z - wsSize().w / 2;
+    if (spreadOf(k) !== spread) flipTo(spreadOf(k), k);
+    else if (zoomFit !== 'all') scrollToX(pageX(k));
   }
 
   function fitTo(mode, slide = visibleSlide()) {
     zoomFit = mode;
     z = fitZ(mode);
+    spread = spreadOf(slide);
     renderStrip();
-    if (mode === 'one') showSlide(slide);
-    else ws.scrollLeft = 0;
+    ws.scrollLeft = mode === 'one' ? pageX(slide) : 0;
     ws.scrollTop = Math.max(0, (inner.offsetHeight - wsSize().h) / 2);
     renderTools();
   }
 
   function fitIfNeeded() {
     if (zoomFit) {
+      spread = clamp(spread, 0, spreadCount(p) - 1);
       const k = visibleSlide();
       z = fitZ(zoomFit);
       renderStrip();
-      if (zoomFit === 'one') showSlide(Math.min(k, p.slides - 1));
+      if (zoomFit === 'one') ws.scrollLeft = pageX(k);
     } else {
       z = clamp(z, minZ(), maxZ());
+    }
+  }
+
+  // ---------- Turning the page ----------
+  // The flip is drawn on pictures of the four pages involved; the real pages
+  // are swapped underneath at the start and uncovered at the end.
+  async function flipTo(s, page = s * 2) {
+    if (flipping || destroyed) return;
+    s = clamp(s, 0, spreadCount(p) - 1);
+    if (s === spread) return;
+    flipping = true;
+    stopInertia();
+    touched = null;
+    sel = null;
+    photoMode = false;
+    placeSel();
+    renderTools();
+    renderAdjust();
+    const dir = s > spread ? 1 : -1;
+    const land = (k) => (zoomFit === 'one' ? pageX(k) : zoomFit === 'all' ? 0 : ws.scrollLeft);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      spread = s;
+      renderStrip();
+      ws.scrollLeft = land(page);
+      flipping = false;
+      return;
+    }
+    const get = await previewSources();
+    if (destroyed) return;
+    const sh = H() * z;
+    const px = Math.round(Math.min(1200, sh * Math.min(2, window.devicePixelRatio || 1)));
+    const face = (k) => {
+      const el = document.createElement('div');
+      el.className = 'flip-page';
+      if (k < p.slides) el.appendChild(previewCanvas(p, get, { height: px, from: k, count: 1, empty: '#ffffff' }));
+      else el.classList.add('is-blank');
+      return el;
+    };
+    const oldL = spread * 2;
+    const newL = s * 2;
+    const under = (el, cls) => {
+      el.classList.add('flip-under', cls);
+      const shade = document.createElement('i');
+      shade.className = 'flip-shade';
+      el.appendChild(shade);
+      return el;
+    };
+    const left = under(face(dir > 0 ? oldL : newL), 'is-left');
+    const right = under(face(dir > 0 ? newL + 1 : oldL + 1), 'is-right');
+    const front = face(dir > 0 ? oldL + 1 : newL + 1);
+    const back = face(dir > 0 ? newL : oldL);
+    front.classList.add('flip-front');
+    back.classList.add('flip-back');
+    [front, back].forEach((el) => {
+      const shade = document.createElement('i');
+      shade.className = 'flip-shade';
+      el.appendChild(shade);
+    });
+    const leaf = document.createElement('div');
+    leaf.className = 'flip-leaf';
+    leaf.append(front, back);
+    const box = document.createElement('div');
+    box.className = 'flip';
+    box.style.left = `${pageLeft}px`;
+    box.style.top = `${margY}px`;
+    box.style.width = `${2 * SLIDE_W * z}px`;
+    box.style.height = `${sh}px`;
+    box.append(left, right, leaf);
+    const angle = (t) => (dir > 0 ? -180 * t : -180 * (1 - t));
+    leaf.style.transform = `rotateY(${angle(0)}deg)`;
+    inner.appendChild(box);
+
+    spread = s;
+    renderStrip();
+    const shades = box.querySelectorAll('.flip-shade');
+    const x0 = ws.scrollLeft;
+    const x1 = land(page);
+    const t0 = performance.now();
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(guard);
+      if (!destroyed) ws.scrollLeft = x1;
+      box.querySelectorAll('canvas').forEach((c) => (c.width = c.height = 0));
+      box.remove();
+      flipping = false;
+    };
+    const guard = setTimeout(finish, FLIP_MS + 400);
+    const step = (now) => {
+      if (done || destroyed) return;
+      const r = clamp((now - t0) / FLIP_MS, 0, 1);
+      const t = r < 0.5 ? 2 * r * r : 1 - (-2 * r + 2) ** 2 / 2;
+      leaf.style.transform = `rotateY(${angle(t)}deg)`;
+      const dark = String(Math.sin(Math.PI * t) * 0.34);
+      shades.forEach((el) => (el.style.opacity = dark));
+      ws.scrollLeft = x0 + (x1 - x0) * t;
+      if (r < 1) requestAnimationFrame(step);
+      else finish();
+    };
+    requestAnimationFrame(step);
+  }
+
+  // One page on, or back: across the spread, or over to the next one.
+  function turnPage(dir) {
+    if (flipping) return;
+    if (zoomFit === 'one') {
+      const k = visibleSlide() + dir;
+      if (k >= 0 && k < p.slides) showSlide(k);
+    } else if (spread + dir >= 0 && spread + dir < spreadCount(p)) {
+      flipTo(spread + dir);
     }
   }
 
@@ -370,10 +533,9 @@ export async function mountEditor(view, id) {
     bandsEl.innerHTML = html.join('');
   }
 
+  // The spine stands in for the seam between the two open pages.
   function renderSeams() {
-    let html = '';
-    for (let k = 1; k < p.slides; k++) html += `<div class="seam" style="left:${k * SLIDE_W * z}px"></div>`;
-    seamsEl.innerHTML = html;
+    seamsEl.innerHTML = '';
   }
 
   function renderSafe() {
@@ -394,12 +556,12 @@ export async function mountEditor(view, id) {
     const sw = SLIDE_W * z;
     const word = isStory(p) ? 'Story' : 'Slide';
     let html = '';
-    for (let i = 0; i < p.slides; i++) {
+    for (let i = firstPage(); i <= lastPage(); i++) {
       // The trash sits right after the label, away from the frame's corner x.
       const del = p.slides > 1 && sw >= 60
         ? `<button type="button" class="ws-del" data-act="del-slide" data-k="${i}" aria-label="Delete ${word.toLowerCase()} ${i + 1}">${ICONS.trash}</button>`
         : '';
-      html += `<div class="ws-label${del ? ' has-del' : ''}" style="left:${margX + i * sw}px;top:${margY - 24}px;width:${sw}px"><span>${sw >= 90 ? `${word} ${i + 1}` : i + 1}</span>${del}</div>`;
+      html += `<div class="ws-label${del ? ' has-del' : ''}" style="left:${margX + i * sw}px;top:${margY - EDGE_Y - 22}px;width:${sw}px"><span>${sw >= 90 ? `${word} ${i + 1}` : i + 1}</span>${del}</div>`;
     }
     labelsEl.innerHTML = html;
   }
@@ -449,11 +611,10 @@ export async function mountEditor(view, id) {
   }
 
   function renderTop() {
-    $('[data-name]').textContent = p.name;
-    const n = p.slides;
-    $('[data-sub]').textContent = `${p.ratio} · ${n} ${pageWord(p, n !== 1)}`;
-    $('[data-act="undo"]').disabled = hi === 0;
-    $('[data-act="redo"]').disabled = hi >= hist.length - 1;
+    const u = toolsEl.querySelector('[data-act="undo"]');
+    const r = toolsEl.querySelector('[data-act="redo"]');
+    if (u) u.disabled = hi === 0;
+    if (r) r.disabled = hi >= hist.length - 1;
   }
 
   function render() {
@@ -468,11 +629,16 @@ export async function mountEditor(view, id) {
   const tool = (act, icon, label, { disabled = false, on = false } = {}) =>
     `<button type="button" class="tool${on ? ' is-on' : ''}" data-act="${act}"${disabled ? ' disabled' : ''}><span class="tool-icon">${icon}</span><span class="tool-label">${esc(label)}</span></button>`;
 
+  const smallTool = (act, icon, label, disabled) =>
+    `<button type="button" class="tool tool-sm" data-act="${act}" aria-label="${esc(label)}"${disabled ? ' disabled' : ''}><span class="tool-icon">${icon}</span></button>`;
+
   function renderTools() {
     const f = selFrame();
+    const history = [smallTool('undo', ICONS.undo, 'Undo', hi === 0), smallTool('redo', ICONS.redo, 'Redo', hi >= hist.length - 1)];
     if (f) {
       const has = !!f.photoId;
       toolsEl.innerHTML = [
+        ...history,
         tool('adjust', ICONS.adjust, 'Adjust', { disabled: !has, on: photoMode }),
         tool('rotate', ICONS.rotate, 'Rotate', { disabled: !has }),
         tool('swap', has ? ICONS.swap : ICONS.photo, has ? 'Swap' : 'Photo'),
@@ -482,13 +648,14 @@ export async function mountEditor(view, id) {
       ].join('');
       return;
     }
-    const all = p.slides > 1 && z > fitZ('all') * 1.05;
     toolsEl.innerHTML = [
+      smallTool('back', ICONS.back, 'Back to the notebook'),
+      ...history,
       tool('add-frame', ICONS.addFrame, 'Frame'),
       tool('slides', ICONS.slides, isStory(p) ? 'Stories' : 'Slides'),
       tool('layout', ICONS.layout, 'Layout'),
-      isStory(p) ? tool('safe', ICONS.safe, 'Safe zone', { on: showSafe }) : '',
-      p.slides > 1 ? tool('zoom', all ? ICONS.zoomOut : ICONS.zoomIn, all ? 'See all' : 'Zoom in') : tool('zoom', ICONS.zoomIn, 'Fit'),
+      tool('more', ICONS.more, 'More'),
+      tool('export', ICONS.export, 'Export'),
     ].join('');
   }
 
@@ -890,8 +1057,7 @@ export async function mountEditor(view, id) {
       const d = b.dataset;
       if (d.go !== undefined) {
         s.close();
-        if (zoomFit !== 'one' && z < fitZ('one') * 0.7) fitTo('one', Number(d.go));
-        else showSlide(Number(d.go));
+        showSlide(Number(d.go));
         return;
       }
       if (d.layout !== undefined || d.add !== undefined) {
@@ -972,10 +1138,9 @@ export async function mountEditor(view, id) {
     addSlideWith(layout);
     sel = null;
     photoMode = false;
-    if (zoomFit === 'all') fitTo('all');
-    else fitIfNeeded();
+    fitIfNeeded();
     render();
-    if (zoomFit !== 'all') showSlide(p.slides - 1);
+    showSlide(p.slides - 1);
     commit();
   }
 
@@ -1076,10 +1241,13 @@ export async function mountEditor(view, id) {
 
   async function topMore() {
     const unused = p.photoIds.filter((pid) => !usedIds().has(pid));
+    const both = z <= fitZ('all') * 1.05;
     const key = await choiceSheet({
-      title: 'Draft',
+      title: 'Chapter',
       options: [
         { key: 'rename', label: 'Rename', detail: 'Also names the exported files.' },
+        { key: 'zoom', label: both ? 'See one page' : 'See both pages', detail: both ? 'Closer in, one page at a time.' : 'The whole open notebook.' },
+        ...(isStory(p) ? [{ key: 'safe', label: showSafe ? 'Hide safe zone' : 'Show safe zone', detail: 'The parts Instagram covers.' }] : []),
         { key: 'borders', label: 'Background and borders', detail: 'The background color, and space around the photos.' },
         { key: 'template', label: 'Save as template', detail: 'Keeps the layout, not the photos.' },
         ...(isStory(p) ? [] : [{ key: 'grid', label: 'Grid preview', detail: 'How the first slide looks in your profile grid.' }]),
@@ -1087,6 +1255,8 @@ export async function mountEditor(view, id) {
       ],
     });
     if (key === 'rename') rename();
+    else if (key === 'zoom') fitTo(both ? 'one' : 'all');
+    else if (key === 'safe') toggleSafe();
     else if (key === 'borders') openBorders();
     else if (key === 'template') saveAsTemplate();
     else if (key === 'grid') openGrid();
@@ -1127,7 +1297,7 @@ export async function mountEditor(view, id) {
     saveSoon.flush();
     thumbSoon.cancel();
     await makeThumb();
-    location.hash = '#/';
+    location.hash = '#/book';
   }
 
   // ---------- Buttons ----------
@@ -1139,7 +1309,6 @@ export async function mountEditor(view, id) {
     if (b && !b.disabled) {
       const a = b.dataset.act;
       if (a === 'back') leave();
-      else if (a === 'rename') rename();
       else if (a === 'undo') undo();
       else if (a === 'redo') redo();
       else if (a === 'more') topMore();
@@ -1151,8 +1320,6 @@ export async function mountEditor(view, id) {
       else if (a === 'add-slide') addSlide();
       else if (a === 'slides') openSlides();
       else if (a === 'layout') layoutThisSlide();
-      else if (a === 'safe') toggleSafe();
-      else if (a === 'zoom') fitTo(p.slides > 1 && z > fitZ('all') * 1.05 ? 'all' : 'one');
       else if (a === 'adjust') {
         photoMode = !photoMode;
         placeSel();
@@ -1317,6 +1484,11 @@ export async function mountEditor(view, id) {
     };
     if (h.includes('w')) [l, gx] = snap(s.x + dxu, g.targets.xs);
     if (h.includes('e')) [r, gx] = snap(s.x + s.w + dxu, g.targets.xs);
+    // The edges of the open spread are as far as a frame can go.
+    const lo = spread * 2 * SLIDE_W;
+    const hi2 = lo + 2 * SLIDE_W;
+    if (l < lo) [l, gx] = [lo, null];
+    if (r > hi2) [r, gx] = [hi2, null];
     if (h.includes('n')) [t, gy] = snap(s.y + dyu, g.targets.ys);
     if (h.includes('s')) [b, gy] = snap(s.y + s.h + dyu, g.targets.ys);
     if (r - l < MIN_FRAME) {
@@ -1346,12 +1518,14 @@ export async function mountEditor(view, id) {
   function onDown(e) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     // Buttons on the canvas (the photo's x, a slide's delete) take their own taps.
-    if (e.target.closest('button')) return;
+    if (e.target.closest('button') || flipping) return;
     try {
       ws.setPointerCapture(e.pointerId);
     } catch {}
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     stopInertia();
+    inner.style.transition = 'none';
+    inner.style.transform = '';
     if (pts.size === 2) {
       stopHold();
       if (g && g.type === 'lift') return;
@@ -1402,8 +1576,13 @@ export async function mountEditor(view, id) {
     g.moved = true;
     stopHold();
     if (g.type === 'pan') {
-      ws.scrollLeft = g.sl - dx;
+      const want = g.sl - dx;
+      const maxS = Math.max(0, inner.offsetWidth - wsSize().w);
+      ws.scrollLeft = want;
       ws.scrollTop = g.st - dy;
+      // Past the end of the spread the page gives a little, then turns on release.
+      g.over = want < 0 ? want : want > maxS ? want - maxS : 0;
+      inner.style.transform = g.over ? `translateX(${-g.over * 0.4}px)` : '';
       g.samples.push({ t: performance.now(), x: e.clientX, y: e.clientY });
       if (g.samples.length > 6) g.samples.shift();
       return;
@@ -1430,6 +1609,39 @@ export async function mountEditor(view, id) {
       else inertia = 0;
     };
     inertia = requestAnimationFrame(step);
+  }
+
+  // A drag has ended: snap to a page, turn the page, or coast.
+  function settlePan(was, e) {
+    const s = was.samples;
+    const a = s[0];
+    const b = s[s.length - 1];
+    const dt = b.t - a.t;
+    const fresh = e.type === 'pointerup' && dt > 0 && performance.now() - b.t < 60;
+    const vx = fresh ? (b.x - a.x) / dt : 0;
+    const vy = fresh ? (b.y - a.y) / dt : 0;
+    const over = was.over || 0;
+    const dragged = b.x - was.x0;
+    const flick = Math.abs(vx) > 0.35 && Math.sign(vx) === Math.sign(dragged);
+    inner.style.transition = 'transform .22s ease-out';
+    inner.style.transform = '';
+    if (zoomFit === 'one') {
+      const first = firstPage();
+      const last = lastPage();
+      const from = Math.abs(was.sl - pageX(first)) <= Math.abs(was.sl - pageX(last)) ? first : last;
+      const turned = Math.abs(dragged) > SLIDE_W * z * 0.28 || flick;
+      const k = from + (turned ? (dragged < 0 ? 1 : -1) : 0);
+      if (k < 0 || k >= p.slides) scrollToX(pageX(from));
+      else if (spreadOf(k) !== spread) flipTo(spreadOf(k), k);
+      else scrollToX(pageX(k));
+      return;
+    }
+    const maxS = Math.max(0, inner.offsetWidth - wsSize().w);
+    const next = over > 60 || (flick && vx < 0 && ws.scrollLeft >= maxS - 2);
+    const prev = over < -60 || (flick && vx > 0 && ws.scrollLeft <= 2);
+    if (next && spread < spreadCount(p) - 1) flipTo(spread + 1);
+    else if (prev && spread > 0) flipTo(spread - 1, spread * 2 - 1);
+    else if (fresh && !was.mouse) glide(vx, vy);
   }
 
   function onUp(e) {
@@ -1461,17 +1673,15 @@ export async function mountEditor(view, id) {
     g = null;
     if (was.moved) {
       if (was.type === 'pan') {
-        const s = was.samples;
-        const a = s[0];
-        const b = s[s.length - 1];
-        const dt = b.t - a.t;
-        if (e.type === 'pointerup' && !was.mouse && dt > 0 && performance.now() - b.t < 60) glide((b.x - a.x) / dt, (b.y - a.y) / dt);
+        settlePan(was, e);
       } else commit();
       return;
     }
     if (e.type !== 'pointerup') return;
     // A tap: on the grey it deselects, on a frame it selects that frame.
     if (was.type === 'resize') return;
+    const hit = toUnits(e.clientX, e.clientY);
+    touched = clamp(Math.floor(hit.x / SLIDE_W), firstPage(), lastPage());
     const id = was.type === 'pan' ? was.frameId : was.id;
     if (!id) {
       deselect();
@@ -1526,7 +1736,7 @@ export async function mountEditor(view, id) {
     if (fr && view.contains(fr)) return { frameId: fr.dataset.id };
     const sr = strip.getBoundingClientRect();
     if (x >= sr.left && x <= sr.right && y >= sr.top && y <= sr.bottom) {
-      return { slide: clamp(Math.floor((x - sr.left) / (SLIDE_W * z)), 0, p.slides - 1) };
+      return { slide: clamp(Math.floor((x - sr.left) / (SLIDE_W * z)), firstPage(), lastPage()) };
     }
     return null;
   }
@@ -1725,6 +1935,9 @@ export async function mountEditor(view, id) {
       deleteSel();
     } else if (e.key === 'Escape') {
       deselect();
+    } else if (!sel && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault();
+      turnPage(e.key === 'ArrowRight' ? 1 : -1);
     } else if (sel && e.key.startsWith('Arrow')) {
       // Arrows nudge the photo inside its frame; frames stay put.
       e.preventDefault();
@@ -1755,12 +1968,12 @@ export async function mountEditor(view, id) {
   render();
   const zOne = fitZ('one');
   const zAll = fitZ('all');
-  fitTo(p.slides > 1 && zAll >= zOne * 0.6 ? 'all' : 'one', 0);
+  fitTo(zAll >= zOne * 0.6 ? 'all' : 'one', 0);
   render();
   if (!p.thumb) thumbSoon();
 
   // Testing aid only: lets a test drive the editor without a camera roll.
-  window.__editor = { p, photos, importInto, render, commit, undo, redo, get z() { return z; }, setZoom, fitTo, select, openSwap };
+  window.__editor = { p, photos, importInto, render, commit, undo, redo, get z() { return z; }, get spread() { return spread; }, get flipping() { return flipping; }, setZoom, fitTo, select, openSwap, flipTo, showSlide };
 
   return function destroy() {
     destroyed = true;

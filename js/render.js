@@ -59,7 +59,7 @@ export function drawSlide(ctx, p, i, getSrc, { scale = 1, dx = 0, dy = 0, emptyF
 const EMPTY = '#cdcdcd';
 
 // Slides side by side, `height` pixels tall, for previews.
-export function previewCanvas(p, getSrc, { height = 200, from = 0, count = p.slides, gap = 0 } = {}) {
+export function previewCanvas(p, getSrc, { height = 200, from = 0, count = p.slides, gap = 0, empty = EMPTY } = {}) {
   const H = slideH(p);
   const scale = height / H;
   const sw = Math.round(SLIDE_W * scale);
@@ -68,6 +68,6 @@ export function previewCanvas(p, getSrc, { height = 200, from = 0, count = p.sli
   c.width = sw * n + gap * (n - 1);
   c.height = Math.round(height);
   const ctx = c.getContext('2d', { colorSpace: 'srgb' });
-  for (let k = 0; k < n; k++) drawSlide(ctx, p, from + k, getSrc, { scale, dx: k * (sw + gap), emptyFill: EMPTY });
+  for (let k = 0; k < n; k++) drawSlide(ctx, p, from + k, getSrc, { scale, dx: k * (sw + gap), emptyFill: empty });
   return c;
 }
