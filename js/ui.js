@@ -208,7 +208,7 @@ export function choiceSheet({ title, message = '', options, footer = '' }) {
         <div class="choice-list">
           ${options
             .map(
-              (o) => `<button type="button" class="choice${o.current ? ' current' : ''}${o.danger ? ' is-danger' : ''}" data-key="${esc(o.key)}">
+              (o) => o.heading ? `<span class="field-label choice-heading">${esc(o.heading)}</span>` : `<button type="button" class="choice${o.current ? ' current' : ''}${o.danger ? ' is-danger' : ''}" data-key="${esc(o.key)}">
                 ${o.icon || ''}<span class="choice-text"><span class="choice-label">${esc(o.label)}</span>
                 ${o.detail ? `<span class="choice-detail">${esc(o.detail)}</span>` : ''}</span></button>`
             )

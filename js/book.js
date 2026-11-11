@@ -6,6 +6,7 @@ import { confirmSheet, openSheet, sheetIsOpen } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, shortDate, isIOS, isStandalone } from './util.js';
 import { pageWord } from './model.js';
+import { openNotebookExport } from './export.js';
 
 const TIP_KEY = 'contact-sheet-home-tip';
 const RATIO = 1000 / 1360; // the notebook art's width over its height
@@ -43,7 +44,15 @@ function openOptions() {
             <span class="opt-book" style="background-image:url(art/${key}-cover.webp)"></span>
             <span>${name}</span>
           </button>`).join('')}
+      </div>
+      <span class="field-label opt-gap">Export</span>
+      <div class="button-stack wide">
+        <button type="button" class="modal-cta secondary" data-export-book>Whole notebook as PDF</button>
       </div>`,
+  });
+  s.body.querySelector('[data-export-book]').addEventListener('click', () => {
+    s.close();
+    openNotebookExport();
   });
   s.body.addEventListener('click', (e) => {
     const picked = e.target.closest('[data-color]');
@@ -200,11 +209,16 @@ export function mountBook(view, startMode, onNew) {
       return;
     }
     turning = true;
+    // The leaf stays flat inside this, and its paper edges turn with it.
+    const turnEl = document.createElement('div');
+    turnEl.className = 'toc-turn';
+    turnEl.innerHTML = '<i class="flip-edge is-out"></i><i class="flip-edge is-top"></i><i class="flip-edge is-bottom"></i>';
     const leaf = document.createElement('div');
     leaf.className = 'nb-sheet toc-leaf';
     leaf.innerHTML = `<div class="nb-sheet-in">${dir > 0 ? newHtml : oldHtml}</div><i class="toc-shade"></i>`;
     if (dir < 0) pageEl.innerHTML = newHtml;
-    sheet.appendChild(leaf);
+    turnEl.appendChild(leaf);
+    sheet.appendChild(turnEl);
     const timing = { duration: TURN_MS, easing: 'cubic-bezier(.45,.05,.25,1)', fill: 'both' };
     const swing = [{ transform: 'rotateY(100deg)' }, { transform: 'rotateY(0deg)' }];
     const dim = [{ opacity: 0.32 }, { opacity: 0 }];
@@ -212,7 +226,7 @@ export function mountBook(view, startMode, onNew) {
       swing.reverse();
       dim.reverse();
     }
-    const run = leaf.animate(swing, timing);
+    const run = turnEl.animate(swing, timing);
     leaf.querySelector('.toc-shade').animate(dim, timing);
     let ended = false;
     const finish = () => {
@@ -220,7 +234,7 @@ export function mountBook(view, startMode, onNew) {
       ended = true;
       clearTimeout(guard);
       if (dir > 0 && !destroyed) pageEl.innerHTML = newHtml;
-      leaf.remove();
+      turnEl.remove();
       turning = false;
     };
     const guard = setTimeout(finish, TURN_MS + 300);

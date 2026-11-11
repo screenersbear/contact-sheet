@@ -9,7 +9,7 @@
 // colours of the photos are never thrown off by the app's own.
 import {
   SLIDE_W, MAX_SLIDES, MIN_FRAME, LAYOUT_KEYS, SAFE_TOP, SAFE_BOTTOM,
-  slideH, isStory, pageWord, newFrame, defaultCrop, placement, clampedCrop, cssTransform, rotatedCrop,
+  slideH, isStory, isPrint, pageWord, pageTitle, newFrame, defaultCrop, placement, clampedCrop, cssTransform, rotatedCrop,
   anchorSlide, insertSlide, removeSlide, moveSlide, copySlideLayout, slideBox, borderBands,
   snapTargets, nearest, templateFromProject, SLIDE_LAYOUTS, layoutRects, applySlideLayout, layoutOfSlide,
   framesWithinSlide, spreadOf, spreadCount, keepInSpreads,
@@ -412,7 +412,14 @@ export async function mountEditor(view, id) {
     });
     const leaf = document.createElement('div');
     leaf.className = 'flip-leaf';
-    leaf.append(front, back);
+    // The page has a little thickness: paper edges down the outside, top and bottom.
+    const edges = ['out', 'top', 'bottom'].map((side) => {
+      const edge = document.createElement('i');
+      edge.className = `flip-edge is-${side}`;
+      return edge;
+    });
+    leaf.append(front, back, ...edges);
+    leaf.style.setProperty('--t', `${Math.max(4, Math.round(SLIDE_W * z * 0.016))}px`);
     const box = document.createElement('div');
     box.className = 'flip';
     box.style.left = `${pageLeft}px`;
@@ -568,7 +575,7 @@ export async function mountEditor(view, id) {
 
   function renderLabels() {
     const sw = SLIDE_W * z;
-    const word = isStory(p) ? 'Story' : 'Slide';
+    const word = pageTitle(p);
     let html = '';
     for (let i = firstPage(); i <= lastPage(); i++) {
       // The trash sits right after the label, away from the frame's corner x.
@@ -675,7 +682,7 @@ export async function mountEditor(view, id) {
       smallTool('back', ICONS.back, 'Back to the notebook'),
       ...history,
       tool('add-frame', ICONS.addFrame, 'Frame'),
-      tool('slides', ICONS.slides, isStory(p) ? 'Stories' : 'Slides'),
+      tool('slides', ICONS.slides, pageTitle(p, true)),
       tool('layout', ICONS.layout, 'Layout'),
       tool('more', ICONS.more, 'More'),
       tool('export', ICONS.export, 'Export'),
@@ -1051,8 +1058,8 @@ export async function mountEditor(view, id) {
   // ---------- Sheets ----------
   async function openSlides() {
     const get = await previewSources();
-    const word = isStory(p) ? 'Story' : 'Slide';
-    const s = openSheet({ title: isStory(p) ? 'Stories' : 'Slides', className: 'has-footer' });
+    const word = pageTitle(p);
+    const s = openSheet({ title: pageTitle(p, true), className: 'has-footer' });
     function draw() {
       const n = p.slides;
       s.body.innerHTML = `
@@ -1284,7 +1291,7 @@ export async function mountEditor(view, id) {
         ...(isStory(p) ? [{ key: 'safe', label: showSafe ? 'Hide safe zone' : 'Show safe zone', detail: 'The parts Instagram covers.' }] : []),
         { key: 'borders', label: 'Background and borders', detail: 'The background color, and space around the photos.' },
         { key: 'template', label: 'Save as template', detail: 'Keeps the layout, not the photos.' },
-        ...(isStory(p) ? [] : [{ key: 'grid', label: 'Grid preview', detail: 'How the first slide looks in your profile grid.' }]),
+        ...(isStory(p) || isPrint(p) ? [] : [{ key: 'grid', label: 'Grid preview', detail: 'How the first slide looks in your profile grid.' }]),
         ...(unused.length ? [{ key: 'clear', label: 'Remove unused photos', detail: `${unused.length} in the tray, not in a frame.` }] : []),
       ],
     });

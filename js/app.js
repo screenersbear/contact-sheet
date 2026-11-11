@@ -1,7 +1,7 @@
 // Screens and routing: the notebook (book.js) and the editor.
 // Routes: #/  #/book  #/contents  #/edit/<project id>
 import { saveProject, listTemplates, saveTemplate, saveTemplates, deleteTemplate, getMeta, setMeta } from './db.js';
-import { starterTemplates, blankLayout, layoutFromTemplate, changeRatio, RATIOS, RATIO_ORDER, SLIDE_W, pageWord } from './model.js';
+import { starterTemplates, blankLayout, layoutFromTemplate, changeRatio, RATIOS, RATIO_ORDER, MORE_RATIOS, SLIDE_W, pageWord } from './model.js';
 import { mountEditor } from './editor.js';
 import { mountBook, modeOfHash } from './book.js';
 import { openSheet, choiceSheet, confirmSheet, promptSheet, closeAllSheets } from './ui.js';
@@ -22,6 +22,7 @@ async function seedStarters() {
 
 // ---------- Making chapters ----------
 
+const sizeOption = (r) => ({ key: r, label: RATIOS[r].label, detail: `${RATIOS[r].size}. ${RATIOS[r].detail}` });
 const dateName = () => `Chapter ${shortDate(new Date().toISOString())}`;
 
 async function createProject(layout, name) {
@@ -38,7 +39,7 @@ async function newChapter() {
   if (name === null) return false;
   const ratio = await choiceSheet({
     title: 'New chapter',
-    options: RATIO_ORDER.map((r) => ({ key: r, label: RATIOS[r].label, detail: `${RATIOS[r].size}. ${RATIOS[r].detail}` })),
+    options: [...RATIO_ORDER.map(sizeOption), { heading: 'Other sizes' }, ...MORE_RATIOS.map(sizeOption)],
   });
   return ratio ? chooseTemplate(ratio, name) : false;
 }
