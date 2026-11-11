@@ -3,7 +3,7 @@
 import { saveProject, listTemplates, saveTemplate, saveTemplates, deleteTemplate, getMeta, setMeta } from './db.js';
 import { starterTemplates, blankLayout, layoutFromTemplate, changeRatio, RATIOS, RATIO_ORDER, SLIDE_W, pageWord } from './model.js';
 import { mountEditor } from './editor.js';
-import { mountBook, bookName, useBook, modeOfHash } from './book.js';
+import { mountBook, modeOfHash } from './book.js';
 import { openSheet, choiceSheet, confirmSheet, promptSheet, closeAllSheets } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, shortDate } from './util.js';
@@ -12,8 +12,6 @@ const view = document.getElementById('view');
 let destroyCurrent = null;
 let book = null;
 let routeToken = 0;
-
-useBook(bookName());
 
 // The starter set goes in once. Deleting a starter keeps it deleted.
 async function seedStarters() {
