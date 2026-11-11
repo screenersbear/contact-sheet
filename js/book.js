@@ -16,7 +16,6 @@ const STACK = 16; // sheets drawn for the thickness of the shut book
 const TURNED = (20 * Math.PI) / 180; // the shut book's turn; matches style.css
 const PERSPECTIVE = 1100; // matches .nb in style.css
 const TAB_OUT = 0.06; // how far the tabs stick out, of the book's width
-const SHUT_ROOM = 190; // kept free above and below the shut book, for the sun
 const OPEN_MS = 860; // the cover swinging open and the book zooming in
 const ZOOM_MS = 760;
 const BOOK_KEY = 'contact-sheet-book'; // also read in index.html, before the first paint
@@ -150,7 +149,7 @@ export function mountBook(view, startMode, onNew) {
   let swiped = false;
   let showTip = false;
 
-  // The shut book as big as it can go with its pages and tabs still on screen.
+  // The shut book is the same size as Documenting Fictions' shut book.
   function shutBook(vw, vh) {
     const cos = Math.cos(TURNED);
     const sin = Math.sin(TURNED);
@@ -160,12 +159,7 @@ export function mountBook(view, startMode, onNew) {
         ([x, d]) => ((x * cos - d * sin) * PERSPECTIVE) / (PERSPECTIVE - (x * sin + d * cos)),
       );
     };
-    const tallOf = (W) => ((W / RATIO) * PERSPECTIVE) / (PERSPECTIVE - (W / 2) * sin);
-    let W = Math.min(vw, (vh - SHUT_ROOM) * RATIO);
-    for (; W > 120; W *= 0.99) {
-      const seen = seenOf(W);
-      if (Math.max(...seen) - Math.min(...seen) <= vw - 12 && tallOf(W) <= vh - SHUT_ROOM) break;
-    }
+    const W = Math.min(vw * 0.78, vh * 0.66 * RATIO, 460);
     // Turned, the near side looks bigger and the pages and tabs show down the
     // right, so what you see would sit right of the middle. This slides it
     // back by half that difference.
