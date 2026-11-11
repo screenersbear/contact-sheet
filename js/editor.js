@@ -24,12 +24,12 @@ import { openExport } from './export.js';
 import { openSheet, choiceSheet, promptSheet, toast, sheetIsOpen } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, clamp, debounce, canvasToBlob, loadImage } from './util.js';
+import { OUT, RIM, GAP, PEEK, bookSize, bookLeft } from './frame.js';
+import { playFlip } from './flip.js';
 
 const SNAP_PX = 9;
-const EDGE_X = 16; // how much notebook shows around the pages
-const EDGE_Y = 14;
-const NAME_H = 34; // the chapter name under the notebook
-const FLIP_MS = 620;
+const ROOM = 34; // kept above and below the photos, for the labels and the name
+const NAME_H = 34; // the chapter name under the photos
 const SAFE_KEY = 'contact-sheet-safe-zone';
 const SNAP_KEYS = ['name', ...LAYOUT_KEYS, 'frames', 'photoIds'];
 
@@ -87,6 +87,7 @@ export async function mountEditor(view, id) {
   let margX = 24;
   let margY = 32;
   let pageLeft = 24; // where the spread's left page starts
+  let bookX = OUT; // where the notebook's left edge starts
   let spread = 0; // the two pages lying open
   let flipping = false;
   let touched = null; // the page last tapped, when both are in view
@@ -168,9 +169,10 @@ export async function mountEditor(view, id) {
   // ---------- DOM ----------
   view.innerHTML = `
     <div class="editor" data-editor>
+      <div class="nb-open" data-nb><span></span><span></span><i class="nb-spine"></i></div>
+      <div class="ed-flips" data-flips></div>
       <div class="ws" data-ws>
         <div class="ws-inner" data-inner>
-          <div class="nb-open" data-nb><span></span><span></span></div>
           <div class="ws-labels" data-labels></div>
           <div class="strip" data-strip>
             <div class="strip-frames" data-frames></div>
@@ -208,7 +210,9 @@ export async function mountEditor(view, id) {
   const safeEl = $('[data-safe]');
   const guidesEl = $('[data-guides]');
   const labelsEl = $('[data-labels]');
+  const editorEl = $('[data-editor]');
   const nbEl = $('[data-nb]');
+  const flipsEl = $('[data-flips]');
   const gutterEl = $('[data-gutter]');
   const selEl = $('[data-sel]');
   const adjustEl = $('[data-adjust]');
@@ -217,16 +221,30 @@ export async function mountEditor(view, id) {
   const nameEl = $('[data-name]');
   const trayEl = $('[data-tray]');
   const toolsEl = $('[data-tools]');
-  ws.addEventListener('scroll', () => { if (sel) placeX(); }, { passive: true });
+  ws.addEventListener('scroll', () => {
+    placeBook();
+    if (sel) placeX();
+  }, { passive: true });
 
   // ---------- Zoom and layout ----------
   function wsSize() {
     return { w: ws.clientWidth || 360, h: ws.clientHeight || 480 };
   }
+  // The notebook is the same size in every chapter and in the contents; the
+  // photos fit inside it.
+  const sizes = () => bookSize(wsSize().w, nbEl.offsetHeight);
   function fitZ(mode) {
-    const { w, h } = wsSize();
-    const across = mode === 'all' ? 2 : 1;
-    return Math.max(0.02, Math.min((w - 2 * EDGE_X - 8) / (across * SLIDE_W), (h - 2 * (EDGE_Y + 36)) / H()));
+    const { h } = wsSize();
+    const g = sizes();
+    const room = (mode === 'all' ? g.both : g.one) - RIM - GAP;
+    return Math.max(0.02, Math.min(room / SLIDE_W, (h - 2 * ROOM) / H()));
+  }
+  // One notebook page, from the spine out.
+  function pageW() {
+    const g = sizes();
+    if (zoomFit === 'all') return g.both;
+    if (zoomFit === 'one') return g.one;
+    return Math.max(SLIDE_W * z + RIM + GAP, g.both);
   }
   const minZ = () => fitZ('all') * 0.85;
   const maxZ = () => fitZ('one') * 4;
@@ -238,10 +256,12 @@ export async function mountEditor(view, id) {
     const sh = H() * z;
     const both = 2 * sw;
     spread = clamp(spread, 0, spreadCount(p) - 1);
-    pageLeft = both + 2 * EDGE_X <= w ? (w - both) / 2 : Math.max(EDGE_X + 6, (w - sw) / 2);
+    const pw = pageW();
+    bookX = bookLeft(w, pw);
+    pageLeft = bookX + pw - sw; // the two pages meet at the spine
     margX = pageLeft - spread * both;
-    margY = Math.max(EDGE_Y + 32, (h - sh) / 2);
-    inner.style.width = `${both + 2 * pageLeft}px`;
+    margY = Math.max(ROOM, (h - sh) / 2);
+    inner.style.width = `${2 * pw + 2 * bookX}px`;
     inner.style.height = `${Math.max(h, sh + 2 * margY)}px`;
     strip.style.left = `${margX}px`;
     strip.style.top = `${margY}px`;
@@ -252,36 +272,44 @@ export async function mountEditor(view, id) {
     const a = spread * both;
     const b = Math.min(total, a + both);
     strip.style.clipPath = `inset(0 ${total - b}px 0 ${a}px)`;
-    nbEl.style.left = `${pageLeft - EDGE_X}px`;
-    nbEl.style.top = `${margY - EDGE_Y}px`;
-    nbEl.style.width = `${both + 2 * EDGE_X}px`;
-    nbEl.style.height = `${sh + 2 * EDGE_Y}px`;
+    nbEl.style.width = flipsEl.style.width = `${2 * pw}px`;
     gutterEl.style.left = `${pageLeft + sw}px`;
-    gutterEl.style.top = `${margY - EDGE_Y}px`;
-    gutterEl.style.height = `${sh + 2 * EDGE_Y}px`;
+    gutterEl.style.top = `${margY}px`;
+    gutterEl.style.height = `${sh}px`;
+    // Everything below the photos stays inside the notebook's edges.
+    editorEl.style.setProperty('--ed-in', `${2 * pw + 2 * OUT <= w + 1 ? bookX + RIM + GAP : PEEK}px`);
+    placeBook();
     placeAdd();
     placeName();
   }
 
-  // The chapter name sits in the middle of the space under the notebook.
+  // The notebook stays put up and down and slides with the pages side to side.
+  function placeBook(extra = 0) {
+    const t = `translateX(${bookX - ws.scrollLeft - extra}px)`;
+    nbEl.style.transform = t;
+    flipsEl.style.transform = t;
+  }
+
+  // The chapter name sits in the middle of the space under the photos.
   function placeName() {
     const { h } = wsSize();
-    const under = Math.min(h, margY + H() * z + EDGE_Y);
+    const under = Math.min(h, margY + H() * z);
     const mid = Math.min((under + h) / 2, h - NAME_H / 2);
     nameEl.style.top = `${ws.offsetTop + mid - NAME_H / 2}px`;
-    // Zoomed in, the notebook reaches behind it and it needs a backing.
+    // Zoomed in, the photos reach behind it and it needs a backing.
     nameEl.classList.toggle('is-over', under > h - NAME_H);
   }
 
-  // The add-a-slide button stays in the bottom-right corner of the grey, so
+  // The add-a-slide button stays in the bottom-right corner of the page, so
   // it never scrolls out of reach and stays clear of the seams. It lives
   // outside the scroller, so the strip scrolls under it.
   function placeAdd() {
     addBtn.hidden = p.slides >= MAX_SLIDES;
     if (addBtn.hidden) return;
     const { w, h } = wsSize();
-    addBtn.style.left = `${ws.offsetLeft + w - 44 - 14}px`;
-    addBtn.style.top = `${ws.offsetTop + h - 44 - 14}px`;
+    const edge = parseFloat(editorEl.style.getPropertyValue('--ed-in')) || PEEK;
+    addBtn.style.left = `${ws.offsetLeft + w - 44 - edge}px`;
+    addBtn.style.top = `${ws.offsetTop + h - 44 - 4}px`;
   }
 
   function setZoom(nz, cx, cy) {
@@ -312,7 +340,10 @@ export async function mountEditor(view, id) {
   // Where the scroller sits to centre a page of the open spread.
   function pageX(k) {
     const { w } = wsSize();
-    return clamp(pageLeft + ((k % 2) + 0.5) * SLIDE_W * z - w / 2, 0, Math.max(0, inner.offsetWidth - w));
+    const max = Math.max(0, inner.offsetWidth - w);
+    // A page at a time, the notebook always lands in the same place.
+    if (zoomFit === 'one') return k % 2 ? max : 0;
+    return clamp(pageLeft + ((k % 2) + 0.5) * SLIDE_W * z - w / 2, 0, max);
   }
 
   function scrollToX(x, ms = 260) {
@@ -370,7 +401,6 @@ export async function mountEditor(view, id) {
     placeSel();
     renderTools();
     renderAdjust();
-    const dir = s > spread ? 1 : -1;
     const land = (k) => (zoomFit === 'one' ? pageX(k) : zoomFit === 'all' ? 0 : ws.scrollLeft);
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       spread = s;
@@ -381,85 +411,45 @@ export async function mountEditor(view, id) {
     }
     const get = await previewSources();
     if (destroyed) return;
+    const sw = SLIDE_W * z;
     const sh = H() * z;
     const px = Math.round(Math.min(1200, sh * Math.min(2, window.devicePixelRatio || 1)));
+    const pw = pageW();
+    // A whole notebook page turns, with the photos where they sit on it.
+    const photoTop = ws.offsetTop + margY - ws.scrollTop - nbEl.offsetTop - RIM;
+    const word = pageTitle(p);
     const face = (k) => {
       const el = document.createElement('div');
-      el.className = 'flip-page';
-      if (k < p.slides) el.appendChild(previewCanvas(p, get, { height: px, from: k, count: 1, empty: '#ffffff' }));
-      else el.classList.add('is-blank');
+      if (k >= p.slides) return el;
+      const side = k % 2 ? 'left:0' : 'right:0';
+      const c = previewCanvas(p, get, { height: px, from: k, count: 1, empty: '#ffffff' });
+      c.style.cssText = `position:absolute;${side};top:${photoTop}px;width:${sw}px;height:${sh}px`;
+      el.appendChild(c);
+      const label = document.createElement('div');
+      label.className = `ws-label${p.slides > 1 ? ' has-del' : ''}`;
+      label.style.cssText = `${side};top:${photoTop - 30}px;width:${sw}px`;
+      label.innerHTML = `<span>${sw >= 90 ? `${word} ${k + 1}` : k + 1}</span>${p.slides > 1 ? `<i class="ws-del">${ICONS.trash}</i>` : ''}`;
+      el.appendChild(label);
       return el;
     };
     const oldL = spread * 2;
     const newL = s * 2;
-    const under = (el, cls) => {
-      el.classList.add('flip-under', cls);
-      const shade = document.createElement('i');
-      shade.className = 'flip-shade';
-      el.appendChild(shade);
-      return el;
-    };
-    const left = under(face(dir > 0 ? oldL : newL), 'is-left');
-    const right = under(face(dir > 0 ? newL + 1 : oldL + 1), 'is-right');
-    const front = face(dir > 0 ? oldL + 1 : newL + 1);
-    const back = face(dir > 0 ? newL : oldL);
-    front.classList.add('flip-front');
-    back.classList.add('flip-back');
-    [front, back].forEach((el) => {
-      const shade = document.createElement('i');
-      shade.className = 'flip-shade';
-      el.appendChild(shade);
-    });
-    const leaf = document.createElement('div');
-    leaf.className = 'flip-leaf';
-    // The page has a little thickness: paper edges down the outside, top and bottom.
-    const edges = ['out', 'top', 'bottom'].map((side) => {
-      const edge = document.createElement('i');
-      edge.className = `flip-edge is-${side}`;
-      return edge;
-    });
-    leaf.append(front, back, ...edges);
-    leaf.style.setProperty('--t', `${Math.max(4, Math.round(SLIDE_W * z * 0.016))}px`);
-    const box = document.createElement('div');
-    box.className = 'flip';
-    box.style.left = `${pageLeft}px`;
-    box.style.top = `${margY}px`;
-    box.style.width = `${2 * SLIDE_W * z}px`;
-    box.style.height = `${sh}px`;
-    box.append(left, right, leaf);
-    const angle = (t) => (dir > 0 ? -180 * t : -180 * (1 - t));
-    leaf.style.transform = `rotateY(${angle(0)}deg)`;
-    inner.appendChild(box);
-
-    spread = s;
-    renderStrip();
-    const shades = box.querySelectorAll('.flip-shade');
     const x0 = ws.scrollLeft;
     const x1 = land(page);
-    const t0 = performance.now();
-    let done = false;
-    const finish = () => {
-      if (done) return;
-      done = true;
-      clearTimeout(guard);
-      if (!destroyed) ws.scrollLeft = x1;
-      box.querySelectorAll('canvas').forEach((c) => (c.width = c.height = 0));
-      box.remove();
-      flipping = false;
-    };
-    const guard = setTimeout(finish, FLIP_MS + 400);
-    const step = (now) => {
-      if (done || destroyed) return;
-      const r = clamp((now - t0) / FLIP_MS, 0, 1);
-      const t = r < 0.5 ? 2 * r * r : 1 - (-2 * r + 2) ** 2 / 2;
-      leaf.style.transform = `rotateY(${angle(t)}deg)`;
-      const dark = String(Math.sin(Math.PI * t) * 0.34);
-      shades.forEach((el) => (el.style.opacity = dark));
-      ws.scrollLeft = x0 + (x1 - x0) * t;
-      if (r < 1) requestAnimationFrame(step);
-      else finish();
-    };
-    requestAnimationFrame(step);
+    playFlip({
+      host: flipsEl,
+      rect: { left: RIM, top: RIM, width: 2 * (pw - RIM), height: nbEl.offsetHeight - 2 * RIM },
+      oldL,
+      newL,
+      face,
+      thick: Math.max(4, Math.round(sw * 0.016)),
+      onStep: (t) => {
+        if (!destroyed) ws.scrollLeft = x0 + (x1 - x0) * t;
+      },
+      onDone: () => (flipping = false),
+    });
+    spread = s;
+    renderStrip();
   }
 
   // One page on, or back: across the spread, or over to the next one.
@@ -582,7 +572,7 @@ export async function mountEditor(view, id) {
       const del = p.slides > 1 && sw >= 60
         ? `<button type="button" class="ws-del" data-act="del-slide" data-k="${i}" aria-label="Delete ${word.toLowerCase()} ${i + 1}">${ICONS.trash}</button>`
         : '';
-      html += `<div class="ws-label${del ? ' has-del' : ''}" style="left:${margX + i * sw}px;top:${margY - EDGE_Y - 27}px;width:${sw}px"><span>${sw >= 90 ? `${word} ${i + 1}` : i + 1}</span>${del}</div>`;
+      html += `<div class="ws-label${del ? ' has-del' : ''}" style="left:${margX + i * sw}px;top:${margY - 30}px;width:${sw}px"><span>${sw >= 90 ? `${word} ${i + 1}` : i + 1}</span>${del}</div>`;
     }
     labelsEl.innerHTML = html;
   }
@@ -1634,6 +1624,7 @@ export async function mountEditor(view, id) {
       // Past the end of the spread the page gives a little, then turns on release.
       g.over = want < 0 ? want : want > maxS ? want - maxS : 0;
       inner.style.transform = g.over ? `translateX(${-g.over * 0.4}px)` : '';
+      placeBook(g.over * 0.4);
       g.samples.push({ t: performance.now(), x: e.clientX, y: e.clientY });
       if (g.samples.length > 6) g.samples.shift();
       return;
@@ -1676,6 +1667,11 @@ export async function mountEditor(view, id) {
     const flick = Math.abs(vx) > 0.35 && Math.sign(vx) === Math.sign(dragged);
     inner.style.transition = 'transform .22s ease-out';
     inner.style.transform = '';
+    if (over) {
+      const given = `translateX(${bookX - ws.scrollLeft - over * 0.4}px)`;
+      placeBook();
+      nbEl.animate([{ transform: given }, { transform: nbEl.style.transform }], { duration: 220, easing: 'ease-out' });
+    }
     if (zoomFit === 'one') {
       const first = firstPage();
       const last = lastPage();

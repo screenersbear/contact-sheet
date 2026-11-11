@@ -935,7 +935,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 
 .ws-add {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -1305,6 +1305,13 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
 :root[data-book="ocean"] { --book-cover: url(art/ocean-cover.webp); --book-block: url(art/ocean-block.webp); --book-back: #1f5095; }
 :root[data-book="ink"] { --book-cover: url(art/ink-cover.webp); --book-block: url(art/ink-block.webp); --book-back: #2a353c; }
 
+/* The notebook's frame, the same in the contents and every chapter. */
+:root {
+  --nb-t: max(env(safe-area-inset-top), 10px);
+  --nb-b: max(calc(env(safe-area-inset-bottom) + 2px), 10px);
+  --nb-rim: 10px;
+}
+html.is-short { --nb-b: 10px; }
 html { background: #fff; }
 /* For a moment as the iPhone app opens (ui.js): taller than the screen, so
    iOS measures the screen again. */
@@ -1423,14 +1430,20 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-leaf,
 .nb-front,
 .nb-inside { position: absolute; inset: 0; }
+/* The edge is drawn at the width it ends up on screen, so the zoomed page
+   lands exactly on the contents' frame. */
 .nb-block,
-.nb-inside::before { border-radius: 0 calc(var(--W) * 0.044) calc(var(--W) * 0.044) 0; }
-.nb-block { background: var(--book-block) center / 100% 100% no-repeat; transition: box-shadow 0.3s, visibility 0s; }
+.nb-inside::before {
+  box-sizing: border-box;
+  border-style: solid;
+  border-width: var(--ry) var(--rx) var(--ry) 0;
+  border-image: var(--book-block) 46 46 46 1 fill / var(--ry) var(--rx) var(--ry) 0 stretch;
+}
+.nb-block { transition: box-shadow 0.3s, visibility 0s; }
 /* Shut, the inside isn't drawn at all, so it can never show before the cover
    has painted. It goes once the cover has swung closed. */
-.nb-new, .nb-inside { transition: visibility 0s; }
+.nb-inside { transition: visibility 0s; }
 .nb[data-mode="closed"] .nb-block { visibility: hidden; transition: box-shadow 0.3s, visibility 0s 0.82s; }
-.nb[data-mode="closed"] .nb-new,
 .nb[data-mode="closed"] .nb-inside { visibility: hidden; transition: visibility 0s 0.82s; }
 .nb:not([data-mode="closed"]) .nb-block { box-shadow: var(--book-shadow); }
 .nb-leaf {
@@ -1453,7 +1466,6 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--book-block) center / 100% 100% no-repeat;
   box-shadow: var(--book-shadow);
   transform: scaleX(-1);
 }
@@ -1485,7 +1497,6 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb:not([data-mode="closed"]) .nb-stack i,
 .nb:not([data-mode="closed"]) .nb-stack b { transform: translateZ(-1px); visibility: hidden; }
 .nb.no-anim .nb-block,
-.nb.no-anim .nb-new,
 .nb.no-anim .nb-inside,
 .nb.no-anim .nb-book,
 .nb.no-anim .nb-leaf,
@@ -1493,76 +1504,67 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb.no-anim .nb-stack b { transition: none; }
 
 .nb[data-mode="closed"] .nb-book { transform: rotateY(-20deg) translate(calc(var(--W) / -2 + var(--shut-x, 0px)), 0) scale(1); }
-.nb[data-mode="open"] .nb-book { transform: rotateY(0deg) translate(0, 0) scale(var(--k)); }
-.nb[data-mode="toc"] .nb-book { transform: rotateY(0deg) translate(calc(var(--W) / 2 * var(--kz)), var(--toc-up, 0px)) scale(var(--kz)); }
-.nb[data-mode="new"] .nb-book { transform: rotateY(0deg) translate(calc(var(--W) / -2 * var(--kz)), 0) scale(var(--kz)); }
+.nb[data-mode="toc"] .nb-book { transform: rotateY(0deg) translate(var(--toc-x), var(--toc-y)) scale(var(--kx), var(--ky)); }
+.nb[data-mode="toc"].at-right .nb-book,
+.nb[data-mode="new"] .nb-book { transform: rotateY(0deg) translate(var(--new-x), var(--toc-y)) scale(var(--kx), var(--ky)); }
 .nb:not([data-mode="closed"]) .nb-leaf { transform: rotateY(-180deg) translateZ(1px); }
-.nb-new { transform: translateZ(0.5px); }
 
-.nb-words {
+/* Says where the frame's top and bottom land on this screen. */
+.nb-probe { position: absolute; left: 0; width: 0; top: var(--nb-t); bottom: var(--nb-b); visibility: hidden; pointer-events: none; }
+
+/* The two tabs, on sheets of their own, seen from outside with their names. */
+.nb-side-tabs { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; transition: opacity 0.25s; }
+.nb-side-tabs i {
   position: absolute;
-  z-index: 1;
-  inset: 8% 10%;
+  left: 98%;
+  top: calc(9% + var(--t) * 42%);
+  width: 11%;
+  height: 40%;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
+  justify-content: flex-end;
+  border-radius: 0 calc(var(--W) * 0.022) calc(var(--W) * 0.022) 0;
+  background: var(--text);
+  transform: translateZ(calc(var(--i) * var(--W) * -0.0112));
+}
+.nb-side-tabs i span {
+  width: 80%;
   text-align: center;
-  color: var(--text);
-  pointer-events: none;
-}
-.nb-word {
+  writing-mode: vertical-rl;
+  white-space: nowrap;
   font-family: var(--font-title);
-  font-size: calc(var(--W) * 0.088);
-  line-height: 1.15;
+  font-size: calc(var(--W) * 0.046);
+  line-height: 1;
+  color: #fff;
 }
-.nb-plus svg { width: calc(var(--W) * 0.09); height: calc(var(--W) * 0.09); display: block; color: var(--text); }
+.nb:not([data-mode="closed"]) .nb-side-tabs { opacity: 0; visibility: hidden; }
+.nb-tabhit { position: fixed; z-index: 6; border: none; padding: 0; background: none; }
+.nb:not([data-mode="closed"]) .nb-tabhits { display: none; }
 
-/* Table of contents: the zoomed page, flat, six chapters to a page. */
+/* Table of contents: six chapters to a page, in the notebook's frame. */
 .nb-toc {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
   background: #fff;
   opacity: 0;
   transition: opacity 0.22s;
-  padding-top: env(safe-area-inset-top);
 }
 .nb.is-reading .nb-toc { opacity: 1; }
 .nb-toc[hidden] { display: none; }
-.nb-toc-area { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
-/* Exactly the page the book just zoomed to, so the list appears on it. */
-.nb-sheet {
-  position: relative;
-  width: calc(var(--W) * var(--kz));
-  height: calc(var(--H) * var(--kz));
-  perspective: 1400px;
-  touch-action: none;
-}
-.nb-sheet::before {
-  content: '';
+.nb-toc .nb-open { pointer-events: auto; touch-action: none; }
+.nb-toc .ed-tools { position: absolute; left: 20px; right: 20px; bottom: calc(var(--nb-b) + var(--nb-rim)); margin: 0; }
+.toc-page {
   position: absolute;
-  inset: 0;
-  background: var(--book-block) center / 100% 100% no-repeat;
-  border-radius: 0 calc(var(--W) * var(--kz) * 0.044) calc(var(--W) * var(--kz) * 0.044) 0;
-  box-shadow: var(--book-shadow);
-  transform: scaleX(-1);
+  z-index: 1;
+  top: calc(var(--nb-rim) + 12px);
+  bottom: calc(var(--nb-rim) + 58px);
+  width: calc(var(--page) - var(--nb-rim) - 24px);
+  display: flex;
+  flex-direction: column;
 }
-.nb-sheet-in { position: absolute; z-index: 1; inset: 4.5% 7% 3% 7%; display: flex; flex-direction: column; }
-.toc-leaf {
-  position: absolute;
-  z-index: 2;
-  inset: 0;
-  width: auto;
-  height: auto;
-  transform-origin: 100% 50%;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  pointer-events: none;
-}
-.toc-shade { position: absolute; z-index: 3; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+.toc-page.is-left { left: calc(var(--nb-rim) + 12px); }
+.toc-page.is-right { left: calc(var(--page) + 12px); }
+.toc-page.is-face { left: 12px; right: 12px; top: 12px; bottom: 58px; width: auto; }
 .nb-head {
   flex-shrink: 0;
   margin: 0 0 4px;
@@ -1622,27 +1624,37 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .toc-x svg { width: 20px; height: 20px; display: block; }
 .toc-empty { grid-row: 1 / -1; align-self: center; margin: 0; text-align: center; font-family: var(--font-title); font-size: 19px; color: var(--text-dim); }
 .toc-foot { flex-shrink: 0; height: 22px; line-height: 24px; text-align: center; font-size: 12.5px; color: var(--text-dim); }
-.toc-tip { position: absolute; left: 16px; right: 16px; bottom: 6px; margin: 0; text-align: center; font-size: 12px; line-height: 1.35; color: var(--text-dim); }
+.toc-tip { flex-shrink: 0; margin: 8px 0 0; text-align: center; font-size: 12px; line-height: 1.35; color: var(--text-dim); }
 .toc-tip .text-btn { font-size: inherit; }
 
 /* The open notebook around the pages in the editor. */
 /* Pinned by its edges, not 100dvh: on iOS 26 100dvh stops a status bar short
-   of the bottom of the screen. */
-.editor { height: auto; padding-top: env(safe-area-inset-top); background: #fff; }
+   of the bottom of the screen. Everything sits inside the notebook's frame. */
+.editor { --ed-in: 20px; height: auto; padding: calc(var(--nb-t) + var(--nb-rim)) 0 calc(var(--nb-b) + var(--nb-rim)); background: #fff; }
 body[data-route="edit"] { background: #fff; }
-.ws { scrollbar-width: none; }
+.ws { z-index: 1; background: none; scrollbar-width: none; }
 .ws::-webkit-scrollbar { display: none; }
 .ws-inner { overflow: hidden; }
-.nb-open { position: absolute; display: flex; pointer-events: none; filter: drop-shadow(0 8px 16px rgba(60, 40, 20, 0.16)); }
-.nb-open span {
+.nb-open { position: absolute; left: 0; top: var(--nb-t); bottom: var(--nb-b); display: flex; pointer-events: none; filter: drop-shadow(0 8px 16px rgba(60, 40, 20, 0.16)); }
+.nb-open > span {
   position: relative;
   flex: 1;
   box-sizing: border-box;
   border-style: solid;
-  border-width: 14px 16px 14px 0;
-  border-image: var(--book-block) 46 46 46 1 fill / 14px 16px 14px 0 stretch;
+  border-width: var(--nb-rim) var(--nb-rim) var(--nb-rim) 0;
+  border-image: var(--book-block) 46 46 46 1 fill / var(--nb-rim) var(--nb-rim) var(--nb-rim) 0 stretch;
 }
-.nb-open span:first-child { transform: scaleX(-1); }
+.nb-open > span:first-of-type { transform: scaleX(-1); }
+.nb-spine {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  margin-left: -14px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.07) 48%, rgba(0, 0, 0, 0.14) 50%, rgba(0, 0, 0, 0.07) 52%, rgba(0, 0, 0, 0));
+}
+.ed-flips { position: absolute; z-index: 2; left: 0; top: var(--nb-t); bottom: var(--nb-b); pointer-events: none; }
 .strip { box-shadow: none; }
 .nb-gutter {
   position: absolute;
@@ -1656,8 +1668,8 @@ body[data-route="edit"] { background: #fff; }
 .ws-label.has-del { gap: 4px; padding-left: 34px; }
 .ws-del { width: 30px; height: 26px; color: var(--text); }
 .ws-del svg { width: 21px; height: 21px; }
-/* The chapter's name, written under the notebook. Tap to rename. */
-.ed-name { position: absolute; z-index: 2; left: 66px; right: 66px; height: 34px; display: flex; justify-content: center; pointer-events: none; }
+/* The chapter's name, written under the photos. Tap to rename. */
+.ed-name { position: absolute; z-index: 3; left: 66px; right: 66px; height: 34px; display: flex; justify-content: center; pointer-events: none; }
 .ed-name button {
   max-width: 100%;
   padding: 0 10px;
@@ -1707,22 +1719,21 @@ body[data-route="edit"] { background: #fff; }
 .flip-edge.is-bottom { left: 0; right: 0; height: var(--t); background: repeating-linear-gradient(180deg, #fff 0 1px, #d4d4d4 1px 2px); transform: rotateX(90deg); }
 .flip-edge.is-top { top: calc(var(--t) / -2); }
 .flip-edge.is-bottom { bottom: calc(var(--t) / -2); }
-.toc-turn { --t: 5px; position: absolute; z-index: 2; inset: 0; transform-origin: 100% 50%; transform-style: preserve-3d; pointer-events: none; }
-.toc-turn .flip-edge.is-out { left: calc(var(--t) / -2); transform: translateZ(calc(var(--t) / -2)) rotateY(90deg); }
-.toc-turn .flip-edge.is-top,
-.toc-turn .flip-edge.is-bottom { transform: translateZ(calc(var(--t) / -2)) rotateX(90deg); }
 .flip-shade { position: absolute; inset: 0; background: linear-gradient(90deg, #000, rgba(0, 0, 0, 0.25)); opacity: 0; }
 .flip-back .flip-shade { background: linear-gradient(270deg, #000, rgba(0, 0, 0, 0.25)); }
 
 /* The bottom bar: no band, just Berry Blade black on the white page. */
 .tray,
 .ed-tools {
-  background: #fff;
+  z-index: 3;
+  background: none;
   border-top: none;
+  margin-left: var(--ed-in);
+  margin-right: var(--ed-in);
 }
-.ed-tools { padding-bottom: calc(env(safe-area-inset-bottom) + 10px); }
-/* iOS left the screen short and the bar is already above the home bar. */
-html.is-short .ed-tools { padding-bottom: 2px; }
+.tray { padding: 8px 0; }
+.ed-tools { position: relative; padding: 2px 0 4px; }
+.ed-adjust { position: relative; z-index: 3; margin-left: var(--ed-in); margin-right: var(--ed-in); }
 html.is-short .nb-sun { bottom: max(14px, calc(env(safe-area-inset-bottom) - 6px)); }
 .ed-tools .tool {
   color: var(--text);

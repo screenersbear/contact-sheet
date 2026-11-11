@@ -1,21 +1,26 @@
-// The notebook: floating shut on white, open at its first two pages, and
-// zoomed into the Table of contents. Routes: #/ (shut), #/book (open),
-// #/contents. Each draft is a chapter.
+// The notebook: floating shut on white with its two tabs, then open at the
+// Table of contents. Routes: #/ (shut), #/contents. Each draft is a chapter.
 import { listProjects, deleteProject } from './db.js';
 import { confirmSheet, openSheet, sheetIsOpen } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, shortDate, isIOS, isStandalone } from './util.js';
 import { pageWord } from './model.js';
 import { openNotebookExport } from './export.js';
+import { OUT, RIM, bookSize, bookLeft } from './frame.js';
+import { playFlip } from './flip.js';
 
 const TIP_KEY = 'contact-sheet-home-tip';
 const RATIO = 1000 / 1360; // the notebook art's width over its height
 const PER_PAGE = 6;
 const STACK = 16; // sheets drawn for the thickness of the shut book
-const TURN_MS = 560;
 const TURNED = (20 * Math.PI) / 180; // the shut book's turn; matches style.css
 const PERSPECTIVE = 1100; // matches .nb in style.css
+const TAB_OUT = 0.09; // how far the tabs stick out, of the book's width
+const SHUT_ROOM = 190; // kept free above and below the shut book, for the sun
+const OPEN_MS = 860; // the cover swinging open and the book zooming in
+const ZOOM_MS = 760;
 const BOOK_KEY = 'contact-sheet-book'; // also read in index.html, before the first paint
+const TABS = [['toc', 'Table of contents'], ['new', 'New chapter']];
 const COLORS = [
   ['orange', 'Orange'],
   ['mango', 'Mango'],
@@ -75,7 +80,7 @@ function openOptions() {
 }
 
 export function modeOfHash(h) {
-  return h === '/contents' ? 'toc' : h === '/book' ? 'open' : 'closed';
+  return h === '/contents' || h === '/book' ? 'toc' : 'closed';
 }
 const currentMode = () => modeOfHash((location.hash || '#/').slice(1) || '/');
 
@@ -83,6 +88,7 @@ export function mountBook(view, startMode, onNew) {
   document.body.dataset.route = 'book';
   view.innerHTML = `
     <div class="nb no-anim${startMode === 'closed' ? ' is-waiting' : ''}" data-mode="${startMode}">
+      <div class="nb-probe"></div>
       <div class="nb-ground"></div>
       <div class="nb-float">
         <div class="nb-book">
@@ -90,21 +96,26 @@ export function mountBook(view, startMode, onNew) {
             ${Array.from({ length: STACK }, (_, i) => `<i style="--i:${i + 1}"></i>`).join('')}
             <b style="--i:${STACK + 1}"></b>
           </div>
+          <div class="nb-side-tabs">
+            ${TABS.map(([, name], i) => `<i style="--t:${i};--i:${5 + i * 6}"><span>${name}</span></i>`).join('')}
+          </div>
           <div class="nb-block"></div>
-          <div class="nb-words nb-new"><span class="nb-plus">${ICONS.plus}</span><span class="nb-word">New chapter</span></div>
           <div class="nb-leaf">
             <div class="nb-front"></div>
-            <div class="nb-inside">
-              <div class="nb-words"><span class="nb-word">Table of contents</span></div>
-            </div>
+            <div class="nb-inside"></div>
           </div>
         </div>
       </div>
+      <div class="nb-tabhits">
+        ${TABS.map(([key, name]) => `<button type="button" class="nb-tabhit" data-tab="${key}" aria-label="${name}"></button>`).join('')}
+      </div>
       <button type="button" class="nb-sun" data-options aria-label="App options">${ICONS.sun}</button>
       <div class="nb-toc" hidden>
-        <div class="nb-toc-area">
-          <div class="nb-sheet" data-sheet><div class="nb-sheet-in" data-page></div></div>
-          <div data-tip></div>
+        <div class="nb-open" data-tocbook>
+          <span></span><span></span>
+          <i class="nb-spine"></i>
+          <div class="toc-page is-left" data-left></div>
+          <div class="toc-page is-right" data-right></div>
         </div>
         <nav class="ed-tools" aria-label="Contents">
           <button type="button" class="tool" data-toc="back"><span class="tool-icon">${ICONS.back}</span><span class="tool-label">Back</span></button>
@@ -115,10 +126,19 @@ export function mountBook(view, startMode, onNew) {
 
   const root = view.querySelector('.nb');
   const toc = root.querySelector('.nb-toc');
-  const sheet = root.querySelector('[data-sheet]');
-  const pageEl = root.querySelector('[data-page]');
-  const tipEl = root.querySelector('[data-tip]');
-  let geo = { W: 300, H: 400, k: 0.6 };
+  const probe = root.querySelector('.nb-probe');
+  const tocBook = root.querySelector('[data-tocbook]');
+  const leftEl = root.querySelector('[data-left]');
+  const rightEl = root.querySelector('[data-right]');
+  const sideTabs = root.querySelector('.nb-side-tabs');
+  const tabHits = root.querySelector('.nb-tabhits');
+  let geo = { W: 300, H: 400 };
+  let page = 300; // one page of the open notebook, from the spine out
+  let two = false; // both pages in view at once
+  let left = OUT;
+  let frameH = 700;
+  let maxPan = 0;
+  let pan = 0;
   let timer = 0;
   let destroyed = false;
   let chapters = [];
@@ -127,36 +147,92 @@ export function mountBook(view, startMode, onNew) {
   let turning = false;
   let swipe = null;
   let swiped = false;
+  let showTip = false;
+
+  // The shut book as big as it can go with its pages and tabs still on screen.
+  function shutBook(vw, vh) {
+    const cos = Math.cos(TURNED);
+    const sin = Math.sin(TURNED);
+    const seenOf = (W) => {
+      const depth = (STACK + 1) * W * 0.0112;
+      return [[-W / 2, 0], [W / 2, 0], [-W / 2, -depth], [W / 2 + W * TAB_OUT, -depth * 0.7]].map(
+        ([x, d]) => ((x * cos - d * sin) * PERSPECTIVE) / (PERSPECTIVE - (x * sin + d * cos)),
+      );
+    };
+    const tallOf = (W) => ((W / RATIO) * PERSPECTIVE) / (PERSPECTIVE - (W / 2) * sin);
+    let W = Math.min(vw, (vh - SHUT_ROOM) * RATIO);
+    for (; W > 120; W *= 0.99) {
+      const seen = seenOf(W);
+      if (Math.max(...seen) - Math.min(...seen) <= vw - 12 && tallOf(W) <= vh - SHUT_ROOM) break;
+    }
+    // Turned, the near side looks bigger and the pages and tabs show down the
+    // right, so what you see would sit right of the middle. This slides it
+    // back by half that difference.
+    const seen = seenOf(W);
+    return { W, shutX: -(Math.min(...seen) + Math.max(...seen)) / 2 / cos };
+  }
 
   function measure() {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const W = Math.min(vw * 0.84, vh * 0.68 * RATIO, 460);
+    const frame = probe.getBoundingClientRect();
+    frameH = frame.height;
+    const size = bookSize(vw, frameH);
+    two = size.two;
+    page = size.one;
+    left = bookLeft(vw, page);
+    maxPan = Math.max(0, 2 * page + 2 * left - vw);
+    const { W, shutX } = shutBook(vw, vh);
     const H = W / RATIO;
-    const k = Math.min(1, (vw - 14) / (2 * W), (vh * 0.82) / H);
-    const kz = Math.min((vw - 8) / W, (vh - 90) / H);
-    geo = { W, H, k };
-    root.style.setProperty('--W', `${W}px`);
-    root.style.setProperty('--H', `${H}px`);
-    root.style.setProperty('--k', String(k));
-    root.style.setProperty('--kz', String(kz));
-    // Turned, the shut book's near side looks bigger and its pages show down
-    // the right, so what you see would sit right of the middle. This slides
-    // it back by half that difference.
-    const cos = Math.cos(TURNED);
-    const sin = Math.sin(TURNED);
-    const depth = (STACK + 1) * W * 0.0112;
-    const seen = [[-W / 2, 0], [W / 2, 0], [-W / 2, -depth], [W / 2, -depth]].map(
-      ([x, d]) => ((x * cos - d * sin) * PERSPECTIVE) / (PERSPECTIVE - (x * sin + d * cos)),
-    );
-    root.style.setProperty('--shut-x', `${-(Math.min(...seen) + Math.max(...seen)) / 2 / cos}px`);
-    // The contents page sits centred above its bottom bar.
-    const bar = toc.querySelector('.ed-tools');
-    const barH = toc.hidden ? 48 + parseFloat(getComputedStyle(bar).paddingBottom) : bar.offsetHeight;
-    root.style.setProperty('--toc-up', `${-barH / 2}px`);
+    geo = { W, H };
+    const kx = page / W;
+    const ky = frameH / H;
+    const set = (k, v) => root.style.setProperty(k, v);
+    set('--W', `${W}px`);
+    set('--H', `${H}px`);
+    set('--shut-x', `${shutX}px`);
+    // Zoomed in, a page lands exactly on the frame the contents draw.
+    set('--kx', String(kx));
+    set('--ky', String(ky));
+    set('--rx', `${RIM / kx}px`);
+    set('--ry', `${RIM / ky}px`);
+    set('--toc-x', `${left + page - vw / 2}px`);
+    set('--new-x', `${left + page - maxPan - vw / 2}px`);
+    set('--toc-y', `${frame.top + frameH / 2 - vh / 2}px`);
+    set('--page', `${page}px`);
+    tocBook.style.width = `${2 * page}px`;
+    showCamera(panOf(tocPage));
+  }
+
+  // Where the tabs land on screen with the book shut. Measured in that pose
+  // in one go, before anything paints: the tabs themselves are turned in 3D.
+  function placeTabHits() {
+    const mode = root.dataset.mode;
+    const still = root.classList.contains('no-anim');
+    root.classList.add('no-anim');
+    root.dataset.mode = 'closed';
+    const rects = [...sideTabs.children].map((el) => el.getBoundingClientRect());
+    [...tabHits.children].forEach((hit, i) => {
+      const r = rects[i];
+      const above = i ? (rects[i - 1].bottom + r.top) / 2 : r.top - 6;
+      const below = i < rects.length - 1 ? (r.bottom + rects[i + 1].top) / 2 : r.bottom + 6;
+      hit.style.cssText = `left:${r.left - 8}px;right:0;top:${above}px;height:${below - above}px`;
+    });
+    root.dataset.mode = mode;
+    if (!still) root.classList.remove('no-anim');
+    void root.offsetWidth;
   }
 
   const pageCount = () => Math.max(1, Math.ceil(chapters.length / PER_PAGE));
+  const panOf = (n) => (two || n % 2 === 0 ? 0 : maxPan);
+  const spreadOf = (n) => Math.floor(n / 2);
+
+  // The notebook slides under the screen: left page, then right page.
+  function showCamera(x, ms = 0) {
+    pan = x;
+    tocBook.style.transition = ms ? `transform ${ms}ms cubic-bezier(.22,.61,.36,1)` : 'none';
+    tocBook.style.transform = `translateX(${left - x}px)`;
+  }
 
   function rowHtml(p) {
     const u = thumbs.get(p.id);
@@ -174,12 +250,24 @@ export function mountBook(view, startMode, onNew) {
   }
 
   function pageHtml(n) {
-    const rows = chapters.slice(n * PER_PAGE, (n + 1) * PER_PAGE).map(rowHtml).join('');
     const total = pageCount();
+    if (n >= total) return '';
+    const rows = chapters.slice(n * PER_PAGE, (n + 1) * PER_PAGE).map(rowHtml).join('');
+    const tip = n === 0 && showTip
+      ? `<p class="toc-tip"><b>Keep your chapters safe:</b> add Contact Sheet to your Home Screen. Safari can clear the photos of sites that aren't on it. <button type="button" class="text-btn" data-tip-off>Got it</button></p>`
+      : '';
     return `
       <h2 class="nb-head">Table of contents</h2>
       <div class="toc-list">${rows || '<p class="toc-empty">No chapters yet.</p>'}</div>
+      ${tip}
       <div class="toc-foot">${total > 1 ? `${n + 1} / ${total}` : ''}</div>`;
+  }
+
+  function drawPages() {
+    const first = spreadOf(tocPage) * 2;
+    leftEl.innerHTML = pageHtml(first);
+    rightEl.innerHTML = pageHtml(first + 1);
+    root.classList.toggle('at-right', panOf(tocPage) > 0);
   }
 
   function releaseThumbs() {
@@ -194,8 +282,7 @@ export function mountBook(view, startMode, onNew) {
     chapters = projects;
     chapters.forEach((p) => p.thumb && thumbs.set(p.id, URL.createObjectURL(p.thumb)));
     tocPage = Math.min(tocPage, pageCount() - 1);
-    pageEl.innerHTML = pageHtml(tocPage);
-    const showTip = (() => {
+    showTip = (() => {
       if (!isIOS() || isStandalone()) return false;
       try {
         return localStorage.getItem(TIP_KEY) !== 'off';
@@ -203,58 +290,56 @@ export function mountBook(view, startMode, onNew) {
         return true;
       }
     })();
-    tipEl.innerHTML = showTip
-      ? `<p class="toc-tip"><b>Keep your chapters safe:</b> add Contact Sheet to your Home Screen. Safari can clear the photos of sites that aren't on it. <button type="button" class="text-btn" data-tip-off>Got it</button></p>`
-      : '';
+    drawPages();
+    showCamera(panOf(tocPage));
   }
 
-  // The leaf hinges on the spine, off the right of this page: the next page
-  // swings in over this one, and going back swings this one away.
-  function turnToc(dir) {
-    const to = tocPage + dir;
-    if (turning || to < 0 || to >= pageCount()) return;
-    const oldHtml = pageHtml(tocPage);
-    const newHtml = pageHtml(to);
-    tocPage = to;
+  // Goes to a page the way a chapter does: across to the other side of the
+  // spread, or a page turn to the next one.
+  function goPage(n) {
+    if (turning) return;
+    if (n < 0 || n >= pageCount()) {
+      showCamera(panOf(tocPage), 240);
+      return;
+    }
+    const from = spreadOf(tocPage);
+    const to = spreadOf(n);
+    if (from === to) {
+      tocPage = n;
+      root.classList.toggle('at-right', panOf(n) > 0);
+      showCamera(panOf(n), 260);
+      return;
+    }
+    const x0 = pan;
+    const x1 = panOf(n);
+    tocPage = n;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      pageEl.innerHTML = newHtml;
+      drawPages();
+      showCamera(x1);
       return;
     }
     turning = true;
-    // The leaf stays flat inside this, and its paper edges turn with it.
-    const turnEl = document.createElement('div');
-    turnEl.className = 'toc-turn';
-    turnEl.innerHTML = '<i class="flip-edge is-out"></i><i class="flip-edge is-top"></i><i class="flip-edge is-bottom"></i>';
-    const leaf = document.createElement('div');
-    leaf.className = 'nb-sheet toc-leaf';
-    leaf.innerHTML = `<div class="nb-sheet-in">${dir > 0 ? newHtml : oldHtml}</div><i class="toc-shade"></i>`;
-    if (dir < 0) pageEl.innerHTML = newHtml;
-    turnEl.appendChild(leaf);
-    sheet.appendChild(turnEl);
-    const timing = { duration: TURN_MS, easing: 'cubic-bezier(.45,.05,.25,1)', fill: 'both' };
-    const swing = [{ transform: 'rotateY(100deg)' }, { transform: 'rotateY(0deg)' }];
-    const dim = [{ opacity: 0.32 }, { opacity: 0 }];
-    if (dir < 0) {
-      swing.reverse();
-      dim.reverse();
-    }
-    const run = turnEl.animate(swing, timing);
-    leaf.querySelector('.toc-shade').animate(dim, timing);
-    let ended = false;
-    const finish = () => {
-      if (ended) return;
-      ended = true;
-      clearTimeout(guard);
-      if (dir > 0 && !destroyed) pageEl.innerHTML = newHtml;
-      turnEl.remove();
-      turning = false;
+    const face = (k) => {
+      const el = document.createElement('div');
+      el.innerHTML = `<div class="toc-page is-face">${pageHtml(k)}</div>`;
+      return el;
     };
-    const guard = setTimeout(finish, TURN_MS + 300);
-    run.finished.then(finish, finish);
+    playFlip({
+      host: tocBook,
+      rect: { left: RIM, top: RIM, width: 2 * (page - RIM), height: frameH - 2 * RIM },
+      oldL: from * 2,
+      newL: to * 2,
+      face,
+      onStep: (t) => showCamera(x0 + (x1 - x0) * t),
+      onDone: () => (turning = false),
+    });
+    drawPages();
   }
+  const step = (dir) => goPage(two ? (spreadOf(tocPage) + dir) * 2 : tocPage + dir);
 
   function setMode(next, instant = false) {
     clearTimeout(timer);
+    const wasShut = root.dataset.mode === 'closed';
     root.classList.toggle('no-anim', instant);
     if (next === 'toc') {
       drawToc();
@@ -264,43 +349,77 @@ export function mountBook(view, startMode, onNew) {
         root.classList.add('is-reading');
       };
       if (instant) show();
-      else timer = setTimeout(show, 760);
+      else timer = setTimeout(show, wasShut ? OPEN_MS : ZOOM_MS);
     } else {
       toc.hidden = true;
       root.classList.remove('is-reading');
+      if (next === 'closed') {
+        tocPage = 0;
+        root.classList.remove('at-right');
+      }
       root.dataset.mode = next;
     }
     if (instant) setTimeout(() => root.classList.remove('no-anim'), 60);
   }
 
   function startNew() {
+    const wasShut = root.dataset.mode === 'closed';
     setMode('new');
     timer = setTimeout(async () => {
       const made = await onNew();
       if (!made && !destroyed) setMode(currentMode());
-    }, 620);
+    }, wasShut ? OPEN_MS : 620);
   }
 
   // Any new touch, anywhere on the book, is a fresh start.
   root.addEventListener('pointerdown', () => (swiped = false), true);
-  sheet.addEventListener('pointerdown', (e) => {
-    swipe = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  tocBook.addEventListener('pointerdown', (e) => {
+    if (turning) return;
+    swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, base: pan, moved: false, samples: [] };
   });
-  sheet.addEventListener('pointerup', (e) => {
+  tocBook.addEventListener('pointermove', (e) => {
     if (!swipe || swipe.id !== e.pointerId) return;
     const dx = e.clientX - swipe.x;
     const dy = e.clientY - swipe.y;
-    swipe = null;
-    if (Math.abs(dx) < 36 || Math.abs(dx) < Math.abs(dy)) return;
-    swiped = true;
-    turnToc(dx < 0 ? 1 : -1);
+    if (!swipe.moved) {
+      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy)) return;
+      swipe.moved = true;
+      // Only now: held from the start, a tap on a row would never reach it.
+      try {
+        tocBook.setPointerCapture(e.pointerId);
+      } catch {}
+    }
+    swipe.samples.push({ t: e.timeStamp, x: e.clientX });
+    if (swipe.samples.length > 6) swipe.samples.shift();
+    if (two) return;
+    // The page follows the finger, and gives a little past the last one.
+    const hi = spreadOf(tocPage) * 2 + 1 < pageCount() ? maxPan : 0;
+    const x = swipe.base - dx;
+    showCamera(x < 0 ? x * 0.4 : x > hi ? hi + (x - hi) * 0.4 : x);
   });
-  sheet.addEventListener('pointercancel', () => (swipe = null));
+  tocBook.addEventListener('pointerup', (e) => {
+    if (!swipe || swipe.id !== e.pointerId) return;
+    const was = swipe;
+    swipe = null;
+    if (!was.moved) return;
+    swiped = true;
+    const dx = e.clientX - was.x;
+    const a = was.samples[0];
+    const b = was.samples[was.samples.length - 1];
+    const v = a && b && b.t > a.t && e.timeStamp - b.t < 60 ? (b.x - a.x) / (b.t - a.t) : 0;
+    const flick = Math.abs(v) > 0.35 && Math.sign(v) === Math.sign(dx);
+    if (Math.abs(dx) > (two ? 36 : page * 0.28) || flick) step(dx < 0 ? 1 : -1);
+    else showCamera(panOf(tocPage), 240);
+  });
+  tocBook.addEventListener('pointercancel', () => {
+    if (swipe && swipe.moved) showCamera(panOf(tocPage), 240);
+    swipe = null;
+  });
 
   function onKey(e) {
     if (root.dataset.mode !== 'toc' || sheetIsOpen()) return;
-    if (e.key === 'ArrowRight') turnToc(1);
-    else if (e.key === 'ArrowLeft') turnToc(-1);
+    if (e.key === 'ArrowRight') step(1);
+    else if (e.key === 'ArrowLeft') step(-1);
   }
   document.addEventListener('keydown', onKey);
 
@@ -315,9 +434,15 @@ export function mountBook(view, startMode, onNew) {
       openOptions();
       return;
     }
+    const tab = e.target.closest('[data-tab]');
+    if (tab) {
+      if (tab.dataset.tab === 'toc') location.hash = '#/contents';
+      else startNew();
+      return;
+    }
     const t = e.target.closest('[data-toc]');
     if (t) {
-      if (t.dataset.toc === 'back') location.hash = '#/book';
+      if (t.dataset.toc === 'back') location.hash = '#/';
       else startNew();
       return;
     }
@@ -325,7 +450,8 @@ export function mountBook(view, startMode, onNew) {
       try {
         localStorage.setItem(TIP_KEY, 'off');
       } catch {}
-      tipEl.innerHTML = '';
+      showTip = false;
+      drawPages();
       return;
     }
     const del = e.target.closest('[data-del]');
@@ -344,24 +470,22 @@ export function mountBook(view, startMode, onNew) {
       return;
     }
     if (e.target.closest('.nb-toc')) return;
-    // On the book itself, where the tap landed says what it means.
-    const mode = root.dataset.mode;
-    const cx = window.innerWidth / 2;
-    const cy = window.innerHeight / 2;
-    const dy = Math.abs(e.clientY - cy);
-    if (mode === 'closed') {
-      if (Math.abs(e.clientX - cx) <= geo.W / 2 && dy <= geo.H / 2) location.hash = '#/book';
-    } else if (mode === 'open') {
-      const dx = e.clientX - cx;
-      if (Math.abs(dx) > geo.W * geo.k || dy > (geo.H * geo.k) / 2) location.hash = '#/';
-      else if (dx < 0) location.hash = '#/contents';
-      else startNew();
+    // The cover opens straight to the contents.
+    if (root.dataset.mode === 'closed') {
+      const dx = Math.abs(e.clientX - window.innerWidth / 2);
+      const dy = Math.abs(e.clientY - window.innerHeight / 2);
+      if (dx <= geo.W / 2 && dy <= geo.H / 2) location.hash = '#/contents';
     }
   });
 
-  window.addEventListener('resize', measure);
+  const refit = () => {
+    measure();
+    placeTabHits();
+  };
+  window.addEventListener('resize', refit);
   measure();
   setMode(startMode, true);
+  placeTabHits();
   artReady().then(() => root.classList.remove('is-waiting'));
 
   return {
@@ -369,7 +493,7 @@ export function mountBook(view, startMode, onNew) {
     destroy() {
       destroyed = true;
       clearTimeout(timer);
-      window.removeEventListener('resize', measure);
+      window.removeEventListener('resize', refit);
       document.removeEventListener('keydown', onKey);
       releaseThumbs();
       delete document.body.dataset.route;
