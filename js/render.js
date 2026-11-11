@@ -7,7 +7,7 @@ import { SLIDE_W, slideH, drawPhoto, borderBands } from './model.js';
 
 // getSrc(photoId) returns { photo, src } or null. emptyFill, for previews
 // only, shows empty frames in that colour; exports leave them as background.
-export function drawSlide(ctx, p, i, getSrc, { scale = 1, dx = 0, dy = 0, emptyFill = null } = {}) {
+export function drawSlide(ctx, p, i, getSrc, { scale = 1, dx = 0, dy = 0, emptyFill = null, smooth = 'high' } = {}) {
   const W = SLIDE_W;
   const H = slideH(p);
   const a = i * W;
@@ -20,7 +20,7 @@ export function drawSlide(ctx, p, i, getSrc, { scale = 1, dx = 0, dy = 0, emptyF
   ctx.fillStyle = p.background;
   ctx.fillRect(0, 0, W, H);
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
+  ctx.imageSmoothingQuality = smooth;
   ctx.translate(-a, 0);
   const bw = p.borderWidth || 0;
   for (const f of p.frames) {

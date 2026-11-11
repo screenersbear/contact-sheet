@@ -3,6 +3,7 @@ const svg = (d, extra = '') =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${extra}>${d}</svg>`;
 
 export const ICONS = {
+  play: svg('<path d="M8 5l11 7-11 7z" fill="currentColor"/>'),
   back: svg('<path d="M15 5l-7 7 7 7"/>'),
   undo: svg('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>'),
   redo: svg('<path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>'),

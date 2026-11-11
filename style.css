@@ -873,6 +873,15 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   user-select: none;
   -webkit-user-drag: none;
 }
+.fr video {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  object-fit: fill;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
 .fr-line { position: absolute; inset: 0; pointer-events: none; }
 .fr-empty {
   position: absolute;
@@ -1130,6 +1139,25 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   justify-content: center;
 }
 .tray-used svg { width: 13px; height: 13px; }
+/* Marks a video: on thumbs in the tray and pickers, and in the export list. */
+.tray-vid,
+.order-vid {
+  position: absolute;
+  left: 3px;
+  bottom: 3px;
+  width: 20px;
+  height: 20px;
+  background: var(--hero);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.tray-vid svg,
+.order-vid svg { width: 13px; height: 13px; }
+.video-live { display: flex; justify-content: center; margin-top: 12px; }
+.video-live canvas { display: block; max-width: 100%; max-height: 240px; width: auto; height: auto; box-shadow: 0 0 0 1px var(--line); }
 .tray-hint { margin: 0; font-size: 12px; line-height: 1.25; color: var(--text-dim); }
 
 .ed-tools {

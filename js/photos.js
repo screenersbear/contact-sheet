@@ -49,6 +49,18 @@ const fit = (w, h, max) => {
   return [Math.round(w * k), Math.round(h * k)];
 };
 
+// The editing copy and the tray's thumb, from a photo or a video's still.
+async function stillsOf(src, width, height) {
+  const [pw, ph] = fit(width, height, PREVIEW_MAX);
+  const pc = downscale(src, width, height, pw, ph);
+  const preview = await canvasToBlob(pc, 'image/jpeg', 0.86);
+  const [tw, th] = fit(width, height, THUMB_MAX);
+  const tc = downscale(pc, pw, ph, tw, th);
+  const thumb = await canvasToBlob(tc, 'image/jpeg', 0.8);
+  pc.width = pc.height = tc.width = tc.height = 0;
+  return { preview, previewW: pw, previewH: ph, thumb };
+}
+
 async function importFile(projectId, file) {
   const url = URL.createObjectURL(file);
   try {
@@ -56,28 +68,83 @@ async function importFile(projectId, file) {
     const width = img.naturalWidth;
     const height = img.naturalHeight;
     if (!width || !height) throw new Error('empty');
-    const [pw, ph] = fit(width, height, PREVIEW_MAX);
-    const pc = downscale(img, width, height, pw, ph);
-    const preview = await canvasToBlob(pc, 'image/jpeg', 0.86);
-    const [tw, th] = fit(width, height, THUMB_MAX);
-    const tc = downscale(pc, pw, ph, tw, th);
-    const thumb = await canvasToBlob(tc, 'image/jpeg', 0.8);
-    pc.width = pc.height = tc.width = tc.height = 0;
+    const stills = await stillsOf(img, width, height);
     img.src = '';
-    return addPhoto({
-      projectId,
-      name: file.name || 'photo',
-      type: file.type || '',
-      original: file,
-      width,
-      height,
-      preview,
-      previewW: pw,
-      previewH: ph,
-      thumb,
-    });
+    return addPhoto({ projectId, name: file.name || 'photo', type: file.type || '', original: file, width, height, ...stills });
   } finally {
     URL.revokeObjectURL(url);
+  }
+}
+
+const VIDEO_NAME = /\.(mov|mp4|m4v|webm|3gp)$/i;
+const isVideoFile = (f) => (f.type || '').startsWith('video/') || (!f.type && VIDEO_NAME.test(f.name || ''));
+
+// A muted video that is ready to draw. release() lets its memory go.
+export function openVideo(blob, wait = 20000) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const video = document.createElement('video');
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('muted', '');
+    video.preload = 'auto';
+    const release = () => {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      URL.revokeObjectURL(url);
+    };
+    const timer = setTimeout(() => fail(), wait);
+    function fail() {
+      clearTimeout(timer);
+      release();
+      reject(new Error('Could not open the video'));
+    }
+    video.onerror = fail;
+    video.onloadedmetadata = async () => {
+      video.onloadedmetadata = null;
+      // An iPhone holds back the picture until a video has played.
+      try {
+        await video.play();
+        video.pause();
+      } catch {}
+      clearTimeout(timer);
+      video.onerror = null;
+      resolve({ video, release });
+    };
+    video.src = url;
+    video.load();
+  });
+}
+
+function seek(video, t) {
+  return new Promise((done) => {
+    const finish = () => {
+      clearTimeout(timer);
+      video.removeEventListener('seeked', finish);
+      done();
+    };
+    const timer = setTimeout(finish, 5000);
+    video.addEventListener('seeked', finish);
+    video.currentTime = t;
+  });
+}
+
+// The original is stored untouched, with a still from just after the start
+// that stands in for it in thumbs, page turns and print.
+async function importVideo(projectId, file) {
+  const { video, release } = await openVideo(file);
+  try {
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+    if (!width || !height) throw new Error('empty');
+    const duration = Number.isFinite(video.duration) ? video.duration : 0;
+    await seek(video, Math.min(0.1, duration / 2));
+    const stills = await stillsOf(video, width, height);
+    return addPhoto({ projectId, kind: 'video', duration, name: file.name || 'video', type: file.type || '', original: file, width, height, ...stills });
+  } finally {
+    release();
   }
 }
 
@@ -85,11 +152,11 @@ async function importFile(projectId, file) {
 export async function importFiles(projectId, files, onProgress) {
   const photos = [];
   const failed = [];
-  const list = [...files].filter((f) => !f.type || f.type.startsWith('image/'));
+  const list = [...files].filter((f) => !f.type || f.type.startsWith('image/') || isVideoFile(f));
   for (let i = 0; i < list.length; i++) {
     if (onProgress) onProgress(i, list.length);
     try {
-      photos.push(await importFile(projectId, list[i]));
+      photos.push(await (isVideoFile(list[i]) ? importVideo : importFile)(projectId, list[i]));
     } catch {
       failed.push(list[i].name || 'photo');
     }
@@ -102,7 +169,7 @@ export function pickFiles({ multiple = true } = {}) {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
+    input.accept = 'image/*,video/*';
     input.multiple = multiple;
     input.style.display = 'none';
     input.addEventListener('change', () => {

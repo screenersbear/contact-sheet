@@ -47,6 +47,7 @@ export async function mountEditor(view, id) {
   const previewUrl = {};
   const thumbUrl = {};
   const previewImg = {};
+  const videoUrl = {};
   recs.forEach((r) => (photos[r.id] = r));
   p.photoIds = (p.photoIds || []).filter((x) => photos[x]);
   p.frames.forEach((f) => {
@@ -62,6 +63,7 @@ export async function mountEditor(view, id) {
 
   const urlOf = (pid) => previewUrl[pid] || (previewUrl[pid] = URL.createObjectURL(photos[pid].preview));
   const thumbOf = (pid) => thumbUrl[pid] || (thumbUrl[pid] = URL.createObjectURL(photos[pid].thumb || photos[pid].preview));
+  const videoSrc = (pid) => videoUrl[pid] || (videoUrl[pid] = URL.createObjectURL(photos[pid].original));
   function previewImage(pid) {
     if (!previewImg[pid]) previewImg[pid] = loadImage(urlOf(pid));
     return previewImg[pid];
@@ -471,6 +473,47 @@ export async function mountEditor(view, id) {
   // ---------- Strip rendering ----------
   const frameEls = new Map();
 
+  function dropVideo(o) {
+    if (!o.video) return;
+    o.video.pause();
+    o.video.removeAttribute('src');
+    o.video.load();
+    o.video.remove();
+    o.video = null;
+  }
+
+  // Videos play silently over their stills, only on the pages lying open:
+  // an iPhone can only decode a few at once.
+  function showVideo(f, o, ph) {
+    if (ph.kind !== 'video' || !ph.original || spreadOf(anchorSlide(f, p.slides)) !== spread) {
+      dropVideo(o);
+      return;
+    }
+    if (!o.video || o.video.dataset.pid !== f.photoId) {
+      dropVideo(o);
+      const v = document.createElement('video');
+      v.muted = true;
+      v.loop = true;
+      v.autoplay = true;
+      v.playsInline = true;
+      v.setAttribute('muted', '');
+      v.setAttribute('playsinline', '');
+      v.preload = 'auto';
+      v.dataset.pid = f.photoId;
+      v.style.width = `${ph.previewW}px`;
+      v.style.height = `${ph.previewH}px`;
+      // The still stays until there's a moving picture to replace it.
+      v.style.visibility = 'hidden';
+      v.addEventListener('playing', () => (v.style.visibility = ''), { once: true });
+      v.addEventListener('error', () => o.video === v && dropVideo(o), { once: true });
+      v.src = videoSrc(f.photoId);
+      o.img.after(v);
+      o.video = v;
+      v.play().catch(() => {});
+    }
+    o.video.style.transform = o.img.style.transform;
+  }
+
   function placeFrame(f) {
     const o = frameEls.get(f.id);
     if (!o) return;
@@ -489,7 +532,9 @@ export async function mountEditor(view, id) {
       }
       o.img.hidden = false;
       o.img.style.transform = cssTransform(f, ph, ph.previewW, z);
+      showVideo(f, o, ph);
     } else {
+      dropVideo(o);
       o.img.hidden = true;
       o.img.removeAttribute('src');
       delete o.img.dataset.pid;
@@ -511,7 +556,7 @@ export async function mountEditor(view, id) {
         el.className = 'fr';
         el.dataset.id = f.id;
         el.innerHTML = `<img alt="" draggable="false" hidden /><div class="fr-line" hidden></div>
-          <div class="fr-empty"><span class="fr-plus">${ICONS.plus}</span><span class="fr-hint">Double-tap to add a photo</span></div>`;
+          <div class="fr-empty"><span class="fr-plus">${ICONS.plus}</span><span class="fr-hint">Double-tap to add a photo or video</span></div>`;
         o = { el, img: el.querySelector('img'), line: el.querySelector('.fr-line') };
         frameEls.set(f.id, o);
       }
@@ -521,6 +566,7 @@ export async function mountEditor(view, id) {
     });
     for (const [fid, o] of frameEls) {
       if (!seen.has(fid)) {
+        dropVideo(o);
         o.el.remove();
         frameEls.delete(fid);
       }
@@ -697,14 +743,14 @@ export async function mountEditor(view, id) {
       .filter((pid) => photos[pid])
       .map(
         (pid) => `<button type="button" class="tray-item${used.has(pid) ? ' is-used' : ''}" data-pid="${pid}" aria-label="${used.has(pid) ? 'Photo in use' : 'Photo'}">
-          <img src="${thumbOf(pid)}" alt="" draggable="false" />${used.has(pid) ? `<span class="tray-used">${ICONS.check}</span>` : ''}</button>`
+          <img src="${thumbOf(pid)}" alt="" draggable="false" />${photos[pid].kind === 'video' ? `<span class="tray-vid">${ICONS.play}</span>` : ''}${used.has(pid) ? `<span class="tray-used">${ICONS.check}</span>` : ''}</button>`
       )
       .join('');
     const was = trayEl.querySelector('[data-tray-list]');
     const keep = was ? was.scrollLeft : 0;
     trayEl.innerHTML = `
       <button type="button" class="tray-add" data-act="add-photos">${ICONS.plus}<span>Photos</span></button>
-      <div class="tray-list" data-tray-list>${items || '<p class="tray-hint">Add photos from your camera roll. They fill empty frames in order.</p>'}</div>`;
+      <div class="tray-list" data-tray-list>${items || '<p class="tray-hint">Add photos and videos from your camera roll. They fill empty frames in order.</p>'}</div>`;
     // A redraw must not throw the row back to its first photos.
     trayEl.querySelector('[data-tray-list]').scrollLeft = keep;
   }
@@ -865,7 +911,7 @@ export async function mountEditor(view, id) {
       photos[r.id] = r;
       if (!p.photoIds.includes(r.id)) p.photoIds.push(r.id);
     });
-    if (failed.length) toast(`${failed.length === 1 ? 'One photo' : `${failed.length} photos`} could not be opened. JPEG and PNG work everywhere.`, { ms: 5000 });
+    if (failed.length) toast(`${failed.length === 1 ? 'One file' : `${failed.length} files`} could not be opened. JPEG, PNG and MP4 work everywhere.`, { ms: 5000 });
     const queue = added.map((r) => r.id);
     const targets = [].concat(targetIds || []).map((id) => frameById(id)).filter(Boolean);
     for (const f of targets) if (queue.length) putPhoto(f, queue.shift());
@@ -930,7 +976,7 @@ export async function mountEditor(view, id) {
     for (const pid of list) {
       const ph = photos[pid];
       const i = tall.indexOf(Math.min(...tall));
-      cols[i].push(`<button type="button" class="pick-photo${pid === current ? ' is-current' : ''}" data-pid="${pid}" style="aspect-ratio:${ph.width || 1} / ${ph.height || 1}"><img src="${thumbOf(pid)}" alt="" draggable="false" /><span class="pick-num"></span></button>`);
+      cols[i].push(`<button type="button" class="pick-photo${pid === current ? ' is-current' : ''}" data-pid="${pid}" style="aspect-ratio:${ph.width || 1} / ${ph.height || 1}"><img src="${thumbOf(pid)}" alt="" draggable="false" />${ph.kind === 'video' ? `<span class="tray-vid">${ICONS.play}</span>` : ''}<span class="pick-num"></span></button>`);
       tall[i] += (ph.height || 1) / (ph.width || 1);
     }
     return `<div class="pick-grid">${cols.map((c) => `<div class="pick-col">${c.join('')}</div>`).join('')}</div>`;
@@ -2031,11 +2077,13 @@ export async function mountEditor(view, id) {
     stopInertia();
     off.abort();
     if (trayDrag.ghost) trayDrag.ghost.remove();
+    frameEls.forEach(dropVideo);
     delete document.body.dataset.route;
     // Give images a moment to leave the screen before letting their memory go.
     setTimeout(() => {
       Object.values(previewUrl).forEach((u) => URL.revokeObjectURL(u));
       Object.values(thumbUrl).forEach((u) => URL.revokeObjectURL(u));
+      Object.values(videoUrl).forEach((u) => URL.revokeObjectURL(u));
     }, 1000);
     if (window.__editor && window.__editor.p === p) delete window.__editor;
   };

@@ -10,6 +10,8 @@ import { downscale } from './photos.js';
 import { makeZip } from './zip.js';
 import { SHEET_W, SHEET_H } from './pdf.js';
 import { showPdf } from './pdfview.js';
+import { MAX_VIDEO_S, canRecordVideo, hasVideo, recordSlide, startSound } from './videoexport.js';
+import { ICONS } from './icons.js';
 import { listProjects, photosForProject } from './db.js';
 import { openSheet, toast } from './ui.js';
 import { esc, slug, loadImage, canvasToBlob, downloadBlob, nextFrame, isPhone } from './util.js';
@@ -17,7 +19,8 @@ import { esc, slug, loadImage, canvasToBlob, downloadBlob, nextFrame, isPhone } 
 // The original, shrunk only if it is more than twice the size the slide
 // needs (big downscales in one step look gritty).
 async function openSource(photo, scale) {
-  const url = URL.createObjectURL(photo.original || photo.preview);
+  // A video is printed and thumbnailed from its still.
+  const url = URL.createObjectURL(photo.kind === 'video' ? photo.preview : photo.original || photo.preview);
   try {
     const img = await loadImage(url);
     const tw = Math.ceil(photo.width * scale);
@@ -134,7 +137,7 @@ function checkPictures(p, photos, order, sheets, first = 0, chapter = '') {
     const sheetAt = (pos) => sheets[Math.floor(pos / per)];
     const pageAt = (pos) => sheetAt(pos).images[pos % per];
     // Without the original, only the smaller editing copy can be printed.
-    const real = photo.original ? 1 : (photo.previewW || photo.width) / photo.width;
+    const real = photo.original && photo.kind !== 'video' ? 1 : (photo.previewW || photo.width) / photo.width;
     const ppi = Math.round((real * 72 * SLIDE_W) / (placement(f, photo).s * pageAt(seen[0].pos).w));
     if (ppi >= PRINT_PPI) continue;
     const blurry = ppi < BLURRY_PPI;
@@ -392,10 +395,17 @@ export function openExport(p, photos) {
   const H = slideH(p);
   const empty = p.frames.filter((f) => !f.photoId).length;
   let urls = [];
+  const slidesWithVideo = Array.from({ length: p.slides }, (_, i) => i).filter((i) => hasVideo(p, photos, i));
+  const record = slidesWithVideo.length > 0 && canRecordVideo();
+  // Started here, on the tap, or an iPhone keeps the sound off.
+  const audio = record ? startSound() : null;
   const s = openSheet({
     title: 'Export',
     className: 'sheet-export',
-    onClose: () => urls.forEach((u) => URL.revokeObjectURL(u)),
+    onClose: () => {
+      urls.forEach((u) => URL.revokeObjectURL(u));
+      if (audio) audio.close().catch(() => {});
+    },
   });
 
   async function run() {
@@ -412,11 +422,30 @@ export function openExport(p, photos) {
         msg.textContent = `Making ${pageWord(p)} ${i + 1} of ${n}`;
         bar.style.width = `${Math.round((i / n) * 100)}%`;
       });
+      if (record) {
+        s.body.querySelector('.field-hint').textContent = `Videos are made as they play, up to ${MAX_VIDEO_S} seconds each. Keep this screen open while it works.`;
+        const live = document.createElement('div');
+        live.className = 'video-live';
+        s.body.appendChild(live);
+        for (const i of slidesWithVideo) {
+          if (!s.overlay.isConnected) return;
+          msg.textContent = `Making the video on ${pageWord(p)} ${i + 1}`;
+          bar.style.width = '0%';
+          const made = await recordSlide(p, photos, i, {
+            audio,
+            host: live,
+            openSource,
+            stillOpen: () => s.overlay.isConnected,
+            onTime: (t, length) => (bar.style.width = `${Math.round((t / length) * 100)}%`),
+          });
+          files[i] = { ...files[i], ...made, name: files[i].name.replace(/\.jpg$/, `.${made.ext}`) };
+        }
+      }
     } catch (e) {
       console.error(e);
       if (!s.overlay.isConnected) return;
       s.body.innerHTML = `
-        <p class="sheet-message">Something went wrong making the images. Try again, or try fewer ${esc(pageWord(p, true))} at a time.</p>
+        <p class="sheet-message">Something went wrong making the ${record ? 'videos' : 'images'}. Keep this screen open and try again, or try fewer ${esc(pageWord(p, true))} at a time.</p>
         <button type="button" class="modal-cta primary" data-again>Try again</button>`;
       s.body.querySelector('[data-again]').addEventListener('click', run);
       return;
@@ -440,9 +469,10 @@ export function openExport(p, photos) {
     s.body.innerHTML = `
       ${n > 1 ? `<p class="order-note"><b>${isPrint(p) ? 'Keep' : 'Post'} them in this order.</b> Tap one to leave it out. Hold and drag to move it.</p>` : ''}
       <ol class="order-grid${n > 1 ? ' is-pick' : ''}" data-grid>
-        ${files.map((f, i) => `<li data-i="${i}"><img style="aspect-ratio:${f.width}/${f.height}" src="${urls[i]}" alt="${esc(pageWord(p))} ${i + 1}" draggable="false" /><span class="order-num"></span><span class="order-off">Left out</span></li>`).join('')}
+        ${files.map((f, i) => `<li data-i="${i}"><img style="aspect-ratio:${f.width}/${f.height}" src="${urls[i]}" alt="${esc(pageWord(p))} ${i + 1}" draggable="false" /><span class="order-num"></span>${f.isVideo ? `<span class="order-vid">${ICONS.play}</span>` : ''}<span class="order-off">Left out</span></li>`).join('')}
       </ol>
       ${empty ? `<p class="tip">${empty === 1 ? '1 frame is' : `${empty} frames are`} empty and show the background color.</p>` : ''}
+      ${slidesWithVideo.length && !record ? '<p class="tip">This browser can\'t save video, so those slides are saved as still images. Safari and Chrome can.</p>' : ''}
       <div class="button-stack wide">
         <button type="button" class="modal-cta primary" data-save></button>
       </div>
@@ -458,7 +488,7 @@ export function openExport(p, photos) {
 
     // The chosen images, in the chosen order, named 01, 02... in that order.
     const chosen = () =>
-      order.filter((i) => !off.has(i)).map((i, k) => ({ ...files[i], name: `${base}-${String(k + 1).padStart(2, '0')}.jpg` }));
+      order.filter((i) => !off.has(i)).map((i, k) => ({ ...files[i], name: `${base}-${String(k + 1).padStart(2, '0')}.${files[i].ext || 'jpg'}` }));
 
     function draw() {
       let k = 0;
@@ -473,7 +503,11 @@ export function openExport(p, photos) {
       save.disabled = !c;
       if (canShare) save.textContent = all || !c ? 'Save to Photos' : `Save ${c} to Photos`;
       else save.textContent = c === 1 ? 'Download' : all ? 'Download ZIP' : `Download ${c} as ZIP`;
-      if (hint) hint.innerHTML = c ? `In the share sheet, tap <b>Save ${c === 1 ? 'Image' : `${c} Images`}</b>.` : 'Tap an image to put it back.';
+      if (hint) {
+        const v = order.filter((i) => !off.has(i) && files[i].isVideo).length;
+        const what = !v ? (c === 1 ? 'Image' : `${c} Images`) : c === 1 ? 'Video' : v === c ? `${c} Videos` : `${c} Items`;
+        hint.innerHTML = c ? `In the share sheet, tap <b>Save ${what}</b>.` : 'Tap an image to put it back.';
+      }
     }
 
     save.addEventListener('click', async () => {
