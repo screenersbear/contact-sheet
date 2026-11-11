@@ -1310,11 +1310,6 @@ html { background: #fff; }
    iOS measures the screen again. */
 html.ios-nudge body { min-height: calc(var(--screen-h, 100vh) + 160px); overflow: visible; }
 
-/* Ink on paper: letters with a slightly soft edge. */
-body, button, a { text-shadow: 0 0 0.6px; }
-.nb-word, .nb-head, .toc-name, .toc-meta, .toc-foot, .toc-empty, .toc-tip,
-.tool-label, .ws-label, .tray-add span, .sheet-header h2, .choice-label, .row-name { filter: blur(0.22px); }
-
 body[data-route="book"] { overflow: hidden; background: #fff; }
 body[data-route="book"] #app { padding: 0; max-width: none; }
 
@@ -1325,11 +1320,14 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   perspective: 1100px;
   perspective-origin: 50% 28%;
   overflow: hidden;
+  transition: opacity 0.2s;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
   touch-action: manipulation;
 }
+/* On the fade: opacity here, not on the book, or its 3D would flatten. */
+.nb.is-waiting { opacity: 0; }
 .nb-float {
   position: absolute;
   left: 50%;
@@ -1375,7 +1373,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-sun {
   position: absolute;
   left: 50%;
-  bottom: max(14px, calc(env(safe-area-inset-bottom) - 6px));
+  bottom: calc(env(safe-area-inset-bottom) + 16px);
   width: 48px;
   height: 48px;
   margin-left: -24px;
@@ -1427,7 +1425,13 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-inside { position: absolute; inset: 0; }
 .nb-block,
 .nb-inside::before { border-radius: 0 calc(var(--W) * 0.044) calc(var(--W) * 0.044) 0; }
-.nb-block { background: var(--book-block) center / 100% 100% no-repeat; transition: box-shadow 0.3s; }
+.nb-block { background: var(--book-block) center / 100% 100% no-repeat; transition: box-shadow 0.3s, visibility 0s; }
+/* Shut, the inside isn't drawn at all, so it can never show before the cover
+   has painted. It goes once the cover has swung closed. */
+.nb-new, .nb-inside { transition: visibility 0s; }
+.nb[data-mode="closed"] .nb-block { visibility: hidden; transition: box-shadow 0.3s, visibility 0s 0.82s; }
+.nb[data-mode="closed"] .nb-new,
+.nb[data-mode="closed"] .nb-inside { visibility: hidden; transition: visibility 0s 0.82s; }
 .nb:not([data-mode="closed"]) .nb-block { box-shadow: var(--book-shadow); }
 .nb-leaf {
   transform: rotateY(0deg) translateZ(1px);
@@ -1436,7 +1440,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   transition: transform 0.82s cubic-bezier(0.45, 0.05, 0.25, 1);
 }
 .nb-front {
-  background: var(--book-cover) center / 100% 100% no-repeat;
+  background: var(--book-back) var(--book-cover) center / 100% 100% no-repeat;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
@@ -1480,6 +1484,9 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb[data-mode="closed"] .nb-stack b { transition: transform 0.6s, visibility 0s; }
 .nb:not([data-mode="closed"]) .nb-stack i,
 .nb:not([data-mode="closed"]) .nb-stack b { transform: translateZ(-1px); visibility: hidden; }
+.nb.no-anim .nb-block,
+.nb.no-anim .nb-new,
+.nb.no-anim .nb-inside,
 .nb.no-anim .nb-book,
 .nb.no-anim .nb-leaf,
 .nb.no-anim .nb-stack i,
@@ -1666,7 +1673,7 @@ body[data-route="edit"] { background: #fff; }
   touch-action: manipulation;
 }
 .ed-name.is-over button { background: #fff; }
-.ed-name span { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; filter: blur(0.22px); }
+.ed-name span { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
 /* Turning the page. */
 .flip { position: absolute; z-index: 2; perspective: 1500px; pointer-events: none; }
@@ -1713,9 +1720,10 @@ body[data-route="edit"] { background: #fff; }
   background: #fff;
   border-top: none;
 }
-.ed-tools { padding-bottom: max(2px, calc(env(safe-area-inset-bottom) - 20px)); }
+.ed-tools { padding-bottom: calc(env(safe-area-inset-bottom) + 10px); }
 /* iOS left the screen short and the bar is already above the home bar. */
 html.is-short .ed-tools { padding-bottom: 2px; }
+html.is-short .nb-sun { bottom: max(14px, calc(env(safe-area-inset-bottom) - 6px)); }
 .ed-tools .tool {
   color: var(--text);
   padding-bottom: 2px;

@@ -32,6 +32,18 @@ function useBook(name) {
   } catch {}
 }
 
+// Resolves once the notebook's art can paint, so the shut book appears whole.
+// Never waits long: a slow file shouldn't keep the notebook away.
+function artReady() {
+  const book = document.documentElement.dataset.book || 'orange';
+  const ready = ['cover', 'block'].map((part) => {
+    const img = new Image();
+    img.src = `art/${book}-${part}.webp`;
+    return img.decode().catch(() => {});
+  });
+  return Promise.race([Promise.all(ready), new Promise((done) => setTimeout(done, 1200))]);
+}
+
 function openOptions() {
   const now = document.documentElement.dataset.book;
   const s = openSheet({
@@ -70,7 +82,7 @@ const currentMode = () => modeOfHash((location.hash || '#/').slice(1) || '/');
 export function mountBook(view, startMode, onNew) {
   document.body.dataset.route = 'book';
   view.innerHTML = `
-    <div class="nb no-anim" data-mode="${startMode}">
+    <div class="nb no-anim${startMode === 'closed' ? ' is-waiting' : ''}" data-mode="${startMode}">
       <div class="nb-ground"></div>
       <div class="nb-float">
         <div class="nb-book">
@@ -140,7 +152,7 @@ export function mountBook(view, startMode, onNew) {
     root.style.setProperty('--shut-x', `${-(Math.min(...seen) + Math.max(...seen)) / 2 / cos}px`);
     // The contents page sits centred above its bottom bar.
     const bar = toc.querySelector('.ed-tools');
-    const barH = toc.hidden ? 56 : bar.offsetHeight;
+    const barH = toc.hidden ? 48 + parseFloat(getComputedStyle(bar).paddingBottom) : bar.offsetHeight;
     root.style.setProperty('--toc-up', `${-barH / 2}px`);
   }
 
@@ -350,6 +362,7 @@ export function mountBook(view, startMode, onNew) {
   window.addEventListener('resize', measure);
   measure();
   setMode(startMode, true);
+  artReady().then(() => root.classList.remove('is-waiting'));
 
   return {
     setMode,
