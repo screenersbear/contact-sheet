@@ -180,17 +180,16 @@ export function openExport(p, photos) {
       if (canShare) {
         try {
           await navigator.share({ files: list.map((f) => new File([f.blob], f.name, { type: f.mime })) });
+          s.close();
         } catch (e) {
+          // Cancelling the share sheet stays here, to change the picks or try again.
           if (e && e.name !== 'AbortError') toast('Sharing did not work here. Try again in Safari.');
         }
         return;
       }
-      if (list.length === 1) {
-        downloadBlob(list[0].blob, list[0].name);
-        return;
-      }
-      const zip = await makeZip(list);
-      downloadBlob(zip, `${base}.zip`);
+      if (list.length === 1) downloadBlob(list[0].blob, list[0].name);
+      else downloadBlob(await makeZip(list), `${base}.zip`);
+      s.close();
     });
 
     if (n > 1) {
