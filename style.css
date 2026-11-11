@@ -1411,20 +1411,21 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
    their row sits on the frame, and an icon's middle is 38.5px up from the
    row's foot (row and button padding, the label, the gap, half the icon). */
 .nb-sun {
-  position: absolute;
+  position: fixed;
   left: 50%;
   bottom: calc(var(--nb-b) + var(--nb-rim) + 38.5px - 24px);
   width: 48px;
   height: 48px;
   margin-left: -24px;
-  padding: 10px;
+  padding: 13.5px;
   border: none;
   background: none;
   color: var(--text);
   transition: opacity 0.25s;
 }
-.nb-sun svg { width: 28px; height: 28px; display: block; }
-.nb:not([data-mode="closed"]) .nb-sun { opacity: 0; pointer-events: none; }
+/* The same size as the contents' bottom icons. */
+.nb-sun svg { width: 21px; height: 21px; display: block; }
+.nb:not([data-mode="closed"]) ~ .nb-sun { opacity: 0; pointer-events: none; }
 .opt-colors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 8px; margin-top: 10px; }
 .opt-color {
   display: flex;
@@ -1525,7 +1526,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-sticker.is-square { border-radius: 5%; }
 .nb.is-sticking .nb-float,
 .nb.is-sticking .nb-ground::before { animation-play-state: paused; }
-.nb.is-sticking .nb-sun,
+.nb.is-sticking ~ .nb-sun,
 .nb.is-sticking .nb-tabhits { display: none; }
 .nb-stickpad { position: absolute; inset: 0; z-index: 7; touch-action: none; }
 .nb-stick-bar {

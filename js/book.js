@@ -147,7 +147,6 @@ export function mountBook(view, startMode, onNew) {
       <div class="nb-tabhits">
         ${TABS.map(([key, name]) => `<button type="button" class="nb-tabhit" data-tab="${key}" aria-label="${name}"></button>`).join('')}
       </div>
-      <button type="button" class="nb-sun" data-options aria-label="App options">${ICONS.sun}</button>
       <div class="nb-toc" hidden>
         <div class="nb-open" data-tocbook>
           <span></span><span></span>
@@ -160,9 +159,13 @@ export function mountBook(view, startMode, onNew) {
           <button type="button" class="tool" data-toc="new"><span class="tool-icon">${ICONS.plus}</span><span class="tool-label">New chapter</span></button>
         </nav>
       </div>
-    </div>`;
+    </div>
+    <button type="button" class="nb-sun" aria-label="App options">${ICONS.sun}</button>`;
 
   const root = view.querySelector('.nb');
+  // Beside the notebook, not in it: there from the start, while the
+  // notebook waits for its art to fade in.
+  const sun = view.querySelector('.nb-sun');
   const toc = root.querySelector('.nb-toc');
   const probe = root.querySelector('.nb-probe');
   const tocBook = root.querySelector('[data-tocbook]');
@@ -423,7 +426,6 @@ export function mountBook(view, startMode, onNew) {
     canStart: (e) =>
       root.dataset.mode === 'closed' &&
       !root.classList.contains('is-sticking') &&
-      !e.target.closest('[data-options]') &&
       Math.abs(e.clientX - window.innerWidth / 2) <= geo.W * 0.62 &&
       Math.abs(e.clientY - window.innerHeight / 2) <= geo.H * 0.56,
   });
@@ -482,6 +484,10 @@ export function mountBook(view, startMode, onNew) {
   }
   document.addEventListener('keydown', onKey);
 
+  sun.addEventListener('click', () => {
+    if (root.dataset.mode === 'closed' && !root.classList.contains('is-sticking')) openOptions(stickers);
+  });
+
   root.addEventListener('click', async (e) => {
     // Placing a sticker: the cover and tabs wait until OK.
     if (root.classList.contains('is-sticking')) return;
@@ -489,10 +495,6 @@ export function mountBook(view, startMode, onNew) {
     if (swiped || turning) {
       swiped = false;
       e.preventDefault();
-      return;
-    }
-    if (e.target.closest('[data-options]')) {
-      openOptions(stickers);
       return;
     }
     const tab = e.target.closest('[data-tab]');
