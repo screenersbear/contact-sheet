@@ -9,6 +9,7 @@ import { openNotebookExport } from './export.js';
 import { OUT, RIM, bookSize, bookLeft } from './frame.js';
 import { playFlip } from './flip.js';
 import { mountStickers, openStickers } from './stickers.js';
+import { makeTurnable } from './turn.js';
 
 const TIP_KEY = 'contact-sheet-home-tip';
 const RATIO = 1000 / 1360; // the notebook art's width over its height
@@ -128,6 +129,9 @@ export function mountBook(view, startMode, onNew) {
           <div class="nb-stack">
             ${Array.from({ length: STACK }, (_, i) => `<i style="--i:${i + 1}"></i>`).join('')}
             <b style="--i:${STACK + 1}"></b>
+            <u class="nb-box is-spine"></u>
+            <u class="nb-box is-top"></u>
+            <u class="nb-box is-bottom"></u>
           </div>
           <div class="nb-side-tabs">
             ${TABS.map(([, name], i) => `<i style="--t:${i};--i:${5 + i * 6}"><span>${name}</span></i>`).join('')}
@@ -327,7 +331,12 @@ export function mountBook(view, startMode, onNew) {
   // spread, or a page turn to the next one.
   function goPage(n) {
     if (turning) return;
-    if (n < 0 || n >= pageCount()) {
+    // Swiping back from the first page shuts the notebook.
+    if (n < 0) {
+      location.hash = '#/';
+      return;
+    }
+    if (n >= pageCount()) {
       showCamera(panOf(tocPage), 240);
       return;
     }
@@ -367,7 +376,10 @@ export function mountBook(view, startMode, onNew) {
   const step = (dir) => goPage(two ? (spreadOf(tocPage) + dir) * 2 : tocPage + dir);
 
   function setMode(next, instant = false) {
-    if (next !== 'closed') stickers.drop();
+    if (next !== 'closed') {
+      stickers.drop();
+      turn.reset();
+    }
     clearTimeout(timer);
     const wasShut = root.dataset.mode === 'closed';
     root.classList.toggle('no-anim', instant);
@@ -403,6 +415,17 @@ export function mountBook(view, startMode, onNew) {
 
   // Any new touch, anywhere on the book, is a fresh start.
   root.addEventListener('pointerdown', () => (swiped = false), true);
+  // Shut, the notebook can be turned by hand.
+  const turn = makeTurnable(root, {
+    size: () => geo.W,
+    onMoved: () => (swiped = true),
+    canStart: (e) =>
+      root.dataset.mode === 'closed' &&
+      !root.classList.contains('is-sticking') &&
+      !e.target.closest('[data-options]') &&
+      Math.abs(e.clientX - window.innerWidth / 2) <= geo.W * 0.62 &&
+      Math.abs(e.clientY - window.innerHeight / 2) <= geo.H * 0.56,
+  });
   tocBook.addEventListener('pointerdown', (e) => {
     if (turning) return;
     swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, base: pan, moved: false, samples: [] };

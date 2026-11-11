@@ -1386,7 +1386,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   width: var(--W);
   height: calc(var(--W) * 0.36);
   transform-origin: 0 0;
-  transform: rotateY(-20deg) translate3d(calc(var(--W) / -2 + var(--shut-x, 0px)), calc(var(--H) / 2 + var(--W) * 0.11), calc(var(--W) * -0.26)) rotateX(90deg);
+  transform: rotateY(calc(-20deg + var(--spin, 0rad))) translate3d(calc(var(--W) / -2 + var(--shut-x, 0px)), calc(var(--H) / 2 + var(--W) * 0.11), calc(var(--W) * -0.26)) rotateX(90deg);
   pointer-events: none;
   transition: opacity 0.4s;
 }
@@ -1483,11 +1483,22 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 }
 .nb-front {
   background: var(--book-back) var(--book-cover) center / 100% 100% no-repeat;
+  transform-style: preserve-3d;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
-/* Stickers: anything past the cover's edge is cropped. */
-.nb-stickers { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+/* Stickers. Each is cut off at the cover's edge, curves away there, and the
+   next bit wraps round the edge, standing at right angles to the cover. */
+.nb-stickers, .nb-sticker-edges, .nb-stick-clip, .nb-fold { position: absolute; inset: 0; pointer-events: none; }
+.nb-stickers { transform: translateZ(0.2px); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.nb-sticker-edges { transform-style: preserve-3d; }
+.nb-stick-clip { overflow: hidden; }
+.nb-fold { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.nb-fold[hidden] { display: none; }
+.nb-fold.is-right { transform-origin: 100% 50%; transform: rotateY(90deg); clip-path: inset(0 -1.8% 0 100%); }
+.nb-fold.is-left { transform-origin: 0 50%; transform: rotateY(-90deg); clip-path: inset(0 100% 0 -1.8%); }
+.nb-fold.is-top { transform-origin: 50% 0; transform: rotateX(90deg); clip-path: inset(-1.3% 0 100% 0); }
+.nb-fold.is-bottom { transform-origin: 50% 100%; transform: rotateX(-90deg); clip-path: inset(100% 0 -1.3% 0); }
 .nb-sticker {
   position: absolute;
   aspect-ratio: 1;
@@ -1503,8 +1514,11 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   border-radius: inherit;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(58, 38, 16, 0.14);
 }
+.nb-bend { position: absolute; inset: 0; border-radius: inherit; }
+.nb-fold .nb-sticker { box-shadow: none; }
+.nb-fold .nb-sticker::after { box-shadow: none; background: rgba(58, 38, 16, 0.42); }
 .nb-sticker.is-circle, .opt-sticker.is-circle img { border-radius: 50%; }
-.nb-sticker.is-square, .opt-sticker.is-square img { border-radius: 5%; }
+.nb-sticker.is-square { border-radius: 5%; }
 .nb.is-sticking .nb-float,
 .nb.is-sticking .nb-ground::before { animation-play-state: paused; }
 .nb.is-sticking .nb-sun,
@@ -1519,7 +1533,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   text-align: center;
 }
 .nb-stick-hint { margin: 0 0 6px; font-size: 15px; color: var(--text); pointer-events: none; }
-.opt-shapes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.opt-shapes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .opt-shape {
   display: flex;
   flex-direction: column;
@@ -1536,9 +1550,23 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .opt-shape i { width: 56px; height: 56px; border: 2px solid var(--text); }
 .opt-shape i.is-circle { border-radius: 50%; }
 .opt-shape i.is-square { border-radius: 5%; }
-.opt-stickers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+.opt-shape i.is-rect { width: 66px; height: 44px; margin: 6px 0; border-radius: 3px; }
+.crop-stage { position: relative; overflow: hidden; touch-action: none; background: #fff; }
+.crop-stage canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.crop-hole {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 999px rgba(255, 255, 255, 0.74);
+  outline: 1.5px solid var(--text);
+  pointer-events: none;
+}
+.crop-hole.is-circle { border-radius: 50%; }
+.crop-hint { text-align: center; margin: 8px 0 10px; }
+.opt-stickers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; align-items: center; }
 .opt-sticker { padding: 0; border: none; background: none; }
-.opt-sticker img { display: block; width: 100%; aspect-ratio: 1; box-shadow: 0 1px 3px rgba(58, 38, 16, 0.4); }
+.opt-sticker img { display: block; width: 100%; box-shadow: 0 1px 3px rgba(58, 38, 16, 0.4); }
 .nb-inside {
   transform: rotateY(180deg);
   backface-visibility: hidden;
@@ -1569,6 +1597,19 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   background: #fff;
 }
 .nb-stack i:nth-child(even) { background: #e4e4e4; }
+/* The sides that only show once the notebook is turned: the spine, and the
+   tops and bottoms of the pages. */
+.nb-box { position: absolute; text-decoration: none; visibility: hidden; }
+.nb.is-turning .nb-box { visibility: visible; }
+.nb-box.is-spine { left: 1px; top: 0; bottom: 0; width: calc(var(--W) * 0.1904); transform-origin: 0 50%; transform: rotateY(90deg); background: var(--book-back); }
+.nb-box.is-top, .nb-box.is-bottom {
+  left: 1px;
+  right: 1.2%;
+  height: calc(var(--W) * 0.1904);
+  background: repeating-linear-gradient(to bottom, #fff 0, #fff calc(var(--W) * 0.0112), #e4e4e4 calc(var(--W) * 0.0112), #e4e4e4 calc(var(--W) * 0.0224));
+}
+.nb-box.is-top { top: 0.9%; transform-origin: 50% 0; transform: translateZ(-3px) rotateX(-90deg); }
+.nb-box.is-bottom { bottom: 0.9%; transform-origin: 50% 100%; transform: translateZ(-3px) rotateX(90deg); }
 .nb-stack b {
   inset: 0;
   border-radius: 0 calc(var(--W) * 0.044) calc(var(--W) * 0.044) 0;
@@ -1585,7 +1626,9 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb.no-anim .nb-stack i,
 .nb.no-anim .nb-stack b { transition: none; }
 
-.nb[data-mode="closed"] .nb-book { transform: rotateY(-20deg) translate(calc(var(--W) / -2 + var(--shut-x, 0px)), 0) scale(1); }
+.nb.is-turning .nb-book { transition: none; }
+.nb[data-mode="closed"] { touch-action: none; }
+.nb[data-mode="closed"] .nb-book { transform: rotateX(var(--tilt, 0rad)) rotateY(calc(-20deg + var(--spin, 0rad))) translate(calc(var(--W) / -2 + var(--shut-x, 0px)), 0) scale(1); }
 .nb[data-mode="toc"] .nb-book { transform: rotateY(0deg) translate(var(--toc-x), var(--toc-y)) scale(var(--kx), var(--ky)); }
 .nb[data-mode="toc"].at-right .nb-book,
 .nb[data-mode="new"] .nb-book { transform: rotateY(0deg) translate(var(--new-x), var(--toc-y)) scale(var(--kx), var(--ky)); }
