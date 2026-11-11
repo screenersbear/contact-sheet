@@ -76,6 +76,15 @@ export function openSheet({ title, body = '', className = '', onClose } = {}) {
   };
   open.push(api);
 
+  // On a phone, the tap that opened this sheet can arrive a moment later as
+  // a click on whatever is now under the finger. Ignore that one.
+  const openedAt = performance.now();
+  overlay.addEventListener('click', (e) => {
+    if (performance.now() - openedAt < 450) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay || e.target.closest('[data-close]')) api.close();
   });

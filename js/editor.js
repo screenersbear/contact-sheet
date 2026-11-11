@@ -7,9 +7,9 @@
 // and everything drawn over the photos stays grey, white or black, so the
 // colours of the photos are never thrown off by the app's own.
 import {
-  SLIDE_W, MAX_SLIDES, MIN_FRAME, RATIOS, RATIO_ORDER, LAYOUT_KEYS, SAFE_TOP, SAFE_BOTTOM,
+  SLIDE_W, MAX_SLIDES, MIN_FRAME, LAYOUT_KEYS, SAFE_TOP, SAFE_BOTTOM,
   slideH, isStory, pageWord, newFrame, defaultCrop, placement, clampedCrop, cssTransform, rotatedCrop,
-  anchorSlide, insertSlide, removeSlide, moveSlide, copySlideLayout, changeRatio, slideBox, borderBands,
+  anchorSlide, insertSlide, removeSlide, moveSlide, copySlideLayout, slideBox, borderBands,
   snapTargets, nearest, templateFromProject, SLIDE_LAYOUTS, layoutRects, applySlideLayout, layoutOfSlide,
   framesWithinSlide,
 } from './model.js';
@@ -20,7 +20,7 @@ import {
 import { importFiles, pickFiles } from './photos.js';
 import { previewCanvas } from './render.js';
 import { openExport } from './export.js';
-import { openSheet, choiceSheet, promptSheet, toast, hideToast, sheetIsOpen } from './ui.js';
+import { openSheet, choiceSheet, promptSheet, toast, sheetIsOpen } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, clamp, debounce, canvasToBlob, loadImage } from './util.js';
 
@@ -477,7 +477,6 @@ export async function mountEditor(view, id) {
         tool('rotate', ICONS.rotate, 'Rotate', { disabled: !has }),
         tool('swap', has ? ICONS.swap : ICONS.photo, has ? 'Swap' : 'Photo'),
         tool('fit', ICONS.fit, 'Fit', { disabled: !has }),
-        tool('copy', ICONS.copy, 'Copy'),
         tool('frame-more', ICONS.more, 'More'),
         tool('delete', ICONS.trash, 'Delete'),
       ].join('');
@@ -488,7 +487,6 @@ export async function mountEditor(view, id) {
       tool('add-frame', ICONS.addFrame, 'Frame'),
       tool('slides', ICONS.slides, isStory(p) ? 'Stories' : 'Slides'),
       tool('layout', ICONS.layout, 'Layout'),
-      tool('format', ICONS.format, 'Format'),
       isStory(p) ? tool('safe', ICONS.safe, 'Safe zone', { on: showSafe }) : '',
       p.slides > 1 ? tool('zoom', all ? ICONS.zoomOut : ICONS.zoomIn, all ? 'See all' : 'Zoom in') : tool('zoom', ICONS.zoomIn, 'Fit'),
     ].join('');
@@ -515,9 +513,13 @@ export async function mountEditor(view, id) {
           <img src="${thumbOf(pid)}" alt="" draggable="false" />${used.has(pid) ? `<span class="tray-used">${ICONS.check}</span>` : ''}</button>`
       )
       .join('');
+    const was = trayEl.querySelector('[data-tray-list]');
+    const keep = was ? was.scrollLeft : 0;
     trayEl.innerHTML = `
       <button type="button" class="tray-add" data-act="add-photos">${ICONS.plus}<span>Photos</span></button>
       <div class="tray-list" data-tray-list>${items || '<p class="tray-hint">Add photos from your camera roll. They fill empty frames in order.</p>'}</div>`;
+    // A redraw must not throw the row back to its first photos.
+    trayEl.querySelector('[data-tray-list]').scrollLeft = keep;
   }
 
   // ---------- Frame actions ----------
@@ -598,17 +600,6 @@ export async function mountEditor(view, id) {
     commit();
   }
 
-  function copySel() {
-    const f = selFrame();
-    if (!f) return;
-    const c = { ...newFrame(f.x + 40, f.y + 40, f.w, f.h, f.photoId), crop: { ...f.crop } };
-    p.frames.push(c);
-    sel = c.id;
-    photoMode = false;
-    render();
-    commit();
-  }
-
   // The x on a selected photo: the frame stays, the photo goes back to the tray.
   function takeOut() {
     const f = selFrame();
@@ -630,7 +621,6 @@ export async function mountEditor(view, id) {
     fitIfNeeded();
     render();
     commit();
-    toast(`${isStory(p) ? 'Story' : 'Slide'} ${k + 1} deleted`, { action: { label: 'Undo', run: undo } });
   }
 
   function deleteSel() {
@@ -678,10 +668,11 @@ export async function mountEditor(view, id) {
   // targetIds: the frames to fill first, in order (one id or a list).
   async function importInto(files, targetIds = []) {
     askToPersist();
-    const { photos: added, failed } = await importFiles(p.id, files, (i, n) =>
-      toast(n === 1 ? 'Adding the photo' : `Adding photo ${i + 1} of ${n}`, { ms: 120000 })
-    );
-    hideToast();
+    // Progress shows on the + Photos button; render() puts its label back.
+    const addLabel = trayEl.querySelector('.tray-add span');
+    const { photos: added, failed } = await importFiles(p.id, files, (i, n) => {
+      if (addLabel) addLabel.textContent = n === 1 ? 'Adding' : `${i + 1} of ${n}`;
+    });
     if (destroyed) return;
     added.forEach((r) => {
       photos[r.id] = r;
@@ -849,10 +840,7 @@ export async function mountEditor(view, id) {
 
   function trayTap(pid) {
     const f = selFrame() || emptyFrames()[0];
-    if (!f) {
-      toast('Tap a frame first, then tap a photo.');
-      return;
-    }
+    if (!f) return;
     putPhoto(f, pid);
     sel = f.id;
     render();
@@ -936,7 +924,7 @@ export async function mountEditor(view, id) {
     const rects = layoutRects(q, k, layout)
       .map((r) => `<rect x="${r.x - k * SLIDE_W}" y="${r.y}" width="${r.w}" height="${r.h}" class="lay-frame"/>`)
       .join('');
-    return `<svg class="lay-svg" viewBox="0 0 ${SLIDE_W} ${Hh}" aria-hidden="true"><rect width="${SLIDE_W}" height="${Hh}" fill="${esc(q.background)}" class="lay-slide"/>${rects}<rect width="${SLIDE_W}" height="${Hh}" class="lay-edge"/></svg>`;
+    return `<svg class="lay-svg" width="${Math.round((84 * SLIDE_W) / Hh)}" height="84" viewBox="0 0 ${SLIDE_W} ${Hh}" aria-hidden="true"><rect width="${SLIDE_W}" height="${Hh}" fill="${esc(q.background)}" class="lay-slide"/>${rects}<rect width="${SLIDE_W}" height="${Hh}" class="lay-edge"/></svg>`;
   }
 
   // Resolves with the chosen layout, or null. k is the slide to change, or
@@ -960,7 +948,7 @@ export async function mountEditor(view, id) {
           <div class="layout-grid">
             ${options.map((o, n) => `<button type="button" class="layout-opt" data-n="${n}">${layoutSvg(q, at, o)}<span>${esc(o.name)}</span></button>`).join('')}
           </div>
-          <p class="field-hint">${p.padding ? 'The space around and between photos is your Slide border, set in Layout.' : 'Photos touch edge to edge. For space around and between them, set a Slide border in Layout.'}</p>`,
+          <p class="field-hint">For space around and between the photos: the three dots at the top, then Background and borders.</p>`,
         onClose: () => resolve(chosen),
       });
       s.body.addEventListener('click', (e) => {
@@ -991,14 +979,28 @@ export async function mountEditor(view, id) {
     commit();
   }
 
-  function openLayout() {
+  // The Layout button: a new layout for the slide on screen.
+  async function layoutThisSlide() {
+    const k = visibleSlide();
+    const l = await pickLayout(k);
+    if (!l || destroyed) return;
+    apply(applySlideLayout(p, k, l));
+    if (sel && !frameById(sel)) {
+      sel = null;
+      photoMode = false;
+    }
+    render();
+    commit();
+  }
+
+  function openBorders() {
     const colorChips = (name, value, options) => `
       <div class="swatches" role="radiogroup">
         ${options.map(([v, label]) => `<label class="swatch"><input type="radio" name="${name}" value="${v}"${value.toLowerCase() === v ? ' checked' : ''} /><span><i style="background:${v}"></i>${label}</span></label>`).join('')}
         <label class="swatch swatch-custom"><input type="radio" name="${name}" value="custom"${options.some(([v]) => v === value.toLowerCase()) ? '' : ' checked'} /><span><input type="color" value="${esc(value)}" data-color="${name}" aria-label="Custom color" />Custom</span></label>
       </div>`;
     const s = openSheet({
-      title: 'Layout',
+      title: 'Background and borders',
       body: `
         <div class="form">
           <div class="field">
@@ -1057,21 +1059,6 @@ export async function mountEditor(view, id) {
     });
   }
 
-  async function openFormat() {
-    const key = await choiceSheet({
-      title: 'Format',
-      message: isStory(p) ? '' : 'Instagram uses one shape for every slide in a post, so this changes them all.',
-      options: RATIO_ORDER.map((r) => ({ key: r, label: RATIOS[r].label, detail: `${RATIOS[r].size}. ${RATIOS[r].detail}`, current: r === p.ratio })),
-    });
-    if (!key || key === p.ratio) return;
-    apply(changeRatio(p, key));
-    p.frames.forEach((f) => f.photoId && photos[f.photoId] && (f.crop = clampedCrop(f, photos[f.photoId])));
-    zoomFit = zoomFit || 'one';
-    fitIfNeeded();
-    render();
-    commit();
-  }
-
   async function openGrid() {
     const get = await previewSources();
     const s = openSheet({
@@ -1093,19 +1080,20 @@ export async function mountEditor(view, id) {
       title: 'Draft',
       options: [
         { key: 'rename', label: 'Rename', detail: 'Also names the exported files.' },
+        { key: 'borders', label: 'Background and borders', detail: 'The background color, and space around the photos.' },
         { key: 'template', label: 'Save as template', detail: 'Keeps the layout, not the photos.' },
         ...(isStory(p) ? [] : [{ key: 'grid', label: 'Grid preview', detail: 'How the first slide looks in your profile grid.' }]),
         ...(unused.length ? [{ key: 'clear', label: 'Remove unused photos', detail: `${unused.length} in the tray, not in a frame.` }] : []),
       ],
     });
     if (key === 'rename') rename();
+    else if (key === 'borders') openBorders();
     else if (key === 'template') saveAsTemplate();
     else if (key === 'grid') openGrid();
     else if (key === 'clear') {
       p.photoIds = p.photoIds.filter((pid) => usedIds().has(pid));
       renderTray();
       commit();
-      toast(unused.length === 1 ? 'Removed 1 photo' : `Removed ${unused.length} photos`, { action: { label: 'Undo', run: undo } });
     }
   }
 
@@ -1123,7 +1111,6 @@ export async function mountEditor(view, id) {
     const all = await listTemplates();
     const order = all.reduce((m, t) => Math.max(m, t.sortOrder ?? 0), -1) + 1;
     await saveTemplate({ ...templateFromProject(p), name: v, sortOrder: order, starter: false });
-    toast('Saved to your templates');
   }
 
   function toggleSafe() {
@@ -1163,8 +1150,7 @@ export async function mountEditor(view, id) {
       } else if (a === 'add-frame') addFrame();
       else if (a === 'add-slide') addSlide();
       else if (a === 'slides') openSlides();
-      else if (a === 'layout') openLayout();
-      else if (a === 'format') openFormat();
+      else if (a === 'layout') layoutThisSlide();
       else if (a === 'safe') toggleSafe();
       else if (a === 'zoom') fitTo(p.slides > 1 && z > fitZ('all') * 1.05 ? 'all' : 'one');
       else if (a === 'adjust') {
@@ -1180,7 +1166,6 @@ export async function mountEditor(view, id) {
       } else if (a === 'rotate') rotateSel();
       else if (a === 'swap') openSwap(sel);
       else if (a === 'fit') fitSel();
-      else if (a === 'copy') copySel();
       else if (a === 'frame-more') frameMore();
       else if (a === 'delete') deleteSel();
       else if (a === 'add-photos') addPhotos();
@@ -1555,28 +1540,73 @@ export async function mountEditor(view, id) {
     if (next) placeFrame(next);
   }
 
+  // The app moves the tray itself, as it does the canvas: a finger going
+  // sideways scrolls the row (with a flick), a finger going up lifts a photo
+  // out to drop on a frame, and a tap places it.
+  const trayList = () => trayEl.querySelector('[data-tray-list]');
+  const trayMax = (list) => {
+    const last = list.querySelector('.tray-item:last-child');
+    return last ? Math.max(0, last.offsetLeft + last.offsetWidth + 2 - list.clientWidth) : 0;
+  };
+  let trayInertia = 0;
+  function stopTrayGlide() {
+    if (trayInertia) cancelAnimationFrame(trayInertia);
+    trayInertia = 0;
+  }
+  function trayGlide(list, v) {
+    let last = performance.now();
+    const max = trayMax(list);
+    const step = (now) => {
+      const dt = Math.min(40, now - last);
+      last = now;
+      const to = clamp(list.scrollLeft - v * dt, 0, max);
+      list.scrollLeft = to;
+      v *= Math.pow(0.994, dt);
+      trayInertia = Math.abs(v) > 0.02 && to > 0 && to < max ? requestAnimationFrame(step) : 0;
+    };
+    trayInertia = requestAnimationFrame(step);
+  }
+
   trayEl.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.tray-add') || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const list = trayList();
+    if (!list) return;
+    stopTrayGlide();
     const item = e.target.closest('.tray-item');
-    if (!item || (e.pointerType === 'mouse' && e.button !== 0)) return;
-    trayDrag.rec = { pid: item.dataset.pid, id: e.pointerId, x0: e.clientX, y0: e.clientY, item, dragging: false };
+    trayDrag.rec = {
+      pid: item ? item.dataset.pid : null, id: e.pointerId, x0: e.clientX, y0: e.clientY, item, list, mode: null,
+      sl: list.scrollLeft, samples: [{ t: performance.now(), x: e.clientX }],
+    };
     trayDrag.suppressClick = false;
+    if (e.pointerType !== 'mouse') traySwell(e.clientX);
   });
   trayEl.addEventListener('pointermove', (e) => {
     const r = trayDrag.rec;
     if (!r || r.id !== e.pointerId) return;
-    if (!r.dragging) {
+    const dx = e.clientX - r.x0;
+    if (!r.mode) {
       const up = r.y0 - e.clientY;
-      if (up < 12 || up < Math.abs(e.clientX - r.x0)) return;
-      r.dragging = true;
-      traySwell(null);
+      if (r.item && up >= 12 && up >= Math.abs(dx)) r.mode = 'drag';
+      else if (Math.abs(dx) >= 6 && Math.abs(dx) >= Math.abs(e.clientY - r.y0)) r.mode = 'scroll';
+      else return;
       try {
-        r.item.setPointerCapture(e.pointerId);
+        trayEl.setPointerCapture(e.pointerId);
       } catch {}
-      const ghost = document.createElement('img');
-      ghost.className = 'drag-ghost';
-      ghost.src = thumbOf(r.pid);
-      document.body.appendChild(ghost);
-      trayDrag.ghost = ghost;
+      if (r.mode === 'drag') {
+        traySwell(null);
+        const ghost = document.createElement('img');
+        ghost.className = 'drag-ghost';
+        ghost.src = thumbOf(r.pid);
+        document.body.appendChild(ghost);
+        trayDrag.ghost = ghost;
+      }
+    }
+    if (r.mode === 'scroll') {
+      r.list.scrollLeft = clamp(r.sl - dx, 0, trayMax(r.list));
+      r.samples.push({ t: performance.now(), x: e.clientX });
+      if (r.samples.length > 6) r.samples.shift();
+      if (e.pointerType !== 'mouse') traySwell(e.clientX);
+      return;
     }
     trayDrag.ghost.style.transform = `translate(${e.clientX - 32}px, ${e.clientY - 32}px)`;
     const d = dropAt(e.clientX, e.clientY);
@@ -1586,9 +1616,17 @@ export async function mountEditor(view, id) {
     const r = trayDrag.rec;
     if (!r || r.id !== e.pointerId) return;
     trayDrag.rec = null;
-    if (!r.dragging) return;
+    if (e.pointerType !== 'mouse') traySwell(null);
+    if (!r.mode) return;
     trayDrag.suppressClick = true;
     setTimeout(() => (trayDrag.suppressClick = false), 400);
+    if (r.mode === 'scroll') {
+      const a = r.samples[0];
+      const b = r.samples[r.samples.length - 1];
+      const dt = b.t - a.t;
+      if (e.type === 'pointerup' && dt > 0 && performance.now() - b.t < 60) trayGlide(r.list, (b.x - a.x) / dt);
+      return;
+    }
     if (trayDrag.ghost) trayDrag.ghost.remove();
     trayDrag.ghost = null;
     setDropTarget(null);
@@ -1629,7 +1667,7 @@ export async function mountEditor(view, id) {
     swellRaf = 0;
     const list = trayEl.querySelector('[data-tray-list]');
     const items = list ? [...list.querySelectorAll('.tray-item')] : [];
-    const on = swellX !== null && !(trayDrag.rec && trayDrag.rec.dragging) && items.length > 0;
+    const on = swellX !== null && !(trayDrag.rec && trayDrag.rec.mode === 'drag') && items.length > 0;
     trayEl.classList.toggle('is-swell', on);
     if (!on) {
       items.forEach((el) => (el.style.transform = ''));
@@ -1647,32 +1685,26 @@ export async function mountEditor(view, id) {
       const d = left + el.offsetLeft + w / 2 - swellX;
       return { el, d, x: push(d), k: Math.abs(d) >= R ? 1 : 1 + SWELL * Math.cos((a * d) / 2) ** 2 };
     });
-    // At either end of the list, the end photo stays inside instead of
-    // being pushed out of view; everything slides the other way instead.
-    let nudge = 0;
+    // Near either end of the list, the end photo stays inside instead of
+    // being pushed out of view; the nudge fades as the row scrolls away.
     const first = fx[0];
     const last = fx[fx.length - 1];
     const firstOut = -(first.x - (w * (first.k - 1)) / 2);
     const lastOut = last.x + (w * (last.k - 1)) / 2;
-    if (list.scrollLeft < 1 && firstOut > 0) nudge = firstOut;
-    else if (list.scrollLeft + list.clientWidth > list.scrollWidth - 1 && lastOut > 0) nudge = -lastOut;
+    const room = trayMax(list) - list.scrollLeft;
+    const nudge = Math.max(0, firstOut - list.scrollLeft) - Math.max(0, lastOut - room);
     for (const { el, x, k } of fx) el.style.transform = `translateX(${(x + nudge).toFixed(1)}px) scale(${k.toFixed(3)})`;
   }
+  // A mouse swells on hover; a finger is handled with the gestures above.
   trayEl.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'mouse' && e.target.closest('[data-tray-list]')) traySwell(e.clientX);
+    if (e.pointerType !== 'mouse') return;
+    const list = trayList();
+    const r = list && list.getBoundingClientRect();
+    traySwell(r && e.clientX >= r.left && e.clientX <= r.right ? e.clientX : null);
   });
   trayEl.addEventListener('pointerleave', (e) => {
     if (e.pointerType === 'mouse') traySwell(null);
   });
-  // Touch: follow the finger, also while the list scrolls under it.
-  const swellTouch = (e) => {
-    const t = e.touches[0];
-    traySwell(t && e.target.closest && e.target.closest('[data-tray-list]') ? t.clientX : null);
-  };
-  trayEl.addEventListener('touchstart', swellTouch, { passive: true });
-  trayEl.addEventListener('touchmove', swellTouch, { passive: true });
-  trayEl.addEventListener('touchend', () => traySwell(null), { passive: true });
-  trayEl.addEventListener('touchcancel', () => traySwell(null), { passive: true });
   trayEl.addEventListener('scroll', () => swellX !== null && traySwell(swellX), { capture: true, passive: true });
 
   // ---------- Keys ----------

@@ -122,7 +122,7 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
   max-width: 560px;
   margin: 0 auto;
   min-height: 100dvh;
-  padding: env(safe-area-inset-top) 16px calc(96px + env(safe-area-inset-bottom));
+  padding: env(safe-area-inset-top) 16px calc(32px + env(safe-area-inset-bottom));
   background: var(--bg);
 }
 
@@ -383,11 +383,16 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 .draft-thumb img { height: 72px; width: auto; max-width: 100%; object-fit: cover; object-position: left center; display: block; box-shadow: inset 0 0 0 1px var(--line); }
 .draft-thumb-empty svg { width: 26px; height: 26px; color: var(--text-dim); }
 
-.tpl-art { flex-shrink: 0; width: 40%; max-width: 168px; display: flex; align-items: center; }
+.tpl-card { align-items: flex-start; }
+.tpl-open { flex-direction: column; align-items: stretch; gap: 8px; }
+.tpl-art { display: block; height: 108px; }
+.tpl-svg { display: block; width: 100%; height: 100%; }
+.lay-sky { fill: var(--accent); }
+.lay-land { fill: var(--magenta); }
 .lay-svg { display: block; height: auto; max-height: 64px; width: auto; max-width: 100%; }
 .lay-slide { stroke: none; }
 .lay-frame { fill: var(--ink); fill-opacity: 0.3; stroke: var(--ink); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-.lay-seam { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.lay-seam { stroke: var(--text); stroke-width: 1.5; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 .lay-edge { fill: none; stroke: var(--ink); stroke-width: 2; vector-effect: non-scaling-stroke; }
 
 .row-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -767,7 +772,6 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 /* ---------- Editor ---------- */
 
 body[data-route="edit"] { overflow: hidden; background: var(--surface); }
-body[data-route="edit"] .tabbar { display: none; }
 body[data-route="edit"] #app { padding: 0; max-width: none; }
 
 .editor {
@@ -1049,6 +1053,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   flex-shrink: 0;
   position: relative;
   z-index: 3;
+  touch-action: none;
   display: flex;
   gap: 8px;
   align-items: center;
@@ -1058,6 +1063,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 }
 .tray-add {
   flex-shrink: 0;
+  touch-action: manipulation;
   width: 72px;
   height: 72px;
   display: flex;
@@ -1088,7 +1094,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   padding: 36px 2px 0;
   overflow-x: auto;
   overflow-y: hidden;
-  touch-action: pan-x;
+  touch-action: none;
   scrollbar-width: none;
   pointer-events: none;
 }
@@ -1101,7 +1107,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   padding: 0;
   border: none;
   background: var(--line);
-  touch-action: pan-x;
+  touch-action: none;
   -webkit-touch-callout: none;
   pointer-events: auto;
   transform-origin: 50% 100%;
@@ -1183,7 +1189,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(84px + env(safe-area-inset-bottom));
+  bottom: calc(24px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   width: calc(100% - 32px);
   max-width: 528px;
@@ -1213,50 +1219,6 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
   flex-shrink: 0;
 }
 
-/* ---------- Tab bar ---------- */
-
-.tabbar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 20;
-  display: flex;
-  background: var(--surface);
-  border-top: 3px solid var(--ink);
-  padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
-  max-width: 560px;
-  margin: 0 auto;
-  transform: translateZ(0);
-}
-
-.tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 6px 2px;
-  color: var(--text-dim);
-  text-decoration: none;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  position: relative;
-}
-.tab-icon svg { width: 23px; height: 23px; display: block; }
-.tab.active { color: var(--text); }
-.tab.active::before {
-  content: '';
-  position: absolute;
-  top: -9px;
-  left: 18%;
-  right: 18%;
-  height: 5px;
-  background: var(--accent);
-}
-
 .noscript { padding: 24px; text-align: center; }
 
 /* ---------- Wider screens ---------- */
@@ -1274,22 +1236,19 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
   .tray-list { flex: 0 1 auto; }
 }
 
-/* Desktop: the tab bar becomes a rail down the left, content gets room. */
+/* Desktop: content gets room. */
 @media (min-width: 900px) {
-  body { padding-left: 200px; }
-  body[data-route="edit"] { padding-left: 0; }
-
   #app {
     max-width: 920px;
     padding: 0 32px 64px;
   }
 
-  /* Edge to edge between the rail and the window, content still lined up
-     with the column below. 100% here is the column's own width. */
+  /* Edge to edge across the window, content still lined up with the
+     column below. 100% here is the column's own width. */
   .hero-band {
-    width: calc(100vw - 200px);
-    margin-left: calc(50% - (100vw - 200px) / 2);
-    padding: 28px calc((100vw - 200px - 100%) / 2) 24px;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    padding: 28px calc((100vw - 100%) / 2) 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1298,40 +1257,7 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
   .hero-band .brand-row { margin-bottom: 0; flex: 1; min-width: 0; }
   .hero-band .hero-cta { width: auto; min-width: 260px; }
 
-  .tabbar {
-    top: 0;
-    bottom: 0;
-    right: auto;
-    width: 200px;
-    max-width: none;
-    margin: 0;
-    flex-direction: column;
-    gap: 4px;
-    padding: 24px 0;
-    border-top: none;
-    border-right: 3px solid var(--ink);
-  }
-  .tabbar::before {
-    content: 'Contact Sheet';
-    display: block;
-    padding: 0 20px 18px;
-    font-family: var(--font-title);
-    font-size: 19px;
-    color: var(--text);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .tab {
-    flex: none;
-    flex-direction: row;
-    gap: 12px;
-    padding: 12px 20px;
-    font-size: 13px;
-  }
-  .tab.active { background: var(--accent); color: var(--on-accent); }
-  .tab.active::before { display: none; }
-
-  .toast { left: calc(50% + 100px); bottom: 24px; }
+  .toast { bottom: 24px; }
   body[data-route="edit"] .toast { left: 50%; bottom: 190px; }
 
   .card-list:has(> .draft-card), .card-list:has(> .tpl-card) { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); }
