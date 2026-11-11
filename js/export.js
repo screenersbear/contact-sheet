@@ -8,12 +8,11 @@ import { SLIDE_W, RATIOS, slideH, framesOnSlide, placement, pageWord, isPrint } 
 import { drawSlide } from './render.js';
 import { downscale } from './photos.js';
 import { makeZip } from './zip.js';
-import { makePdf, SHEET_W, SHEET_H } from './pdf.js';
+import { SHEET_W, SHEET_H } from './pdf.js';
+import { showPdf } from './pdfview.js';
 import { listProjects, photosForProject } from './db.js';
 import { openSheet, toast } from './ui.js';
-import { esc, slug, loadImage, canvasToBlob, downloadBlob, nextFrame } from './util.js';
-
-const isPhone = () => window.matchMedia('(pointer: coarse)').matches;
+import { esc, slug, loadImage, canvasToBlob, downloadBlob, nextFrame, isPhone } from './util.js';
 
 // The original, shrunk only if it is more than twice the size the slide
 // needs (big downscales in one step look gritty).
@@ -38,8 +37,10 @@ async function openSource(photo, scale) {
 // Sizes meant for printing come out with more pixels than the layout uses.
 const exportScale = (p) => RATIOS[p.ratio].scale || 1;
 
-export async function renderSlides(p, photos, type, onProgress, { thumbs = true } = {}) {
-  const k = exportScale(p);
+// `scale` overrides the size; `only` is which slides to make, in that order.
+export async function renderSlides(p, photos, type, onProgress, { thumbs = true, scale = exportScale(p), only = null } = {}) {
+  const k = scale;
+  const list = only || Array.from({ length: p.slides }, (_, i) => i);
   const W = Math.round(SLIDE_W * k);
   const H = Math.round(slideH(p) * k);
   const mime = type === 'png' ? 'image/png' : 'image/jpeg';
@@ -49,8 +50,7 @@ export async function renderSlides(p, photos, type, onProgress, { thumbs = true 
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d', { colorSpace: 'srgb' });
-  const needs = [];
-  for (let i = 0; i < p.slides; i++) needs.push(new Set(framesOnSlide(p, i).filter((f) => f.photoId && photos[f.photoId]).map((f) => f.photoId)));
+  const needs = list.map((i) => new Set(framesOnSlide(p, i).filter((f) => f.photoId && photos[f.photoId]).map((f) => f.photoId)));
   // The biggest size each photo is drawn at, over all its frames.
   const scaleOf = {};
   for (const f of p.frames) {
@@ -60,14 +60,17 @@ export async function renderSlides(p, photos, type, onProgress, { thumbs = true 
   const open = new Map();
   const out = [];
   try {
-    for (let i = 0; i < p.slides; i++) {
-      if (onProgress) onProgress(i, p.slides);
+    for (let n = 0; n < list.length; n++) {
+      const i = list[n];
+      if (onProgress) onProgress(n, list.length);
       await nextFrame();
-      for (const id of needs[i]) {
+      for (const id of needs[n]) {
         if (!open.has(id)) open.set(id, await openSource(photos[id], scaleOf[id] * k));
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, W, H);
+      // Filled, not cleared: an edge row a scale only part covers would go black.
+      ctx.fillStyle = p.background;
+      ctx.fillRect(0, 0, W, H);
       drawSlide(ctx, p, i, (id) => open.get(id) || null, { scale: k });
       const blob = await canvasToBlob(canvas, mime, type === 'png' ? undefined : 0.95);
       // A small copy for the "post in this order" list.
@@ -81,7 +84,7 @@ export async function renderSlides(p, photos, type, onProgress, { thumbs = true 
         t.width = t.height = 0;
       }
       out.push({ name: `${base}-${String(i + 1).padStart(2, '0')}.${ext}`, blob, thumb, mime, width: W, height: H });
-      const next = needs[i + 1] || new Set();
+      const next = needs[n + 1] || new Set();
       for (const [id, s] of open) {
         if (!next.has(id)) {
           s.release();
@@ -104,15 +107,71 @@ const BOOK_AREA = { x: 36, y: 44, w: SHEET_W - 72, h: SHEET_H - 74 };
 const TOC_ROWS = 9;
 const INK = '#313d45';
 
+// What book printers ask for at the printed size, and where they warn it
+// will look blurry.
+const PRINT_PPI = 300;
+const BLURRY_PPI = 150;
+
 const pagesPerSheet = (pxW, pxH) => (pxW / pxH > 1.1 ? 1 : 2);
-const bytesOf = async (blob) => new Uint8Array(await blob.arrayBuffer());
+// How wide a page comes out on its sheet, in points.
+const printedW = (aspect, area) => Math.min(area.w / (aspect > 1.1 ? 1 : 2), area.h * aspect);
+// The export scale that gives a page PRINT_PPI on its sheet.
+const printScale = (p, area) => Math.round((PRINT_PPI * printedW(SLIDE_W / slideH(p), area)) / 72) / SLIDE_W;
+
+// How sharp each picture comes out on paper. Pictures under PRINT_PPI go in
+// the report and get a mark on their sheet, which only the preview draws.
+// `order` is the slides on `sheets`; `first` is the first sheet's number.
+function checkPictures(p, photos, order, sheets, first = 0, chapter = '') {
+  const per = pagesPerSheet(SLIDE_W, slideH(p));
+  const H = slideH(p);
+  const report = { checked: 0, low: [] };
+  for (const f of p.frames) {
+    const photo = f.photoId && photos[f.photoId];
+    if (!photo) continue;
+    const seen = order.map((i, pos) => ({ i, pos })).filter(({ i }) => framesOnSlide(p, i).includes(f));
+    if (!seen.length) continue;
+    report.checked++;
+    const sheetAt = (pos) => sheets[Math.floor(pos / per)];
+    const pageAt = (pos) => sheetAt(pos).images[pos % per];
+    // Without the original, only the smaller editing copy can be printed.
+    const real = photo.original ? 1 : (photo.previewW || photo.width) / photo.width;
+    const ppi = Math.round((real * 72 * SLIDE_W) / (placement(f, photo).s * pageAt(seen[0].pos).w));
+    if (ppi >= PRINT_PPI) continue;
+    const blurry = ppi < BLURRY_PPI;
+    for (const { i, pos } of seen) {
+      const im = pageAt(pos);
+      const x0 = Math.max(0, f.x - i * SLIDE_W);
+      const x1 = Math.min(SLIDE_W, f.x + f.w - i * SLIDE_W);
+      const y0 = Math.max(0, f.y);
+      const y1 = Math.min(H, f.y + f.h);
+      const sheet = sheetAt(pos);
+      sheet.marks = sheet.marks || [];
+      sheet.marks.push({
+        x: im.x + (x0 / SLIDE_W) * im.w,
+        y: im.y + im.h - (y1 / H) * im.h,
+        w: ((x1 - x0) / SLIDE_W) * im.w,
+        h: ((y1 - y0) / H) * im.h,
+        blurry,
+      });
+    }
+    const where = `${pageWord(p)} ${seen[0].i + 1}`;
+    report.low.push({
+      ppi,
+      blurry,
+      thumb: photo.thumb,
+      sheet: first + Math.floor(seen[0].pos / per),
+      label: chapter ? `${chapter}, ${where}` : where[0].toUpperCase() + where.slice(1),
+    });
+  }
+  return report;
+}
 
 // Facing pages side by side on landscape sheets, touching at the middle so a
 // photo running across two pages stays whole. Wide pages get a sheet each.
 export function sheetsOf(jpegs, pxW, pxH, area = FULL_AREA) {
   const aspect = pxW / pxH;
   const per = pagesPerSheet(pxW, pxH);
-  const w = Math.min(area.w / per, area.h * aspect);
+  const w = printedW(aspect, area);
   const h = w / aspect;
   const y = area.y + (area.h - h) / 2;
   const sheets = [];
@@ -122,26 +181,6 @@ export function sheetsOf(jpegs, pxW, pxH, area = FULL_AREA) {
     sheets.push({ images: group.map((jpeg, n) => ({ jpeg, pxW, pxH, x: x0 + n * w, y, w, h, outline: true })), text: [] });
   }
   return sheets;
-}
-
-// Phones get the share sheet (Print, Save to Files); computers a download.
-async function sendPdf(blob, name) {
-  const file = new File([blob], name, { type: 'application/pdf' });
-  let canShare = false;
-  try {
-    canShare = isPhone() && !!navigator.canShare && navigator.canShare({ files: [file] });
-  } catch {}
-  if (!canShare) {
-    downloadBlob(blob, name);
-    return true;
-  }
-  try {
-    await navigator.share({ files: [file] });
-    return true;
-  } catch (e) {
-    if (e && e.name !== 'AbortError') toast('Sharing did not work here. Try again in Safari.');
-    return false;
-  }
 }
 
 function whiteCanvas(w, h) {
@@ -155,7 +194,7 @@ function whiteCanvas(w, h) {
 }
 
 async function finishCanvas(c) {
-  const jpeg = await bytesOf(await canvasToBlob(c, 'image/jpeg', 0.92));
+  const jpeg = await canvasToBlob(c, 'image/jpeg', 0.92);
   const size = { pxW: c.width, pxH: c.height };
   c.width = c.height = 0;
   return { jpeg, ...size };
@@ -219,7 +258,7 @@ async function nameStrip(name) {
 }
 
 // The cover, the contents, then every chapter from its own full-size pages.
-// Returns the sheets, or null if there are no chapters or `stillOpen` says stop.
+// Returns { sheets, report }, or null if there are no chapters or `stillOpen` says stop.
 export async function makeNotebook(onProgress, stillOpen = () => true) {
   const chapters = await listProjects();
   if (!chapters.length) return null;
@@ -233,28 +272,32 @@ export async function makeNotebook(onProgress, stillOpen = () => true) {
   });
   const cover = await coverSheet();
   const sheets = [...(cover ? [cover] : []), ...(await contentsSheets(rows))];
+  const report = { checked: 0, low: [] };
   let made = 0;
   let number = 1;
   for (const p of chapters) {
     if (!stillOpen()) return null;
     const photos = Object.fromEntries((await photosForProject(p.id)).map((ph) => [ph.id, ph]));
-    const files = await renderSlides(p, photos, 'jpeg', (i) => onProgress && onProgress(p.name, (made + i) / total), { thumbs: false });
+    const files = await renderSlides(p, photos, 'jpeg', (i) => onProgress && onProgress(p.name, (made + i) / total), { thumbs: false, scale: printScale(p, BOOK_AREA) });
     made += p.slides;
-    const jpegs = [];
-    for (const f of files) jpegs.push(await bytesOf(f.blob));
     const strip = await nameStrip(p.name);
-    for (const sheet of sheetsOf(jpegs, files[0].width, files[0].height, BOOK_AREA)) {
+    const own = sheetsOf(files.map((f) => f.blob), files[0].width, files[0].height, BOOK_AREA);
+    const found = checkPictures(p, photos, files.map((_, i) => i), own, sheets.length, p.name);
+    report.checked += found.checked;
+    report.low.push(...found.low);
+    for (const sheet of own) {
       const str = String(number++);
       sheet.images.push(strip);
       sheet.text.push({ x: SHEET_W - 36 - str.length * 5.56, y: 20, size: 10, str });
       sheets.push(sheet);
     }
   }
-  return sheets;
+  return { sheets, report };
 }
 
 export function openNotebookExport() {
-  const s = openSheet({ title: 'Export notebook', className: 'sheet-export' });
+  let free = null;
+  const s = openSheet({ title: 'Export notebook', className: 'sheet-export', onClose: () => free && free() });
   async function run() {
     s.setTitle('Export notebook');
     s.body.innerHTML = `
@@ -263,9 +306,9 @@ export function openNotebookExport() {
       <p class="field-hint">Keep this screen open while it works.</p>`;
     const msg = s.body.querySelector('[data-msg]');
     const bar = s.body.querySelector('[data-bar]');
-    let sheets;
+    let book;
     try {
-      sheets = await makeNotebook((name, part) => {
+      book = await makeNotebook((name, part) => {
         msg.textContent = `Making ${name}`;
         bar.style.width = `${Math.round(part * 100)}%`;
       }, () => s.overlay.isConnected);
@@ -279,23 +322,56 @@ export function openNotebookExport() {
       return;
     }
     if (!s.overlay.isConnected) return;
-    if (!sheets) {
+    if (!book) {
       s.body.innerHTML = '<p class="sheet-message">There are no chapters to export yet.</p>';
       return;
     }
-    const pdf = makePdf(sheets);
-    s.setTitle('Ready');
-    s.body.innerHTML = `
-      <p class="sheet-message">${sheets.length} landscape ${sheets.length === 1 ? 'sheet' : 'sheets'}, ready to print.</p>
-      <div class="button-stack wide">
-        <button type="button" class="modal-cta primary" data-save>${isPhone() ? 'Save or print' : 'Download PDF'}</button>
-      </div>`;
-    s.body.querySelector('[data-save]').addEventListener('click', async () => {
-      if (await sendPdf(pdf, 'contact-sheet-notebook.pdf')) s.close();
-    });
+    free = showPdf(s, { ...book, fileName: 'contact-sheet-notebook.pdf', onSaved: () => s.close() });
   }
   run();
   return s;
+}
+
+// One chapter's chosen pages, made at print size, then the preview on top of
+// the export screen. Closing it goes back to the picks.
+function openChapterPdf(p, photos, order, base, exportSheet) {
+  let free = null;
+  const s = openSheet({ title: 'Printable PDF', className: 'sheet-export', onClose: () => free && free() });
+  async function run() {
+    s.body.innerHTML = `
+      <p class="sheet-message" data-msg>Getting ready</p>
+      <div class="progress"><div class="progress-bar" data-bar></div></div>
+      <p class="field-hint">Keep this screen open while it works.</p>`;
+    const msg = s.body.querySelector('[data-msg]');
+    const bar = s.body.querySelector('[data-bar]');
+    let files;
+    try {
+      files = await renderSlides(p, photos, 'jpeg', (i, n) => {
+        msg.textContent = `Making ${pageWord(p)} ${i + 1} of ${n}`;
+        bar.style.width = `${Math.round((i / n) * 100)}%`;
+      }, { thumbs: false, scale: printScale(p, FULL_AREA), only: order });
+    } catch (e) {
+      console.error(e);
+      if (!s.overlay.isConnected) return;
+      s.body.innerHTML = `
+        <p class="sheet-message">Something went wrong making the PDF. Try again.</p>
+        <button type="button" class="modal-cta primary" data-again>Try again</button>`;
+      s.body.querySelector('[data-again]').addEventListener('click', run);
+      return;
+    }
+    if (!s.overlay.isConnected) return;
+    const sheets = sheetsOf(files.map((f) => f.blob), files[0].width, files[0].height);
+    free = showPdf(s, {
+      sheets,
+      report: checkPictures(p, photos, order, sheets),
+      fileName: `${base}-print.pdf`,
+      onSaved: () => {
+        s.close();
+        exportSheet.close();
+      },
+    });
+  }
+  run();
 }
 
 // Export goes straight to making the images (JPEG, best for Instagram).
@@ -334,9 +410,6 @@ export function openExport(p, photos) {
       s.body.querySelector('[data-again]').addEventListener('click', run);
       return;
     }
-    if (!s.overlay.isConnected) return;
-    // Read now, so tapping Printable PDF can open the share sheet right away.
-    for (const f of files) f.bytes = await bytesOf(f.blob);
     if (!s.overlay.isConnected) return;
     finished(files);
   }
@@ -410,11 +483,9 @@ export function openExport(p, photos) {
       s.close();
     });
 
-    s.body.querySelector('[data-pdf]').addEventListener('click', async () => {
-      const list = chosen();
-      if (!list.length) return;
-      const pdf = makePdf(sheetsOf(list.map((f) => f.bytes), list[0].width, list[0].height));
-      if (await sendPdf(pdf, `${base}-print.pdf`)) s.close();
+    s.body.querySelector('[data-pdf]').addEventListener('click', () => {
+      const picked = order.filter((i) => !off.has(i));
+      if (picked.length) openChapterPdf(p, photos, picked, base, s);
     });
 
     if (n > 1) {

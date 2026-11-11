@@ -109,3 +109,5 @@ export const isStandalone = () =>
 
 export const isIOS = () =>
   /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+export const isPhone = () => window.matchMedia('(pointer: coarse)').matches;

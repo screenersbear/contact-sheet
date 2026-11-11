@@ -1762,3 +1762,28 @@ html.is-short .nb-sun { bottom: max(14px, calc(env(safe-area-inset-bottom) - 6px
 .order-note { background: none; color: var(--text-dim); border: none; padding: 0 0 4px; font-family: var(--font-body); font-size: 14px; letter-spacing: 0; text-transform: none; }
 .order-note b { color: var(--text); font-family: inherit; font-weight: 600; text-transform: none; }
 .sheet .primary { background: #fff; color: var(--text); font-family: var(--font-body); font-weight: 600; letter-spacing: 0; text-transform: none; border: 1.5px solid var(--text); border-radius: 8px; }
+
+/* The PDF preview: the whole screen on a phone, a big panel on a computer. */
+.sheet.sheet-pdf { max-width: none; height: var(--vv-height, 100svh); max-height: none; }
+.sheet-pdf .sheet-header { padding-top: calc(14px + env(safe-area-inset-top)); }
+.sheet-pdf .sheet-body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+@media (min-width: 600px) {
+  .sheet.sheet-pdf { max-width: 900px; height: calc(var(--vv-height, 100vh) * 0.92); }
+}
+.pdfv-notice { flex-shrink: 0; width: 100%; margin: 0; padding: 10px 16px; border: none; background: var(--surface); color: var(--text); font-size: 14px; line-height: 1.3; text-align: left; letter-spacing: 0; text-transform: none; }
+.pdfv-notice b { font-weight: 600; }
+.pdfv-notice.is-low { border-left: 5px solid var(--danger); }
+.pdfv-scroll { position: relative; flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; background: #e4e6e8; }
+.pdfv-pages { box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; width: calc(var(--z, 1) * 100%); padding: 12px; }
+.pdfv-sheet { position: relative; flex-shrink: 0; width: 100%; aspect-ratio: 792 / 612; overflow: hidden; background: #fff; box-shadow: 0 1px 5px rgba(49, 61, 69, 0.3); container-type: inline-size; }
+.pdfv-sheet img { position: absolute; display: block; -webkit-user-drag: none; user-select: none; }
+.pdfv-sheet img.has-edge { box-shadow: 0 0 0 0.5px #d1d1d1; }
+.pdfv-text { position: absolute; color: #313d45; font-family: Helvetica, Arial, sans-serif; line-height: 1; white-space: nowrap; transform: translateY(0.2em); }
+.pdfv-mark { position: absolute; box-sizing: border-box; border: 2px dashed #fff; outline: 2px dashed var(--text); outline-offset: -2px; pointer-events: none; }
+.pdfv-mark.is-blurry { outline-color: var(--danger); }
+.pdfv-mark.is-flash { animation: pdfv-flash 0.5s ease 3; }
+@keyframes pdfv-flash { 50% { opacity: 0; } }
+.pdfv-foot { flex-shrink: 0; padding: 8px 16px calc(env(safe-area-inset-bottom) + 10px); background: var(--surface); }
+.pdfv-row { display: flex; align-items: center; gap: 8px; }
+.pdfv-count { flex: 1; font-size: 15px; color: var(--text); }
+.pdfv-thumb { width: 48px; height: 48px; flex-shrink: 0; object-fit: cover; }

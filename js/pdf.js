@@ -10,7 +10,8 @@ const enc = new TextEncoder();
 const n2 = (v) => Number(v).toFixed(2);
 
 // sheets: [{ images: [{ jpeg, pxW, pxH, x, y, w, h, outline }], text: [{ x, y, size, str }] }]
-// A jpeg (a Uint8Array) used on several sheets is stored once.
+// A jpeg (a Blob) used on several sheets is stored once. Blobs go into the
+// file as they are, so a long notebook is never copied into memory.
 export function makePdf(sheets) {
   const parts = [];
   const offsets = [];
@@ -18,7 +19,7 @@ export function makePdf(sheets) {
   const put = (v) => {
     const bytes = typeof v === 'string' ? enc.encode(v) : v;
     parts.push(bytes);
-    size += bytes.length;
+    size += bytes instanceof Blob ? bytes.size : bytes.length;
   };
   const obj = (id, write) => {
     offsets[id] = size;
@@ -49,7 +50,7 @@ export function makePdf(sheets) {
 
   for (const [jpeg, im] of images) {
     obj(im.id, () => {
-      put(`<< /Type /XObject /Subtype /Image /Width ${im.pxW} /Height ${im.pxH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`);
+      put(`<< /Type /XObject /Subtype /Image /Width ${im.pxW} /Height ${im.pxH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.size} >>\nstream\n`);
       put(jpeg);
       put('\nendstream');
     });
