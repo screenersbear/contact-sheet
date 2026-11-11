@@ -1642,7 +1642,28 @@ body[data-route="edit"] { background: #fff; }
   background: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.07) 48%, rgba(0, 0, 0, 0.14) 50%, rgba(0, 0, 0, 0.07) 52%, rgba(0, 0, 0, 0));
 }
 .ws-labels { z-index: 1; }
-.ws-label { font-family: var(--font-body); text-transform: none; letter-spacing: 0; font-weight: 500; }
+.ws-label { height: 26px; line-height: 26px; font-family: var(--font-body); font-size: 16px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--text); }
+.ws-label.has-del { gap: 4px; padding-left: 34px; }
+.ws-del { width: 30px; height: 26px; color: var(--text); }
+.ws-del svg { width: 21px; height: 21px; }
+/* The chapter's name, written under the notebook. Tap to rename. */
+.ed-name { position: absolute; z-index: 2; left: 66px; right: 66px; height: 34px; display: flex; justify-content: center; pointer-events: none; }
+.ed-name button {
+  max-width: 100%;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-hand);
+  font-size: 21px;
+  letter-spacing: 0;
+  line-height: 34px;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+.ed-name.is-over button { background: #fff; }
+.ed-name span { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; filter: blur(0.22px); }
 
 /* Turning the page. */
 .flip { position: absolute; z-index: 2; perspective: 1500px; pointer-events: none; }

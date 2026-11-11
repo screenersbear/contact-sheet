@@ -226,7 +226,7 @@ export function choiceSheet({ title, message = '', options, footer = '' }) {
 }
 
 // One text field; resolves with the trimmed text, or null if cancelled.
-export function promptSheet({ title, label = 'Name', value = '', confirmLabel = 'Save', placeholder = '' }) {
+export function promptSheet({ title, label = 'Name', value = '', confirmLabel = 'Save', placeholder = '', allowEmpty = false }) {
   return new Promise((resolve) => {
     let answer = null;
     const s = openSheet({
@@ -251,7 +251,7 @@ export function promptSheet({ title, label = 'Name', value = '', confirmLabel = 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const v = input.value.trim();
-      if (!v) {
+      if (!v && !allowEmpty) {
         input.focus();
         return;
       }

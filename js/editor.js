@@ -28,6 +28,7 @@ import { esc, clamp, debounce, canvasToBlob, loadImage } from './util.js';
 const SNAP_PX = 9;
 const EDGE_X = 16; // how much notebook shows around the pages
 const EDGE_Y = 14;
+const NAME_H = 34; // the chapter name under the notebook
 const FLIP_MS = 620;
 const SAFE_KEY = 'contact-sheet-safe-zone';
 const SNAP_KEYS = ['name', ...LAYOUT_KEYS, 'frames', 'photoIds'];
@@ -186,6 +187,7 @@ export async function mountEditor(view, id) {
         </div>
       </div>
       <button type="button" class="ws-add" data-act="add-slide" aria-label="Add a slide">${ICONS.plus}</button>
+      <div class="ed-name" data-name><button type="button" data-act="rename" aria-label="Rename this chapter"><span>${esc(p.name)}</span></button></div>
       <div class="ed-adjust" data-adjust hidden>
         <span class="ed-adjust-label">Zoom</span>
         <input type="range" min="1" max="5" step="0.01" value="1" data-zoom aria-label="Photo zoom" />
@@ -212,6 +214,7 @@ export async function mountEditor(view, id) {
   const adjustEl = $('[data-adjust]');
   const zoomInput = $('[data-zoom]');
   const addBtn = $('.ws-add');
+  const nameEl = $('[data-name]');
   const trayEl = $('[data-tray]');
   const toolsEl = $('[data-tools]');
   ws.addEventListener('scroll', () => { if (sel) placeX(); }, { passive: true });
@@ -223,7 +226,7 @@ export async function mountEditor(view, id) {
   function fitZ(mode) {
     const { w, h } = wsSize();
     const across = mode === 'all' ? 2 : 1;
-    return Math.max(0.02, Math.min((w - 2 * EDGE_X - 8) / (across * SLIDE_W), (h - 2 * (EDGE_Y + 30)) / H()));
+    return Math.max(0.02, Math.min((w - 2 * EDGE_X - 8) / (across * SLIDE_W), (h - 2 * (EDGE_Y + 36)) / H()));
   }
   const minZ = () => fitZ('all') * 0.85;
   const maxZ = () => fitZ('one') * 4;
@@ -237,7 +240,7 @@ export async function mountEditor(view, id) {
     spread = clamp(spread, 0, spreadCount(p) - 1);
     pageLeft = both + 2 * EDGE_X <= w ? (w - both) / 2 : Math.max(EDGE_X + 6, (w - sw) / 2);
     margX = pageLeft - spread * both;
-    margY = Math.max(EDGE_Y + 28, (h - sh) / 2);
+    margY = Math.max(EDGE_Y + 32, (h - sh) / 2);
     inner.style.width = `${both + 2 * pageLeft}px`;
     inner.style.height = `${Math.max(h, sh + 2 * margY)}px`;
     strip.style.left = `${margX}px`;
@@ -257,6 +260,17 @@ export async function mountEditor(view, id) {
     gutterEl.style.top = `${margY - EDGE_Y}px`;
     gutterEl.style.height = `${sh + 2 * EDGE_Y}px`;
     placeAdd();
+    placeName();
+  }
+
+  // The chapter name sits in the middle of the space under the notebook.
+  function placeName() {
+    const { h } = wsSize();
+    const under = Math.min(h, margY + H() * z + EDGE_Y);
+    const mid = Math.min((under + h) / 2, h - NAME_H / 2);
+    nameEl.style.top = `${ws.offsetTop + mid - NAME_H / 2}px`;
+    // Zoomed in, the notebook reaches behind it and it needs a backing.
+    nameEl.classList.toggle('is-over', under > h - NAME_H);
   }
 
   // The add-a-slide button stays in the bottom-right corner of the grey, so
@@ -561,7 +575,7 @@ export async function mountEditor(view, id) {
       const del = p.slides > 1 && sw >= 60
         ? `<button type="button" class="ws-del" data-act="del-slide" data-k="${i}" aria-label="Delete ${word.toLowerCase()} ${i + 1}">${ICONS.trash}</button>`
         : '';
-      html += `<div class="ws-label${del ? ' has-del' : ''}" style="left:${margX + i * sw}px;top:${margY - EDGE_Y - 22}px;width:${sw}px"><span>${sw >= 90 ? `${word} ${i + 1}` : i + 1}</span>${del}</div>`;
+      html += `<div class="ws-label${del ? ' has-del' : ''}" style="left:${margX + i * sw}px;top:${margY - EDGE_Y - 27}px;width:${sw}px"><span>${sw >= 90 ? `${word} ${i + 1}` : i + 1}</span>${del}</div>`;
     }
     labelsEl.innerHTML = html;
   }
@@ -623,6 +637,7 @@ export async function mountEditor(view, id) {
     const r = toolsEl.querySelector('[data-act="redo"]');
     if (u) u.disabled = hi === 0;
     if (r) r.disabled = hi >= hist.length - 1;
+    nameEl.querySelector('span').textContent = p.name;
   }
 
   function render() {
@@ -1331,6 +1346,7 @@ export async function mountEditor(view, id) {
       else if (a === 'undo') undo();
       else if (a === 'redo') redo();
       else if (a === 'more') topMore();
+      else if (a === 'rename') rename();
       else if (a === 'export') {
         commitSoon.flush();
         saveSoon.flush();

@@ -22,26 +22,31 @@ async function seedStarters() {
 
 // ---------- Making chapters ----------
 
-async function createProject(layout) {
-  const p = await saveProject({ name: `Chapter ${shortDate(new Date().toISOString())}`, photoIds: [], thumb: null, ...layout });
+const dateName = () => `Chapter ${shortDate(new Date().toISOString())}`;
+
+async function createProject(layout, name) {
+  const p = await saveProject({ name: name || dateName(), photoIds: [], thumb: null, ...layout });
   location.hash = `#/edit/${p.id}`;
 }
 
-// New chapter: pick the size, then a template drawn in that size. Resolves
+// New chapter: name it, pick the size, then a template drawn in that size. Resolves
 // true once a chapter is made, false if it was cancelled.
 async function newChapter() {
   await seedStarters();
+  // Left blank, the chapter is named after today.
+  const name = await promptSheet({ title: 'New chapter', label: 'Chapter name', placeholder: dateName(), confirmLabel: 'Next', allowEmpty: true });
+  if (name === null) return false;
   const ratio = await choiceSheet({
     title: 'New chapter',
     options: RATIO_ORDER.map((r) => ({ key: r, label: RATIOS[r].label, detail: `${RATIOS[r].size}. ${RATIOS[r].detail}` })),
   });
-  return ratio ? chooseTemplate(ratio) : false;
+  return ratio ? chooseTemplate(ratio, name) : false;
 }
 
 // Any template fits any size: frames keep their place relative to the slide.
 const inRatio = (t, ratio) => (t.ratio === ratio ? t : changeRatio(t, ratio));
 
-function chooseTemplate(ratio) {
+function chooseTemplate(ratio, name) {
   return new Promise((resolve) => {
     let made = false;
     const s = openSheet({ title: 'Templates', className: 'sheet-templates', onClose: () => resolve(made) });
@@ -79,7 +84,7 @@ function chooseTemplate(ratio) {
       const t = list.find((x) => x.id === b.dataset.use);
       made = true;
       s.close();
-      createProject(t ? layoutFromTemplate(inRatio(t, ratio)) : blankLayout(ratio));
+      createProject(t ? layoutFromTemplate(inRatio(t, ratio)) : blankLayout(ratio), name);
     });
   });
 }
