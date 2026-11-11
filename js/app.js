@@ -3,7 +3,7 @@
 import { saveProject, listTemplates, saveTemplate, saveTemplates, deleteTemplate, getMeta, setMeta } from './db.js';
 import { starterTemplates, blankLayout, layoutFromTemplate, changeRatio, RATIOS, RATIO_ORDER, MORE_RATIOS, SLIDE_W, pageWord } from './model.js';
 import { mountEditor } from './editor.js';
-import { mountBook, modeOfHash } from './book.js';
+import { mountBook, modeOfHash, startsOnFirstPage } from './book.js';
 import { openSheet, choiceSheet, confirmSheet, promptSheet, closeAllSheets } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, shortDate } from './util.js';
@@ -186,6 +186,8 @@ async function route() {
 }
 
 window.addEventListener('hashchange', route);
+// Set in Options: open on the Table of contents instead of the shut notebook.
+if (startsOnFirstPage() && (location.hash || '#/') === '#/') history.replaceState(null, '', '#/contents');
 route();
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {

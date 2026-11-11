@@ -165,11 +165,11 @@ export async function importFiles(projectId, files, onProgress) {
 }
 
 // Opens the camera roll (or the file picker on a computer).
-export function pickFiles({ multiple = true } = {}) {
+export function pickFiles({ multiple = true, accept = 'image/*,video/*' } = {}) {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*,video/*';
+    input.accept = accept;
     input.multiple = multiple;
     input.style.display = 'none';
     input.addEventListener('change', () => {

@@ -1,13 +1,14 @@
 // The notebook: floating shut on white with its two tabs, then open at the
 // Table of contents. Routes: #/ (shut), #/contents. Each draft is a chapter.
 import { listProjects, deleteProject } from './db.js';
-import { confirmSheet, openSheet, sheetIsOpen } from './ui.js';
+import { choiceSheet, confirmSheet, openSheet, sheetIsOpen } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, shortDate, isIOS, isStandalone } from './util.js';
 import { pageWord } from './model.js';
 import { openNotebookExport } from './export.js';
 import { OUT, RIM, bookSize, bookLeft } from './frame.js';
 import { playFlip } from './flip.js';
+import { mountStickers, openStickers } from './stickers.js';
 
 const TIP_KEY = 'contact-sheet-home-tip';
 const RATIO = 1000 / 1360; // the notebook art's width over its height
@@ -19,6 +20,7 @@ const TAB_OUT = 0.06; // how far the tabs stick out, of the book's width
 const OPEN_MS = 860; // the cover swinging open and the book zooming in
 const ZOOM_MS = 760;
 const BOOK_KEY = 'contact-sheet-book'; // also read in index.html, before the first paint
+const START_KEY = 'contact-sheet-start'; // 'first' opens on the Table of contents
 const TABS = [['toc', 'Table of contents'], ['new', 'New chapter']];
 const COLORS = [
   ['orange', 'Orange'],
@@ -49,27 +51,27 @@ function artReady() {
   return Promise.race([Promise.all(ready), new Promise((done) => setTimeout(done, 1200))]);
 }
 
-function openOptions() {
+export function startsOnFirstPage() {
+  try {
+    return localStorage.getItem(START_KEY) === 'first';
+  } catch {
+    return false;
+  }
+}
+
+function openColors() {
   const now = document.documentElement.dataset.book;
   const s = openSheet({
-    title: 'Options',
+    title: 'App color',
+    className: 'sheet-small',
     body: `
-      <span class="field-label">Notebook color</span>
       <div class="opt-colors">
         ${COLORS.map(([key, name]) => `
           <button type="button" class="opt-color" data-color="${key}" aria-pressed="${key === now}">
             <span class="opt-book" style="background-image:url(art/${key}-cover.webp)"></span>
             <span>${name}</span>
           </button>`).join('')}
-      </div>
-      <span class="field-label opt-gap">Export</span>
-      <div class="button-stack wide">
-        <button type="button" class="modal-cta secondary" data-export-book>Whole notebook as PDF</button>
       </div>`,
-  });
-  s.body.querySelector('[data-export-book]').addEventListener('click', () => {
-    s.close();
-    openNotebookExport();
   });
   s.body.addEventListener('click', (e) => {
     const picked = e.target.closest('[data-color]');
@@ -77,6 +79,37 @@ function openOptions() {
     useBook(picked.dataset.color);
     s.body.querySelectorAll('[data-color]').forEach((b) => b.setAttribute('aria-pressed', String(b === picked)));
   });
+}
+
+async function chooseStart() {
+  const first = startsOnFirstPage();
+  const key = await choiceSheet({
+    title: 'Always start',
+    options: [
+      { key: 'notebook', label: 'In the notebook', detail: 'Shut, with its tabs', current: !first },
+      { key: 'first', label: 'On the first page', detail: 'Open at the Table of contents', current: first },
+    ],
+  });
+  if (!key) return;
+  try {
+    localStorage.setItem(START_KEY, key);
+  } catch {}
+}
+
+async function openOptions(stickers) {
+  const key = await choiceSheet({
+    title: 'Options',
+    options: [
+      { key: 'color', label: 'Change app color' },
+      { key: 'stickers', label: 'Stickers' },
+      { key: 'start', label: 'Always start', detail: startsOnFirstPage() ? 'On the first page' : 'In the notebook' },
+      { key: 'pdf', label: 'Export whole notebook as PDF' },
+    ],
+  });
+  if (key === 'color') openColors();
+  else if (key === 'stickers') openStickers(stickers);
+  else if (key === 'start') chooseStart();
+  else if (key === 'pdf') openNotebookExport();
 }
 
 export function modeOfHash(h) {
@@ -132,6 +165,7 @@ export function mountBook(view, startMode, onNew) {
   const rightEl = root.querySelector('[data-right]');
   const sideTabs = root.querySelector('.nb-side-tabs');
   const tabHits = root.querySelector('.nb-tabhits');
+  const stickers = mountStickers(root, root.querySelector('.nb-front'));
   let geo = { W: 300, H: 400 };
   let page = 300; // one page of the open notebook, from the spine out
   let two = false; // both pages in view at once
@@ -333,6 +367,7 @@ export function mountBook(view, startMode, onNew) {
   const step = (dir) => goPage(two ? (spreadOf(tocPage) + dir) * 2 : tocPage + dir);
 
   function setMode(next, instant = false) {
+    if (next !== 'closed') stickers.drop();
     clearTimeout(timer);
     const wasShut = root.dataset.mode === 'closed';
     root.classList.toggle('no-anim', instant);
@@ -419,6 +454,8 @@ export function mountBook(view, startMode, onNew) {
   document.addEventListener('keydown', onKey);
 
   root.addEventListener('click', async (e) => {
+    // Placing a sticker: the cover and tabs wait until OK.
+    if (root.classList.contains('is-sticking')) return;
     // The end of a swipe is not a tap on whatever it finished over.
     if (swiped || turning) {
       swiped = false;
@@ -426,7 +463,7 @@ export function mountBook(view, startMode, onNew) {
       return;
     }
     if (e.target.closest('[data-options]')) {
-      openOptions();
+      openOptions(stickers);
       return;
     }
     const tab = e.target.closest('[data-tab]');
@@ -481,7 +518,7 @@ export function mountBook(view, startMode, onNew) {
   measure();
   setMode(startMode, true);
   placeTabHits();
-  artReady().then(() => root.classList.remove('is-waiting'));
+  Promise.race([Promise.all([artReady(), stickers.ready]), new Promise((done) => setTimeout(done, 1500))]).then(() => root.classList.remove('is-waiting'));
 
   return {
     setMode,
@@ -491,6 +528,7 @@ export function mountBook(view, startMode, onNew) {
       window.removeEventListener('resize', refit);
       document.removeEventListener('keydown', onKey);
       releaseThumbs();
+      stickers.destroy();
       delete document.body.dataset.route;
     },
   };
