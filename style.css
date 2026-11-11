@@ -1676,7 +1676,23 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb.is-reading .nb-toc { opacity: 1; }
 .nb-toc[hidden] { display: none; }
 .nb-toc .nb-open { pointer-events: auto; touch-action: none; }
-.nb-toc .ed-tools { position: absolute; left: 20px; right: 20px; bottom: calc(var(--nb-b) + var(--nb-rim)); margin: 0; }
+.nb-toc .ed-tools { position: absolute; left: 20px; right: 20px; bottom: calc(var(--nb-b) + var(--nb-rim)); margin: 0; touch-action: none; }
+/* The navigation icon (navicon.js): the icon in the same 21px row as the
+   other tools' icons, the triangles tucked up against it, its name below. */
+.nb-nav .tool-label { line-height: normal; }
+.nb-nav .slider { display: flex; align-items: center; justify-content: center; height: 21px; }
+.nb-nav .slide-arrow { appearance: none; -webkit-appearance: none; border: 0; background: none; padding: 0; width: 26px; height: 44px; margin: -11.5px 0; display: grid; align-items: center; color: var(--text); position: relative; z-index: 1; }
+.nb-nav .slide-arrow.is-prev { justify-items: end; margin-right: -3px; }
+.nb-nav .slide-arrow.is-next { justify-items: start; margin-left: -3px; }
+.nb-nav .slide-arrow.is-off { visibility: hidden; }
+.nb-nav .slide-arrow:active { opacity: 0.5; }
+.nb-nav .slide-arrow svg { width: 8px; height: 10px; display: block; }
+.nb-nav .slide-arrow.is-prev svg { transform: scaleX(-1); }
+.nb-nav .slide-now { appearance: none; -webkit-appearance: none; border: 0; background: none; padding: 0; display: block; flex: none; width: 30px; height: 21px; overflow: hidden; color: var(--text); -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%); }
+.nb-nav .slide-strip { display: flex; }
+.nb-nav .slide-strip.is-moving { transition: transform 0.2s cubic-bezier(0.3, 0.6, 0.3, 1); }
+.nb-nav .slide-icon { flex: 0 0 30px; height: 21px; display: grid; place-items: center; }
+.nb-nav .slide-icon svg { width: 21px; height: 21px; display: block; }
 .toc-page {
   position: absolute;
   z-index: 1;

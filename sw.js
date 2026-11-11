@@ -1,5 +1,5 @@
 // Bump CACHE_NAME with every deploy so installed copies pick up new files.
-const CACHE_NAME = 'contact-sheet-v27';
+const CACHE_NAME = 'contact-sheet-v28';
 const ASSETS = [
   './',
   './index.html',
@@ -21,6 +21,7 @@ const ASSETS = [
   './js/ui.js',
   './js/stickers.js',
   './js/turn.js',
+  './js/navicon.js',
   './js/util.js',
   './js/videoexport.js',
   './js/zip.js',

@@ -10,6 +10,7 @@ import { OUT, RIM, bookSize, bookLeft } from './frame.js';
 import { playFlip } from './flip.js';
 import { mountStickers, openStickers } from './stickers.js';
 import { makeTurnable } from './turn.js';
+import { navHtml, mountNav } from './navicon.js';
 
 const TIP_KEY = 'contact-sheet-home-tip';
 const RATIO = 1000 / 1360; // the notebook art's width over its height
@@ -155,7 +156,7 @@ export function mountBook(view, startMode, onNew) {
           <div class="toc-page is-right" data-right></div>
         </div>
         <nav class="ed-tools" aria-label="Contents">
-          <button type="button" class="tool" data-toc="back"><span class="tool-icon">${ICONS.back}</span><span class="tool-label">Back</span></button>
+          ${navHtml()}
           <button type="button" class="tool" data-toc="new"><span class="tool-icon">${ICONS.plus}</span><span class="tool-label">New chapter</span></button>
         </nav>
       </div>
@@ -376,6 +377,7 @@ export function mountBook(view, startMode, onNew) {
   const step = (dir) => goPage(two ? (spreadOf(tocPage) + dir) * 2 : tocPage + dir);
 
   function setMode(next, instant = false) {
+    nav.reset();
     if (next !== 'closed') {
       stickers.drop();
       turn.reset();
@@ -425,6 +427,11 @@ export function mountBook(view, startMode, onNew) {
       !e.target.closest('[data-options]') &&
       Math.abs(e.clientX - window.innerWidth / 2) <= geo.W * 0.62 &&
       Math.abs(e.clientY - window.innerHeight / 2) <= geo.H * 0.56,
+  });
+  // The navigation icon on the bottom row: its right triangle shuts the book.
+  const nav = mountNav(toc.querySelector('.ed-tools'), {
+    onShut: () => (location.hash = '#/'),
+    onSwiped: () => (swiped = true),
   });
   tocBook.addEventListener('pointerdown', (e) => {
     if (turning) return;
@@ -497,8 +504,10 @@ export function mountBook(view, startMode, onNew) {
     }
     const t = e.target.closest('[data-toc]');
     if (t) {
-      if (t.dataset.toc === 'back') location.hash = '#/';
-      else startNew();
+      if (t.dataset.toc === 'shut') nav.shut();
+      else if (t.dataset.toc === 'first') {
+        if (tocPage) goPage(0);
+      } else startNew();
       return;
     }
     if (e.target.closest('[data-tip-off]')) {
@@ -552,6 +561,7 @@ export function mountBook(view, startMode, onNew) {
       document.removeEventListener('keydown', onKey);
       releaseThumbs();
       stickers.destroy();
+      nav.destroy();
       delete document.body.dataset.route;
     },
   };

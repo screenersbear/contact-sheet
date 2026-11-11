@@ -29,5 +29,7 @@ export const ICONS = {
   up: svg('<path d="M6 15l6-6 6 6"/>'),
   down: svg('<path d="M6 9l6 6 6-6"/>'),
   check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>', ' stroke-width="3"'),
+  contents: svg('<path d="M12 6.5V20"/><path d="M12 6.5C10 5 7 4.6 3 5v13.5c4-.4 7 0 9 1.5 2-1.5 5-1.9 9-1.5V5c-4-.4-7 0-9 1.5z"/>'),
+  shut: svg('<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 3v18"/>'),
   sun: svg('<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>'),
 };
