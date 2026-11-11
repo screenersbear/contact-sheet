@@ -1331,13 +1331,14 @@ body[data-route="edit"] .toast { bottom: calc(136px + var(--sa-b)); }
   --book-block: url(art/orange-block.webp);
   --book-back: #d9641a;
   --book-rim: #ec701e; /* the frame's coloured band, measured off its art */
+  --book-pale: #fbe2d2; /* a fifth of the colour on white: the pale tab */
   --book-shadow: 0 16px 34px rgba(60, 40, 20, 0.2), 0 3px 8px rgba(60, 40, 20, 0.14);
 }
-:root[data-book="mango"] { --book-cover: url(art/mango-cover.webp); --book-block: url(art/mango-block.webp); --book-back: #e0b012; --book-rim: #f9c614; }
-:root[data-book="berry"] { --book-cover: url(art/berry-cover.webp); --book-block: url(art/berry-block.webp); --book-back: #a80a73; --book-rim: #bf0b83; }
-:root[data-book="fern"] { --book-cover: url(art/fern-cover.webp); --book-block: url(art/fern-block.webp); --book-back: #286b4a; --book-rim: #2e7a55; }
-:root[data-book="ocean"] { --book-cover: url(art/ocean-cover.webp); --book-block: url(art/ocean-block.webp); --book-back: #1f5095; --book-rim: #235caa; }
-:root[data-book="ink"] { --book-cover: url(art/ink-cover.webp); --book-block: url(art/ink-block.webp); --book-back: #2a353c; --book-rim: #303d44; }
+:root[data-book="mango"] { --book-cover: url(art/mango-cover.webp); --book-block: url(art/mango-block.webp); --book-back: #e0b012; --book-rim: #f9c614; --book-pale: #fef4d0; }
+:root[data-book="berry"] { --book-cover: url(art/berry-cover.webp); --book-block: url(art/berry-block.webp); --book-back: #a80a73; --book-rim: #bf0b83; --book-pale: #f2cee6; }
+:root[data-book="fern"] { --book-cover: url(art/fern-cover.webp); --book-block: url(art/fern-block.webp); --book-back: #286b4a; --book-rim: #2e7a55; --book-pale: #d5e4dd; }
+:root[data-book="ocean"] { --book-cover: url(art/ocean-cover.webp); --book-block: url(art/ocean-block.webp); --book-back: #1f5095; --book-rim: #235caa; --book-pale: #d3deee; }
+:root[data-book="ink"] { --book-cover: url(art/ink-cover.webp); --book-block: url(art/ink-block.webp); --book-back: #2a353c; --book-rim: #303d44; --book-pale: #d6d8da; }
 
 /* The notebook's frame, the same in the contents and every chapter. */
 :root {
@@ -1473,6 +1474,13 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   letter-spacing: 0;
 }
 .opt-gap { margin-top: 18px; }
+/* Options (book.js): its labels as Ref Notebook's, in the handwriting. */
+.sheet-options .field-label { margin-bottom: 0; font-size: 17px; font-weight: 400; letter-spacing: 0.3px; text-transform: none; }
+.opt-wide { display: block; width: 100%; margin-top: 8px; }
+.opt-seg { display: flex; margin-top: 8px; border: 1px solid var(--text); border-radius: 8px; overflow: hidden; }
+.opt-seg button { flex: 1; min-height: 44px; padding: 0 6px; border: none; background: var(--paper); color: var(--text); font-family: var(--font-body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.opt-seg button + button { border-left: 1px solid var(--text); }
+.opt-seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
 .sheet .modal-cta.secondary { background: var(--paper); color: var(--text); font-family: var(--font-body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; border: 1px solid var(--text); border-radius: 8px; }
 .choice-heading { margin-top: 10px; }
 .opt-book {
@@ -1710,6 +1718,9 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   line-height: 1;
   color: #fff;
 }
+/* The New chapter tab: a very pale shade of the notebook's colour. */
+.nb-side-tabs i.is-new { background: var(--book-pale); }
+.nb-side-tabs i.is-new span { color: var(--text); }
 .nb:not([data-mode="closed"]) .nb-side-tabs { opacity: 0; visibility: hidden; }
 .nb-tabhit { position: fixed; z-index: 6; border: none; padding: 0; background: none; }
 .nb:not([data-mode="closed"]) .nb-tabhits { display: none; }

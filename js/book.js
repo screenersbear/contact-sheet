@@ -1,7 +1,7 @@
 // The notebook: floating shut on white with its two tabs, then open at the
 // Table of contents. Routes: #/ (shut), #/contents. Each draft is a chapter.
 import { listProjects } from './db.js';
-import { choiceSheet, openSheet, sheetIsOpen } from './ui.js';
+import { openSheet, sheetIsOpen } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, shortDate, isIOS, isStandalone } from './util.js';
 import { pageWord } from './model.js';
@@ -61,57 +61,55 @@ export function startsOnFirstPage() {
   }
 }
 
-function openColors() {
+// The sun beside the shut notebook: one sheet, laid out like Ref Notebook's,
+// with this app's own settings.
+function openOptions(stickers) {
   const now = document.documentElement.dataset.book;
+  const first = startsOnFirstPage();
   const s = openSheet({
-    title: 'App color',
-    className: 'sheet-small',
+    title: 'Options',
+    className: 'sheet-small sheet-options',
     body: `
+      <span class="field-label">App color</span>
       <div class="opt-colors">
         ${COLORS.map(([key, name]) => `
           <button type="button" class="opt-color" data-color="${key}" aria-pressed="${key === now}">
             <span class="opt-book" style="background-image:url(art/${key}-cover.webp)"></span>
             <span>${name}</span>
           </button>`).join('')}
-      </div>`,
+      </div>
+      <span class="field-label opt-gap">Stickers</span>
+      <button type="button" class="btn secondary opt-wide" data-stickers>Stickers</button>
+      <span class="field-label opt-gap">Always start</span>
+      <div class="opt-seg" role="group" aria-label="Always start">
+        <button type="button" data-start="notebook" aria-pressed="${!first}">In the notebook</button>
+        <button type="button" data-start="first" aria-pressed="${first}">On the first page</button>
+      </div>
+      <span class="field-label opt-gap">Export</span>
+      <button type="button" class="btn secondary opt-wide" data-pdf>Whole notebook as PDF</button>`,
   });
   s.body.addEventListener('click', (e) => {
-    const picked = e.target.closest('[data-color]');
-    if (!picked) return;
-    useBook(picked.dataset.color);
-    s.body.querySelectorAll('[data-color]').forEach((b) => b.setAttribute('aria-pressed', String(b === picked)));
+    const color = e.target.closest('[data-color]');
+    if (color) {
+      useBook(color.dataset.color);
+      s.body.querySelectorAll('[data-color]').forEach((b) => b.setAttribute('aria-pressed', String(b === color)));
+      return;
+    }
+    const start = e.target.closest('[data-start]');
+    if (start) {
+      try {
+        localStorage.setItem(START_KEY, start.dataset.start);
+      } catch {}
+      s.body.querySelectorAll('[data-start]').forEach((b) => b.setAttribute('aria-pressed', String(b === start)));
+      return;
+    }
+    // Placing a sticker happens on the cover, so Options goes once a shape is picked.
+    if (e.target.closest('[data-stickers]')) openStickers(stickers, () => s.close());
+    else if (e.target.closest('[data-pdf]')) {
+      s.close();
+      openNotebookExport();
+    }
   });
-}
-
-async function chooseStart() {
-  const first = startsOnFirstPage();
-  const key = await choiceSheet({
-    title: 'Always start',
-    options: [
-      { key: 'notebook', label: 'In the notebook', detail: 'Shut, with its tabs', current: !first },
-      { key: 'first', label: 'On the first page', detail: 'Open at the Table of contents', current: first },
-    ],
-  });
-  if (!key) return;
-  try {
-    localStorage.setItem(START_KEY, key);
-  } catch {}
-}
-
-async function openOptions(stickers) {
-  const key = await choiceSheet({
-    title: 'Options',
-    options: [
-      { key: 'color', label: 'Change app color' },
-      { key: 'stickers', label: 'Stickers' },
-      { key: 'start', label: 'Always start', detail: startsOnFirstPage() ? 'On the first page' : 'In the notebook' },
-      { key: 'pdf', label: 'Export whole notebook as PDF' },
-    ],
-  });
-  if (key === 'color') openColors();
-  else if (key === 'stickers') openStickers(stickers);
-  else if (key === 'start') chooseStart();
-  else if (key === 'pdf') openNotebookExport();
 }
 
 export function modeOfHash(h) {
@@ -135,7 +133,7 @@ export function mountBook(view, startMode, onNew) {
             <u class="nb-box is-bottom"></u>
           </div>
           <div class="nb-side-tabs">
-            ${TABS.map(([, name], i) => `<i style="--t:${i};--i:${5 + i * 6}"><span>${name}</span></i>`).join('')}
+            ${TABS.map(([key, name], i) => `<i class="is-${key}" style="--t:${i};--i:${5 + i * 6}"><span>${name}</span></i>`).join('')}
           </div>
           <div class="nb-block"></div>
           <div class="nb-leaf">

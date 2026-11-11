@@ -579,7 +579,8 @@ function openRemove(stickers) {
   });
 }
 
-export function openStickers(stickers) {
+// `leave` closes whatever opened this, when a sticker is to be placed.
+export function openStickers(stickers, leave) {
   const s = openSheet({
     title: 'Stickers',
     className: 'sheet-small',
@@ -600,6 +601,7 @@ export function openStickers(stickers) {
       // Asked for straight from the tap: an iPhone refuses the picker otherwise.
       const picking = pickFiles({ multiple: false, accept: 'image/*' });
       s.close();
+      if (leave) leave();
       picking.then(([file]) => file && stickers.add(b.dataset.shape, file));
       return;
     }
