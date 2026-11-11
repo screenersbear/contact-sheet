@@ -1325,13 +1325,14 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
   --book-cover: url(art/orange-cover.webp);
   --book-block: url(art/orange-block.webp);
   --book-back: #d9641a;
+  --book-rim: #ec701e; /* the frame's coloured band, measured off its art */
   --book-shadow: 0 16px 34px rgba(60, 40, 20, 0.2), 0 3px 8px rgba(60, 40, 20, 0.14);
 }
-:root[data-book="mango"] { --book-cover: url(art/mango-cover.webp); --book-block: url(art/mango-block.webp); --book-back: #e0b012; }
-:root[data-book="berry"] { --book-cover: url(art/berry-cover.webp); --book-block: url(art/berry-block.webp); --book-back: #a80a73; }
-:root[data-book="fern"] { --book-cover: url(art/fern-cover.webp); --book-block: url(art/fern-block.webp); --book-back: #286b4a; }
-:root[data-book="ocean"] { --book-cover: url(art/ocean-cover.webp); --book-block: url(art/ocean-block.webp); --book-back: #1f5095; }
-:root[data-book="ink"] { --book-cover: url(art/ink-cover.webp); --book-block: url(art/ink-block.webp); --book-back: #2a353c; }
+:root[data-book="mango"] { --book-cover: url(art/mango-cover.webp); --book-block: url(art/mango-block.webp); --book-back: #e0b012; --book-rim: #f9c614; }
+:root[data-book="berry"] { --book-cover: url(art/berry-cover.webp); --book-block: url(art/berry-block.webp); --book-back: #a80a73; --book-rim: #bf0b83; }
+:root[data-book="fern"] { --book-cover: url(art/fern-cover.webp); --book-block: url(art/fern-block.webp); --book-back: #286b4a; --book-rim: #2e7a55; }
+:root[data-book="ocean"] { --book-cover: url(art/ocean-cover.webp); --book-block: url(art/ocean-block.webp); --book-back: #1f5095; --book-rim: #235caa; }
+:root[data-book="ink"] { --book-cover: url(art/ink-cover.webp); --book-block: url(art/ink-block.webp); --book-back: #2a353c; --book-rim: #303d44; }
 
 /* The notebook's frame, the same in the contents and every chapter. */
 :root {
@@ -1579,6 +1580,18 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   box-shadow: var(--book-shadow);
   transform: scaleX(-1);
 }
+/* The page edge (see .nb-open > span::after), drawn at the size it ends up
+   on screen. The inside of the cover has its outer edge on the left. */
+.nb-block,
+.nb-inside { --ex: calc(var(--rx) / 10); --ey: calc(var(--ry) / 10); }
+.nb .nb-inside::after {
+  top: calc(var(--ey) * 4.2);
+  bottom: calc(var(--ey) * 4.2);
+  left: var(--rx);
+  right: 0;
+  border-radius: calc(var(--ex) * 20) 0 0 calc(var(--ex) * 20) / calc(var(--ey) * 20) 0 0 calc(var(--ey) * 20);
+  clip-path: inset(0 0 0 calc(var(--ex) * -5.8));
+}
 /* The thickness of the shut book: thin sheets stacked behind the cover, seen
    down the right side. They close up flat as the book opens. */
 .nb-stack { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
@@ -1785,6 +1798,35 @@ body[data-route="edit"] { background: #fff; }
   border-image: var(--book-block) 46 46 46 1 fill / var(--nb-rim) var(--nb-rim) var(--nb-rim) 0 stretch;
 }
 .nb-open > span:first-of-type { transform: scaleX(-1); }
+/* The page's outer edge: a line down it that curves into the top and bottom
+   of the frame, with the notebook's colour in the thin space behind it and in
+   the corners. The frame's coloured band is the outer 24/46 of --nb-rim (the
+   rest of the rim is page), so its inner edge is 4.8px out from here. The box
+   is the page inside the line, its top and bottom 1px under the band so the
+   fill hides the art's soft inner edge; the line and the fill are rings of
+   shadow round it (a border would be rounded to whole pixels in the 3D book),
+   cut off at the top, bottom and spine. --ex and --ey are one screen pixel
+   across and down; the 3D book sets its own. */
+.nb-open > span { --ex: 1px; --ey: 1px; }
+.nb-open > span::after,
+.nb-block::after,
+.nb-inside::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--ey) * -5.8);
+  bottom: calc(var(--ey) * -5.8);
+  left: 0;
+  right: 0;
+  border-radius: 0 calc(var(--ex) * 20) calc(var(--ex) * 20) 0 / 0 calc(var(--ey) * 20) calc(var(--ey) * 20) 0;
+  box-shadow: 0 0 0 calc(var(--ex) * 2) var(--text), 0 0 0 calc((var(--ex) + var(--ey)) * 30) var(--book-rim);
+  clip-path: inset(0 calc(var(--ex) * -5.8) 0 0);
+  pointer-events: none;
+}
+/* Turning pages get the same round outer corners, so the edge shows past them. */
+.flip-under.is-left,
+.flip-back { border-radius: 20px 0 0 20px; }
+.flip-under.is-right,
+.flip-front { border-radius: 0 20px 20px 0; }
 .nb-spine {
   position: absolute;
   left: 50%;
