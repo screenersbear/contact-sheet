@@ -2,7 +2,7 @@
 // zoomed into the Table of contents. Routes: #/ (shut), #/book (open),
 // #/contents. Each draft is a chapter.
 import { listProjects, deleteProject } from './db.js';
-import { confirmSheet, sheetIsOpen } from './ui.js';
+import { confirmSheet, openSheet, sheetIsOpen } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, shortDate, isIOS, isStandalone } from './util.js';
 import { pageWord } from './model.js';
@@ -12,6 +12,46 @@ const RATIO = 1000 / 1360; // the notebook art's width over its height
 const PER_PAGE = 6;
 const STACK = 16; // sheets drawn for the thickness of the shut book
 const TURN_MS = 560;
+const TURNED = (20 * Math.PI) / 180; // the shut book's turn; matches style.css
+const PERSPECTIVE = 1100; // matches .nb in style.css
+const BOOK_KEY = 'contact-sheet-book'; // also read in index.html, before the first paint
+const COLORS = [
+  ['orange', 'Orange'],
+  ['mango', 'Mango'],
+  ['berry', 'Berry'],
+  ['fern', 'Fern'],
+  ['ocean', 'Ocean'],
+  ['ink', 'Black'],
+];
+
+function useBook(name) {
+  document.documentElement.dataset.book = name;
+  try {
+    localStorage.setItem(BOOK_KEY, name);
+  } catch {}
+}
+
+function openOptions() {
+  const now = document.documentElement.dataset.book;
+  const s = openSheet({
+    title: 'Options',
+    body: `
+      <span class="field-label">Notebook color</span>
+      <div class="opt-colors">
+        ${COLORS.map(([key, name]) => `
+          <button type="button" class="opt-color" data-color="${key}" aria-pressed="${key === now}">
+            <span class="opt-book" style="background-image:url(art/${key}-cover.webp)"></span>
+            <span>${name}</span>
+          </button>`).join('')}
+      </div>`,
+  });
+  s.body.addEventListener('click', (e) => {
+    const picked = e.target.closest('[data-color]');
+    if (!picked) return;
+    useBook(picked.dataset.color);
+    s.body.querySelectorAll('[data-color]').forEach((b) => b.setAttribute('aria-pressed', String(b === picked)));
+  });
+}
 
 export function modeOfHash(h) {
   return h === '/contents' ? 'toc' : h === '/book' ? 'open' : 'closed';
@@ -39,6 +79,7 @@ export function mountBook(view, startMode, onNew) {
           </div>
         </div>
       </div>
+      <button type="button" class="nb-sun" data-options aria-label="App options">${ICONS.sun}</button>
       <div class="nb-toc" hidden>
         <div class="nb-toc-area">
           <div class="nb-sheet" data-sheet><div class="nb-sheet-in" data-page></div></div>
@@ -78,6 +119,16 @@ export function mountBook(view, startMode, onNew) {
     root.style.setProperty('--H', `${H}px`);
     root.style.setProperty('--k', String(k));
     root.style.setProperty('--kz', String(kz));
+    // Turned, the shut book's near side looks bigger and its pages show down
+    // the right, so what you see would sit right of the middle. This slides
+    // it back by half that difference.
+    const cos = Math.cos(TURNED);
+    const sin = Math.sin(TURNED);
+    const depth = (STACK + 1) * W * 0.0112;
+    const seen = [[-W / 2, 0], [W / 2, 0], [-W / 2, -depth], [W / 2, -depth]].map(
+      ([x, d]) => ((x * cos - d * sin) * PERSPECTIVE) / (PERSPECTIVE - (x * sin + d * cos)),
+    );
+    root.style.setProperty('--shut-x', `${-(Math.min(...seen) + Math.max(...seen)) / 2 / cos}px`);
     // The contents page sits centred above its bottom bar.
     const bar = toc.querySelector('.ed-tools');
     const barH = toc.hidden ? 56 : bar.offsetHeight;
@@ -232,6 +283,10 @@ export function mountBook(view, startMode, onNew) {
     if (swiped || turning) {
       swiped = false;
       e.preventDefault();
+      return;
+    }
+    if (e.target.closest('[data-options]')) {
+      openOptions();
       return;
     }
     const t = e.target.closest('[data-toc]');

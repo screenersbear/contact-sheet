@@ -1264,32 +1264,56 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
 }
 
 /* ---------- The notebook ---------- */
-/* Flat orange card with off-white dot-grid pages. These come after the
+/* A flat card notebook with white pages, in the color picked in Options.
+   Everything else is Berry Blade black on white. These come after the
    dark-mode tokens so the notebook always wins. */
-:root[data-book="orange"] {
+@font-face {
+  font-family: "Mansalva";
+  src: url("fonts/mansalva-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+:root[data-book] {
   color-scheme: light;
-  --ink: #ec701e;
-  --hero: #ec701e;
+  --ink: #313d45;
+  --hero: #313d45;
   --on-ink: #fff;
-  --accent: #ec701e;
+  --accent: #313d45;
   --on-accent: #fff;
-  --magenta: #c92a16;
-  --text: #2a2622;
-  --text-dim: rgba(42, 38, 34, 0.62);
-  --surface: #fbf9f4;
+  --magenta: #313d45;
+  --text: #313d45;
+  --text-dim: rgba(49, 61, 69, 0.66);
+  --surface: #fff;
   --bg: #fff;
-  --line: #e7e2d8;
+  --line: #d6dadd;
   --field: #fff;
-  --overlay: rgba(42, 38, 34, 0.42);
+  --overlay: rgba(49, 61, 69, 0.42);
   --canvas: #fff;
-  --canvas-label: #2a2622;
+  --canvas-label: #313d45;
   --font-title: "Iowan Old Style", Georgia, serif;
   --font-body: "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-hand: "Mansalva", "Bradley Hand", "Noteworthy", cursive;
   --book-cover: url(art/orange-cover.webp);
   --book-block: url(art/orange-block.webp);
-  --book-tile: url(art/orange-tile.jpg);
+  --book-back: #d9641a;
   --book-shadow: 0 16px 34px rgba(60, 40, 20, 0.2), 0 3px 8px rgba(60, 40, 20, 0.14);
 }
+:root[data-book="mango"] { --book-cover: url(art/mango-cover.webp); --book-block: url(art/mango-block.webp); --book-back: #e0b012; }
+:root[data-book="berry"] { --book-cover: url(art/berry-cover.webp); --book-block: url(art/berry-block.webp); --book-back: #a80a73; }
+:root[data-book="fern"] { --book-cover: url(art/fern-cover.webp); --book-block: url(art/fern-block.webp); --book-back: #286b4a; }
+:root[data-book="ocean"] { --book-cover: url(art/ocean-cover.webp); --book-block: url(art/ocean-block.webp); --book-back: #1f5095; }
+:root[data-book="ink"] { --book-cover: url(art/ink-cover.webp); --book-block: url(art/ink-block.webp); --book-back: #2a353c; }
+
+html { background: #fff; }
+/* For a moment as the iPhone app opens (ui.js): taller than the screen, so
+   iOS measures the screen again. */
+html.ios-nudge body { min-height: calc(var(--screen-h, 100vh) + 160px); overflow: visible; }
+
+/* Ink on paper: letters with a slightly soft edge. */
+body, button, a { text-shadow: 0 0 0.6px; }
+.nb-word, .nb-head, .toc-name, .toc-meta, .toc-foot, .toc-empty, .toc-tip,
+.tool-label, .ws-label, .tray-add span, .sheet-header h2, .choice-label, .row-name { filter: blur(0.22px); }
 
 body[data-route="book"] { overflow: hidden; background: #fff; }
 body[data-route="book"] #app { padding: 0; max-width: none; }
@@ -1319,23 +1343,71 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   0%, 100% { transform: translateY(-7px) rotateZ(-0.7deg) rotateY(-2deg); }
   50% { transform: translateY(7px) rotateZ(0.7deg) rotateY(2deg); }
 }
+/* The shadow lies on a floor under the book, turned the same way and seen
+   through the same perspective, so it runs along the book's bottom edge. */
 .nb-ground {
   position: absolute;
   left: 50%;
-  top: calc(50% + var(--H) / 2 + 22px);
-  width: calc(var(--W) * 0.86);
-  height: 22px;
-  margin-left: calc(var(--W) * -0.43);
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.24), rgba(0, 0, 0, 0));
-  animation: nb-ground 5.2s ease-in-out infinite;
+  top: 50%;
+  width: var(--W);
+  height: calc(var(--W) * 0.36);
+  transform-origin: 0 0;
+  transform: rotateY(-20deg) translate3d(calc(var(--W) / -2 + var(--shut-x, 0px)), calc(var(--H) / 2 + var(--W) * 0.11), calc(var(--W) * -0.26)) rotateX(90deg);
+  pointer-events: none;
   transition: opacity 0.4s;
 }
-.nb:not([data-mode="closed"]) .nb-ground { opacity: 0; animation: none; }
-@keyframes nb-ground {
-  0%, 100% { transform: scaleX(1.06); opacity: 0.8; }
-  50% { transform: scaleX(0.92); opacity: 0.55; }
+.nb-ground::before {
+  content: '';
+  position: absolute;
+  inset: 6% 3%;
+  border-radius: 10px;
+  background: rgba(40, 42, 48, 0.36);
+  filter: blur(calc(var(--W) * 0.04));
+  animation: nb-ground 5.2s ease-in-out infinite;
 }
+.nb:not([data-mode="closed"]) .nb-ground { opacity: 0; }
+.nb:not([data-mode="closed"]) .nb-ground::before { animation: none; }
+/* In time with the float: lighter and wider while the book is up. */
+@keyframes nb-ground {
+  0%, 100% { transform: scale(1.04); opacity: 0.62; }
+  50% { transform: scale(0.97); opacity: 0.92; }
+}
+.nb-sun {
+  position: absolute;
+  left: 50%;
+  bottom: max(14px, calc(env(safe-area-inset-bottom) - 6px));
+  width: 48px;
+  height: 48px;
+  margin-left: -24px;
+  padding: 10px;
+  border: none;
+  background: none;
+  color: var(--text);
+  transition: opacity 0.25s;
+}
+.nb-sun svg { width: 28px; height: 28px; display: block; }
+.nb:not([data-mode="closed"]) .nb-sun { opacity: 0; pointer-events: none; }
+.opt-colors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 8px; margin-top: 10px; }
+.opt-color {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+.opt-book {
+  width: 48px;
+  height: 65px;
+  border-radius: 0 5px 5px 0;
+  background: center / 100% 100% no-repeat;
+}
+.opt-color[aria-pressed="true"] .opt-book { outline: 1.5px solid var(--text); outline-offset: 3px; }
 .nb-book {
   position: absolute;
   left: 0;
@@ -1399,8 +1471,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-stack b {
   inset: 0;
   border-radius: 0 calc(var(--W) * 0.044) calc(var(--W) * 0.044) 0;
-  background: #d9641a;
-  box-shadow: var(--book-shadow);
+  background: var(--book-back);
 }
 .nb[data-mode="closed"] .nb-stack i,
 .nb[data-mode="closed"] .nb-stack b { transition: transform 0.6s, visibility 0s; }
@@ -1411,7 +1482,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb.no-anim .nb-stack i,
 .nb.no-anim .nb-stack b { transition: none; }
 
-.nb[data-mode="closed"] .nb-book { transform: rotateY(-20deg) translate(calc(var(--W) / -2), 0) scale(1); }
+.nb[data-mode="closed"] .nb-book { transform: rotateY(-20deg) translate(calc(var(--W) / -2 + var(--shut-x, 0px)), 0) scale(1); }
 .nb[data-mode="open"] .nb-book { transform: rotateY(0deg) translate(0, 0) scale(var(--k)); }
 .nb[data-mode="toc"] .nb-book { transform: rotateY(0deg) translate(calc(var(--W) / 2 * var(--kz)), var(--toc-up, 0px)) scale(var(--kz)); }
 .nb[data-mode="new"] .nb-book { transform: rotateY(0deg) translate(calc(var(--W) / -2 * var(--kz)), 0) scale(var(--kz)); }
@@ -1527,7 +1598,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 }
 .toc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .toc-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.toc-name { font-family: var(--font-title); font-size: 16px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.toc-name { font-family: var(--font-hand); font-size: 20px; line-height: 1.2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .toc-meta { font-size: 12.5px; color: var(--text-dim); }
 .toc-x {
   flex-shrink: 0;
@@ -1545,7 +1616,9 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .toc-tip .text-btn { font-size: inherit; }
 
 /* The open notebook around the pages in the editor. */
-.editor { padding-top: env(safe-area-inset-top); background: #fff; }
+/* Pinned by its edges, not 100dvh: on iOS 26 100dvh stops a status bar short
+   of the bottom of the screen. */
+.editor { height: auto; padding-top: env(safe-area-inset-top); background: #fff; }
 body[data-route="edit"] { background: #fff; }
 .ws { scrollbar-width: none; }
 .ws::-webkit-scrollbar { display: none; }
@@ -1598,44 +1671,50 @@ body[data-route="edit"] { background: #fff; }
 .flip-shade { position: absolute; inset: 0; background: linear-gradient(90deg, #000, rgba(0, 0, 0, 0.25)); opacity: 0; }
 .flip-back .flip-shade { background: linear-gradient(270deg, #000, rgba(0, 0, 0, 0.25)); }
 
-/* The bottom bar is the same flat card. */
+/* The bottom bar: no band, just Berry Blade black on the white page. */
 .tray,
 .ed-tools {
-  background: var(--ink) var(--book-tile) center / 256px;
+  background: #fff;
   border-top: none;
 }
+.ed-tools { padding-bottom: max(2px, calc(env(safe-area-inset-bottom) - 20px)); }
+/* iOS left the screen short and the bar is already above the home bar. */
+html.is-short .ed-tools { padding-bottom: 2px; }
 .ed-tools .tool {
-  color: #fff;
+  color: var(--text);
+  padding-bottom: 2px;
   font-family: var(--font-body);
   font-size: 11px;
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
 }
-.ed-tools .tool.is-on::before { top: -2px; background: #fff; }
+.ed-tools .tool.is-on::before { top: -2px; height: 2px; background: var(--text); }
 .tool-sm { flex: 0 0 34px; justify-content: center; padding: 6px 0; }
-.tray-hint { color: #fff; }
+.tray-hint { color: var(--text); }
 .tray-add {
   background: #fff;
   color: var(--text);
-  border: none;
+  border: 1.5px solid var(--text);
   border-radius: 6px;
   font-family: var(--font-body);
   font-size: 12px;
   text-transform: none;
   letter-spacing: 0;
 }
-.ws-add { background: var(--ink); color: var(--on-ink); }
+.ws-add { background: #fff; color: var(--text); border: 1.5px solid var(--text); box-shadow: none; }
+/* While a photo is moved: the frame's middle lines, shown when it catches. */
+.guide.in-frame { background: var(--text); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85); }
 
 /* Sheets: white paper and thin lines. */
 .sheet { border-top: none; }
 .sheet-header { background: #fff; border-bottom: 1px solid var(--line); }
 .sheet-header h2 { color: var(--text); text-transform: none; letter-spacing: 0; font-weight: 400; }
-.choice, .tpl-card { border: 1px solid var(--line); border-radius: 8px; }
+.choice, .tpl-card { border: 1px solid var(--text); border-radius: 8px; }
 .choice-label, .row-name { text-transform: none; font-weight: 500; letter-spacing: 0; }
-.lay-sky { fill: #fbe6d4; }
-.btn { font-family: var(--font-body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; border-width: 1px; border-color: var(--line); border-radius: 8px; }
-.btn.primary { border-color: var(--ink); }
+.lay-sky { fill: #e2e6e9; }
+.btn { font-family: var(--font-body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; border-width: 1px; border-color: var(--text); border-radius: 8px; }
+.btn.primary { background: #fff; color: var(--text); border-width: 1.5px; border-color: var(--text); }
 .order-note { background: none; color: var(--text-dim); border: none; padding: 0 0 4px; font-family: var(--font-body); font-size: 14px; letter-spacing: 0; text-transform: none; }
 .order-note b { color: var(--text); font-family: inherit; font-weight: 600; text-transform: none; }
-.sheet .primary { font-family: var(--font-body); font-weight: 600; letter-spacing: 0; text-transform: none; border-color: var(--ink); border-radius: 8px; }
+.sheet .primary { background: #fff; color: var(--text); font-family: var(--font-body); font-weight: 600; letter-spacing: 0; text-transform: none; border: 1.5px solid var(--text); border-radius: 8px; }

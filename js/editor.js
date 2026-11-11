@@ -600,6 +600,14 @@ export async function mountEditor(view, id) {
     guidesEl.innerHTML = html;
   }
 
+  // The middle lines of one frame, for a photo moving inside it.
+  function showFrameGuides(f, onX, onY) {
+    let html = '';
+    if (onX) html += `<div class="guide v in-frame" style="left:${(f.x + f.w / 2) * z}px;top:${f.y * z}px;bottom:auto;height:${f.h * z}px"></div>`;
+    if (onY) html += `<div class="guide h in-frame" style="top:${(f.y + f.h / 2) * z}px;left:${f.x * z}px;right:auto;width:${f.w * z}px"></div>`;
+    guidesEl.innerHTML = html;
+  }
+
   function renderStrip() {
     layout();
     renderFrames();
@@ -1308,7 +1316,7 @@ export async function mountEditor(view, id) {
     saveSoon.flush();
     thumbSoon.cancel();
     await makeThumb();
-    location.hash = '#/book';
+    location.hash = '#/contents';
   }
 
   // ---------- Buttons ----------
@@ -1371,7 +1379,6 @@ export async function mountEditor(view, id) {
   let inertia = 0;
   let holdTimer = 0;
   const HOLD_MS = 420;
-
   // ---------- Hold a photo, drag it onto another frame: they swap ----------
   function stopHold() {
     clearTimeout(holdTimer);
@@ -1523,7 +1530,16 @@ export async function mountEditor(view, id) {
     const ph = photos[f.photoId];
     const pl = placement({ ...f, crop: g.crop0 }, ph);
     f.crop = { ...g.crop0, cx: pl.cx - dxu / (pl.s * pl.rw), cy: pl.cy - dyu / (pl.s * pl.rh) };
+    // Close to the frame's middle, the photo's centre catches on that axis
+    // and a line shows it. An axis the photo can't move along has no catch.
+    const wide = pl.s * pl.rw;
+    const tall = pl.s * pl.rh;
+    const onX = wide > f.w + 0.5 && Math.abs(f.crop.cx - 0.5) * wide * z < SNAP_PX;
+    const onY = tall > f.h + 0.5 && Math.abs(f.crop.cy - 0.5) * tall * z < SNAP_PX;
+    if (onX) f.crop.cx = 0.5;
+    if (onY) f.crop.cy = 0.5;
     f.crop = clampedCrop(f, ph);
+    showFrameGuides(f, onX, onY);
   }
 
   function onDown(e) {
@@ -1539,6 +1555,7 @@ export async function mountEditor(view, id) {
     inner.style.transform = '';
     if (pts.size === 2) {
       stopHold();
+      showGuides(null, null);
       if (g && g.type === 'lift') return;
       startPinch();
       return;
