@@ -227,7 +227,7 @@ async function contentsSheets(rows) {
     const { c, ctx } = whiteCanvas(2200, 1700);
     ctx.fillStyle = INK;
     ctx.textAlign = 'center';
-    ctx.font = '400 104px "Iowan Old Style", Georgia, serif';
+    ctx.font = '112px Mansalva, "Bradley Hand", cursive';
     ctx.fillText('Table of contents', 1100, 250);
     ctx.fillStyle = '#d6dadd';
     ctx.fillRect(300, 320, 1600, 3);
@@ -238,7 +238,7 @@ async function contentsSheets(rows) {
       ctx.font = '68px Mansalva, "Bradley Hand", cursive';
       ctx.fillText(fitText(ctx, row.name, 1360), 320, y + 90);
       ctx.textAlign = 'right';
-      ctx.font = '500 52px "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif';
+      ctx.font = '60px Mansalva, "Bradley Hand", cursive';
       ctx.fillText(String(row.page), 1880, y + 88);
       ctx.fillStyle = '#d6dadd';
       ctx.fillRect(300, y + 128, 1600, 3);
@@ -255,6 +255,17 @@ async function nameStrip(name) {
   ctx.font = '46px Mansalva, "Bradley Hand", cursive';
   ctx.fillText(fitText(ctx, name, 1380), 0, 38);
   return { ...(await finishCanvas(c)), x: 36, y: 12, w: 504, h: 25.92 };
+}
+
+// A sheet's number, drawn so the handwriting prints as it looks.
+async function numberMark(str) {
+  const { c, ctx } = whiteCanvas(160, 72);
+  ctx.fillStyle = INK;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.font = '46px Mansalva, "Bradley Hand", cursive';
+  ctx.fillText(str, 156, 38);
+  return { ...(await finishCanvas(c)), x: SHEET_W - 36 - 57.6, y: 12, w: 57.6, h: 25.92 };
 }
 
 // The cover, the contents, then every chapter from its own full-size pages.
@@ -288,7 +299,7 @@ export async function makeNotebook(onProgress, stillOpen = () => true) {
     for (const sheet of own) {
       const str = String(number++);
       sheet.images.push(strip);
-      sheet.text.push({ x: SHEET_W - 36 - str.length * 5.56, y: 20, size: 10, str });
+      sheet.images.push(await numberMark(str));
       sheets.push(sheet);
     }
   }

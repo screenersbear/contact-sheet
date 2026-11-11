@@ -15,7 +15,7 @@ const PER_PAGE = 6;
 const STACK = 16; // sheets drawn for the thickness of the shut book
 const TURNED = (20 * Math.PI) / 180; // the shut book's turn; matches style.css
 const PERSPECTIVE = 1100; // matches .nb in style.css
-const TAB_OUT = 0.09; // how far the tabs stick out, of the book's width
+const TAB_OUT = 0.06; // how far the tabs stick out, of the book's width
 const SHUT_ROOM = 190; // kept free above and below the shut book, for the sun
 const OPEN_MS = 860; // the cover swinging open and the book zooming in
 const ZOOM_MS = 760;
@@ -46,6 +46,7 @@ function artReady() {
     img.src = `art/${book}-${part}.webp`;
     return img.decode().catch(() => {});
   });
+  if (document.fonts && document.fonts.load) ready.push(document.fonts.load('16px Mansalva').catch(() => {}));
   return Promise.race([Promise.all(ready), new Promise((done) => setTimeout(done, 1200))]);
 }
 

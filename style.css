@@ -1291,9 +1291,9 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
   --overlay: rgba(49, 61, 69, 0.42);
   --canvas: #fff;
   --canvas-label: #313d45;
-  --font-title: "Iowan Old Style", Georgia, serif;
-  --font-body: "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-hand: "Mansalva", "Bradley Hand", "Noteworthy", cursive;
+  --font-title: var(--font-hand);
+  --font-body: var(--font-hand);
   --book-cover: url(art/orange-cover.webp);
   --book-block: url(art/orange-block.webp);
   --book-back: #d9641a;
@@ -1312,7 +1312,8 @@ body[data-route="edit"] .toast { bottom: calc(136px + env(safe-area-inset-bottom
   --nb-rim: 10px;
 }
 html.is-short { --nb-b: 10px; }
-html { background: #fff; }
+/* The handwriting has one weight: no smeared fake bold. */
+html { background: #fff; font-synthesis: none; -webkit-font-synthesis: none; }
 /* For a moment as the iPhone app opens (ui.js): taller than the screen, so
    iOS measures the screen again. */
 html.ios-nudge body { min-height: calc(var(--screen-h, 100vh) + 160px); overflow: visible; }
@@ -1517,23 +1518,22 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-side-tabs i {
   position: absolute;
   left: 98%;
-  top: calc(9% + var(--t) * 42%);
-  width: 11%;
-  height: 40%;
+  top: calc(22% + var(--t) * 29%);
+  width: 8%;
+  height: 27%;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  border-radius: 0 calc(var(--W) * 0.022) calc(var(--W) * 0.022) 0;
+  justify-content: center;
+  border-radius: 0 calc(var(--W) * 0.02) calc(var(--W) * 0.02) 0;
   background: var(--text);
   transform: translateZ(calc(var(--i) * var(--W) * -0.0112));
 }
 .nb-side-tabs i span {
-  width: 80%;
   text-align: center;
   writing-mode: vertical-rl;
   white-space: nowrap;
   font-family: var(--font-title);
-  font-size: calc(var(--W) * 0.046);
+  font-size: calc(var(--W) * 0.036);
   line-height: 1;
   color: #fff;
 }
@@ -1611,7 +1611,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .toc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .toc-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .toc-name { font-family: var(--font-hand); font-size: 20px; line-height: 1.2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.toc-meta { font-size: 12.5px; color: var(--text-dim); }
+.toc-meta { font-size: 14px; color: var(--text-dim); }
 .toc-x {
   flex-shrink: 0;
   width: 40px;
@@ -1623,7 +1623,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 }
 .toc-x svg { width: 20px; height: 20px; display: block; }
 .toc-empty { grid-row: 1 / -1; align-self: center; margin: 0; text-align: center; font-family: var(--font-title); font-size: 19px; color: var(--text-dim); }
-.toc-foot { flex-shrink: 0; height: 22px; line-height: 24px; text-align: center; font-size: 12.5px; color: var(--text-dim); }
+.toc-foot { flex-shrink: 0; height: 22px; line-height: 24px; text-align: center; font-size: 14px; color: var(--text-dim); }
 .toc-tip { flex-shrink: 0; margin: 8px 0 0; text-align: center; font-size: 12px; line-height: 1.35; color: var(--text-dim); }
 .toc-tip .text-btn { font-size: inherit; }
 
@@ -1739,7 +1739,7 @@ html.is-short .nb-sun { bottom: max(14px, calc(env(safe-area-inset-bottom) - 6px
   color: var(--text);
   padding-bottom: 2px;
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
@@ -1789,7 +1789,7 @@ html.is-short .nb-sun { bottom: max(14px, calc(env(safe-area-inset-bottom) - 6px
 .pdfv-sheet { position: relative; flex-shrink: 0; width: 100%; aspect-ratio: 792 / 612; overflow: hidden; background: #fff; box-shadow: 0 1px 5px rgba(49, 61, 69, 0.3); container-type: inline-size; }
 .pdfv-sheet img { position: absolute; display: block; -webkit-user-drag: none; user-select: none; }
 .pdfv-sheet img.has-edge { box-shadow: 0 0 0 0.5px #d1d1d1; }
-.pdfv-text { position: absolute; color: #313d45; font-family: Helvetica, Arial, sans-serif; line-height: 1; white-space: nowrap; transform: translateY(0.2em); }
+.pdfv-text { position: absolute; color: #313d45; font-family: var(--font-hand); line-height: 1; white-space: nowrap; transform: translateY(0.2em); }
 .pdfv-mark { position: absolute; box-sizing: border-box; border: 2px dashed #fff; outline: 2px dashed var(--text); outline-offset: -2px; pointer-events: none; }
 .pdfv-mark.is-blurry { outline-color: var(--danger); }
 .pdfv-mark.is-flash { animation: pdfv-flash 0.5s ease 3; }
