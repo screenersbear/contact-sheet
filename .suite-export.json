@@ -12,7 +12,7 @@
   "art/ocean-cover.webp": "10cc99905913b9ff3680033bf4018b1f9d6f1bd10f903ac41e6fdf84493e4603",
   "art/orange-block.webp": "28aaa50ce8f604a23b29a86cee7569cbab107a5b9efc679edf182cd571ef657e",
   "art/orange-cover.webp": "48985368f222d0fff351958eaa590785ed44cbe4742c04a598820bc5a6b46a7a",
-  "df-data.js": "214d47b9bc1844d69cb6fa70011306da83d9098dda6423e75e66431effb77d7a",
+  "df-data.js": "1cad9ae40b73e73e84ea309cfeac24f1d480bf248ddfc04feda5f23912955f09",
   "fonts/KaiseiDecol-OFL.txt": "6c5445d4febbf6d84025b874a85c51e7e4bfa7495279eccdb4c317a6de857b46",
   "fonts/KleeOne-OFL.txt": "e376b0df8e8a2345a9533db6f0a5333a1107975569ad9d1973a7ee557161ca38",
   "fonts/kaisei-decol-500-latin.woff2": "2f00d1bb96cacdc475812bdae1bb29f3e65196a2f62a6a598619682d10c90759",
@@ -44,7 +44,7 @@
   "js/zip.js": "4f298d7018597d3884ca0f3ca74c8af3b79c4a953b251f0f9838a473dc910d82",
   "manifest.json": "b2f2f1757c929c6d39e5f346141519dc4dc5b0cd657653cc96ad050215ca6e99",
   "style.css": "f1a4da6722786d27f165e0e6f5869cc8b1aae4237755d96613c0ae3d3a4a4c84",
-  "sw.js": "617c14f17836330c3ba2bd93e98f29d8346bb2af77bdd86ebf3ff99a3073446b"
+  "sw.js": "7ef985fdd567727ee512a02734c6899f7da6638fde03ce0a5ac633c339958693"
  },
  "keep": [
   ".DS_Store",
@@ -61,6 +61,6 @@
  ],
  "name": "Contact Sheet",
  "notebook": "contact-sheet",
- "suite": "32df20e + changes not committed",
+ "suite": "e945955 + changes not committed",
  "suite_folder": "../Documenting Fictions"
 }
