@@ -1,11 +1,10 @@
-// The notebook's size on screen. The Table of contents and every chapter ask
-// here, so they all open to the very same frame.
-//
-// A page is measured from the spine to the outside of the notebook's rim.
-export const OUT = 6; // white left outside the rim
-export const RIM = 10; // the notebook's coloured edge; matches --nb-rim
-export const GAP = 4; // from the rim to the photo
-export const PEEK = OUT + RIM + GAP; // how far the page beyond the spine shows
+// How much of the screen a chapter's pages take. A page is measured from
+// where its two slides meet out to the edge of the screen: no notebook round
+// them any more, just a margin.
+export const OUT = 0; // left outside the pages
+export const RIM = 0; // no notebook edge
+export const GAP = 16; // from the screen's edge to the photos
+export const PEEK = OUT + RIM + GAP; // how far the page beyond shows
 const PAGE_RATIO = 0.74; // a page never gets wider than a notebook page would
 const MIN_TWO = 300; // narrower than this, one page shows at a time
 

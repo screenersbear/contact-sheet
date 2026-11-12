@@ -25,7 +25,6 @@ import { openSheet, choiceSheet, promptSheet, confirmSheet, toast, sheetIsOpen }
 import { ICONS } from './icons.js';
 import { esc, clamp, debounce, canvasToBlob, loadImage } from './util.js';
 import { OUT, RIM, GAP, PEEK, bookSize, bookLeft } from './frame.js';
-import { playFlip } from './flip.js';
 
 const SNAP_PX = 9;
 const ROOM = 34; // kept above and below the photos, for the labels and the name
@@ -174,8 +173,7 @@ export async function mountEditor(view, id) {
   // ---------- DOM ----------
   view.innerHTML = `
     <div class="editor" data-editor>
-      <div class="nb-open" data-nb><span></span><span></span><i class="nb-spine"></i></div>
-      <div class="ed-flips" data-flips></div>
+      <div class="nb-open" data-nb></div>
       <div class="ws" data-ws>
         <div class="ws-inner" data-inner>
           <div class="ws-labels" data-labels></div>
@@ -186,7 +184,6 @@ export async function mountEditor(view, id) {
             <div class="strip-safe" data-safe></div>
             <div class="strip-guides" data-guides></div>
           </div>
-          <div class="nb-gutter" data-gutter></div>
           <div class="sel" data-sel hidden>
             ${['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((h) => `<span class="handle h-${h}" data-h="${h}"></span>`).join('')}
             <button type="button" class="sel-x" data-act="take-out" aria-label="Take the photo out">${ICONS.x}</button>
@@ -194,7 +191,7 @@ export async function mountEditor(view, id) {
         </div>
       </div>
       <button type="button" class="ws-add" data-act="add-slide" aria-label="Add a slide">${ICONS.plus}</button>
-      <div class="ed-name" data-name><button type="button" data-act="rename" aria-label="Rename this chapter"><span data-sit="ename">${esc(p.name)}</span></button></div>
+      <div class="ed-name" data-name><button type="button" data-act="rename" aria-label="Rename this chapter"><span>${esc(p.name)}</span></button></div>
       <div class="ed-adjust" data-adjust hidden>
         <span class="ed-adjust-label">Zoom</span>
         <input type="range" min="1" max="5" step="0.01" value="1" data-zoom aria-label="Photo zoom" />
@@ -217,8 +214,6 @@ export async function mountEditor(view, id) {
   const labelsEl = $('[data-labels]');
   const editorEl = $('[data-editor]');
   const nbEl = $('[data-nb]');
-  const flipsEl = $('[data-flips]');
-  const gutterEl = $('[data-gutter]');
   const selEl = $('[data-sel]');
   const adjustEl = $('[data-adjust]');
   const zoomInput = $('[data-zoom]');
@@ -265,16 +260,11 @@ export async function mountEditor(view, id) {
     bookX = bookLeft(w, pw);
     pageLeft = bookX + pw - sw; // the two pages meet at the spine
     margX = pageLeft - spread * both;
+    // The photos sit in the middle, with room above for their labels.
     const room = Math.max(ROOM, (h - sh) / 2);
-    // The photos' top edge lies along a ruled line, so their label sits on the
-    // line above. The lines start at the paper's top edge, 3px into the rim.
-    const lh = lineH();
-    const sink = ws.offsetTop - nbEl.offsetTop - RIM + 3;
-    margY = Math.max(lh - sink, Math.round((room + sink) / lh) * lh - sink);
+    margY = Math.max(lineH(), Math.round(room));
     inner.style.width = `${2 * pw + 2 * bookX}px`;
     inner.style.height = `${Math.max(h, sh + margY + room)}px`;
-    // The lines stop above the tray and the tools.
-    editorEl.style.setProperty('--foot', `${nbEl.offsetTop + nbEl.offsetHeight - RIM + 3 - ws.offsetTop - h}px`);
     strip.style.left = `${margX}px`;
     strip.style.top = `${margY}px`;
     strip.style.width = `${total}px`;
@@ -284,10 +274,7 @@ export async function mountEditor(view, id) {
     const a = spread * both;
     const b = Math.min(total, a + both);
     strip.style.clipPath = `inset(0 ${total - b}px 0 ${a}px)`;
-    nbEl.style.width = flipsEl.style.width = `${2 * pw}px`;
-    gutterEl.style.left = `${pageLeft + sw}px`;
-    gutterEl.style.top = `${margY}px`;
-    gutterEl.style.height = `${sh}px`;
+    nbEl.style.width = `${2 * pw}px`;
     // Everything below the photos stays inside the notebook's edges.
     editorEl.style.setProperty('--ed-in', `${2 * pw + 2 * OUT <= w + 1 ? bookX + RIM + GAP : PEEK}px`);
     placeBook();
@@ -299,7 +286,6 @@ export async function mountEditor(view, id) {
   function placeBook(extra = 0) {
     const t = `translateX(${bookX - ws.scrollLeft - extra}px)`;
     nbEl.style.transform = t;
-    flipsEl.style.transform = t;
   }
 
   // The chapter name sits in the middle of the space under the photos.
@@ -308,10 +294,9 @@ export async function mountEditor(view, id) {
     const lh = lineH();
     const under = Math.min(h, margY + H() * z);
     const mid = Math.min((under + h) / 2, h - lh / 2);
-    // On the ruled line nearest the middle, kept above the tray.
-    const top0 = nbEl.offsetTop + RIM - 3;
-    let top = top0 + Math.round((ws.offsetTop + mid - lh / 2 - top0) / lh) * lh;
-    if (top + lh > ws.offsetTop + h) top -= lh;
+    // Kept above the tray.
+    let top = Math.round(ws.offsetTop + mid - lh / 2);
+    if (top + lh > ws.offsetTop + h) top = ws.offsetTop + h - lh;
     nameEl.style.top = `${top}px`;
     // Zoomed in, the photos reach behind it and it needs a backing.
     nameEl.classList.toggle('is-over', ws.offsetTop + under > top);
@@ -403,10 +388,10 @@ export async function mountEditor(view, id) {
     }
   }
 
-  // ---------- Turning the page ----------
-  // The flip is drawn on pictures of the four pages involved; the real pages
-  // are swapped underneath at the start and uncovered at the end.
-  async function flipTo(s, page = s * 2) {
+  // ---------- Going to another spread ----------
+  // No page turn: the pages slide away and the next ones slide in from the
+  // side they are on.
+  function flipTo(s, page = s * 2) {
     if (flipping || destroyed) return;
     s = clamp(s, 0, spreadCount(p) - 1);
     if (s === spread) return;
@@ -419,55 +404,36 @@ export async function mountEditor(view, id) {
     renderTools();
     renderAdjust();
     const land = (k) => (zoomFit === 'one' ? pageX(k) : zoomFit === 'all' ? 0 : ws.scrollLeft);
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const dir = s > spread ? 1 : -1;
+    const swap = () => {
       spread = s;
       renderStrip();
       ws.scrollLeft = land(page);
+    };
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      swap();
       flipping = false;
       return;
     }
-    const get = await previewSources();
-    if (destroyed) return;
-    const sw = SLIDE_W * z;
-    const sh = H() * z;
-    const px = Math.round(Math.min(1200, sh * Math.min(2, window.devicePixelRatio || 1)));
-    const pw = pageW();
-    // A whole notebook page turns, with the photos where they sit on it.
-    const photoTop = ws.offsetTop + margY - ws.scrollTop - nbEl.offsetTop - RIM + 3;
-    const word = pageTitle(p);
-    const face = (k) => {
-      const el = document.createElement('div');
-      if (k >= p.slides) return el;
-      const side = k % 2 ? 'left:0' : 'right:0';
-      const c = previewCanvas(p, get, { height: px, from: k, count: 1, empty: '#ffffff' });
-      c.style.cssText = `position:absolute;${side};top:${photoTop}px;width:${sw}px;height:${sh}px`;
-      el.appendChild(c);
-      const label = document.createElement('div');
-      label.className = `ws-label${p.slides > 1 ? ' has-del' : ''}`;
-      label.style.cssText = `${side};top:${photoTop - lineH()}px;width:${sw}px`;
-      label.innerHTML = `<span data-sit="wslabel">${sw >= 90 ? `${word} ${k + 1}` : k + 1}</span>${p.slides > 1 ? `<i class="ws-del">${ICONS.trash}</i>` : ''}`;
-      el.appendChild(label);
-      return el;
-    };
-    const oldL = spread * 2;
-    const newL = s * 2;
-    const x0 = ws.scrollLeft;
-    const x1 = land(page);
-    playFlip({
-      host: flipsEl,
-      // The pages' paper: 3px into the frame's rim, as drawn (style.css).
-      rect: { left: RIM - 3, top: RIM - 3, width: 2 * (pw - RIM + 3), height: nbEl.offsetHeight - 2 * (RIM - 3) },
-      oldL,
-      newL,
-      face,
-      thick: Math.max(4, Math.round(sw * 0.016)),
-      onStep: (t) => {
-        if (!destroyed) ws.scrollLeft = x0 + (x1 - x0) * t;
-      },
-      onDone: () => (flipping = false),
-    });
-    spread = s;
-    renderStrip();
+    const shift = Math.round(Math.min(wsSize().w, 480) * 0.3);
+    const ease = 'cubic-bezier(.3, .6, .3, 1)';
+    inner.style.transition = `transform 130ms ${ease}, opacity 130ms linear`;
+    inner.style.transform = `translateX(${-dir * shift}px)`;
+    inner.style.opacity = '0';
+    setTimeout(() => {
+      if (destroyed) return;
+      swap();
+      inner.style.transition = 'none';
+      inner.style.transform = `translateX(${dir * shift}px)`;
+      void inner.offsetWidth;
+      inner.style.transition = `transform 240ms ${ease}, opacity 180ms linear`;
+      inner.style.transform = '';
+      inner.style.opacity = '';
+      setTimeout(() => {
+        inner.style.transition = '';
+        flipping = false;
+      }, 250);
+    }, 130);
   }
 
   // One page on, or back: across the spread, or over to the next one.
@@ -634,7 +600,7 @@ export async function mountEditor(view, id) {
       const del = p.slides > 1 && sw >= 60
         ? `<button type="button" class="ws-del" data-act="del-slide" data-k="${i}" aria-label="Delete ${word.toLowerCase()} ${i + 1}">${ICONS.trash}</button>`
         : '';
-      html += `<div class="ws-label${del ? ' has-del' : ''}" style="left:${margX + i * sw}px;top:${margY - lineH()}px;width:${sw}px"><span data-sit="wslabel">${sw >= 90 ? `${word} ${i + 1}` : i + 1}</span>${del}</div>`;
+      html += `<div class="ws-label${del ? ' has-del' : ''}" style="left:${margX + i * sw}px;top:${margY - lineH()}px;width:${sw}px"><span>${sw >= 90 ? `${word} ${i + 1}` : i + 1}</span>${del}</div>`;
     }
     labelsEl.innerHTML = html;
   }

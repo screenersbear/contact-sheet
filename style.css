@@ -1318,7 +1318,7 @@ body[data-route="edit"] .toast { bottom: calc(136px + var(--sa-b)); }
      sheets, fields and buttons on them. White lettering stays white, and so
      do marks drawn over photos and anything that shows the export itself. */
   --bg: #f3f3f3;
-  --paper: #fcfaf4; /* warm notebook paper (exports keep their own white) */
+  --paper: #ffffff; /* the open notebook's pages: plain white */
   --surface: var(--paper);
   --line: #d6dadd;
   --field: var(--paper);
@@ -1347,17 +1347,9 @@ body[data-route="edit"] .toast { bottom: calc(136px + var(--sa-b)); }
   --sa-b: env(safe-area-inset-bottom);
   --nb-t: max(var(--sa-t), 10px);
   --nb-b: max(calc(var(--sa-b) + 2px), 10px);
-  --nb-rim: 10px;
+  --nb-rim: 0px; /* no notebook edge round the open pages */
   --head: "Kaisei Decol", "Klee One", Georgia, serif; /* headers, always in capitals */
-  /* Notebook paper: a faint grain; blue ruled lines with a red double margin. */
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .36 0 0 0 0 .27 .16 0 0 0 -.04'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --sheet-1: #ebe5d6; /* the two sheets under each page */
-  --sheet-2: #f3eee2;
-  --rule: rgba(64, 118, 190, .26);
-  --margin: rgba(214, 64, 64, .62);
-  --lh: 32px; /* one ruled line: every line height and gap on a page is a whole number of these */
-  --lhn: 32; /* the same, as a number, for pages drawn at another scale (the 3D book) */
-  --sit-gap: 2px; /* writing rests this far above its line (js/lines.js) */
+  --lh: 32px; /* a slide's label sits this far above it */
   --ink-deep: color-mix(in srgb, var(--book-rim) 78%, #000);
 }
 html.is-short { --nb-b: 10px; }
@@ -1639,10 +1631,8 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 /* The page's edge (see .nb-open > span::after), drawn at the size it ends up
    on screen. The inside of the cover has its outer edge on the left. */
 .nb-block,
-.nb-inside { --ex: calc(var(--rx) / 10); --ey: calc(var(--ry) / 10); --foot: calc(var(--ey) * 61); /* the contents' tools (.nb-toc .nb-open) */ }
+.nb-inside { --ex: calc(var(--rx) / 10); --ey: calc(var(--ry) / 10); }
 .nb .nb-inside::after {
-  --o: -1;
-  --mdir: 90deg;
   top: calc(var(--ey) * 7);
   bottom: calc(var(--ey) * 7);
   left: calc(var(--ex) * 7);
@@ -1705,8 +1695,6 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb[data-mode="new"] .nb-book { transform: rotateY(0deg) translate(var(--new-x), var(--toc-y)) scale(var(--kx), var(--ky)); }
 .nb:not([data-mode="closed"]) .nb-leaf { transform: rotateY(-180deg) translateZ(1px); }
 
-/* Says where the frame's top and bottom land on this screen. */
-.nb-probe { position: absolute; left: 0; width: 0; top: var(--nb-t); bottom: var(--nb-b); visibility: hidden; pointer-events: none; }
 
 /* The two tabs, on sheets of their own, seen from outside with their names. */
 .nb-side-tabs { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; transition: opacity 0.25s; }
@@ -1739,18 +1727,17 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-tabhit { position: fixed; z-index: 6; border: none; padding: 0; background: none; }
 .nb:not([data-mode="closed"]) .nb-tabhits { display: none; }
 
-/* Table of contents: six chapters to a page, in the notebook's frame. */
+/* Table of contents: a plain white page that scrolls, the tools at the bottom. */
 .nb-toc {
   position: absolute;
   inset: 0;
-  background: var(--bg);
+  background: var(--paper);
   opacity: 0;
   transition: opacity 0.22s;
 }
 .nb.is-reading .nb-toc { opacity: 1; }
 .nb-toc[hidden] { display: none; }
-.nb-toc .nb-open { pointer-events: auto; touch-action: none; }
-.nb-toc .ed-tools { position: absolute; left: 20px; right: 20px; bottom: calc(var(--nb-b) + var(--nb-rim)); margin: 0; touch-action: none; }
+.nb-toc .ed-tools { position: absolute; left: 20px; right: 20px; bottom: var(--nb-b); margin: 0; touch-action: none; }
 /* The navigation icon (navicon.js): the icon in the same 21px row as the
    other tools' icons, the triangles tucked up against it, its name below. */
 .nb-nav .tool-label { line-height: normal; }
@@ -1769,111 +1756,58 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-nav .slide-icon svg { width: 21px; height: 21px; display: block; }
 .toc-page {
   position: absolute;
-  z-index: 1;
-  top: calc(var(--nb-rim) + 12px);
-  bottom: calc(var(--nb-rim) + 58px);
-  width: calc(var(--page) - var(--nb-rim) - 24px);
-  display: flex;
-  flex-direction: column;
+  inset: 0 0 calc(var(--nb-b) + 62px);
+  box-sizing: border-box;
+  padding: calc(var(--sa-t) + 28px) max(20px, calc((100% - 560px) / 2)) 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
-.toc-page.is-left { left: calc(var(--nb-rim) + 12px); }
-.toc-page.is-right { left: calc(var(--page) + 12px); }
-.toc-page.is-face { left: 12px; right: 12px; top: 12px; bottom: 58px; width: auto; }
 .nb-head {
-  flex-shrink: 0;
-  margin: 0 0 4px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
-  font-family: var(--font-title);
-  font-size: 26px;
-  font-weight: 400;
+  margin: 0 0 14px;
+  font: 500 26px/1.25 var(--head);
+  text-transform: uppercase;
+  letter-spacing: .08em;
   text-align: center;
-  text-transform: none;
-  letter-spacing: 0;
   color: var(--text);
 }
-.toc-list { flex: 1; min-height: 0; display: grid; grid-template-rows: repeat(6, minmax(0, 1fr)); }
-.toc-row {
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border-bottom: 1px solid var(--line);
-}
+.toc-row { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
 .toc-open {
   flex: 1;
   min-width: 0;
-  height: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 6px 0;
+  gap: 14px;
+  padding: 10px 0;
   color: var(--text);
   text-decoration: none;
   -webkit-user-drag: none;
 }
-.toc-thumb {
-  flex-shrink: 0;
-  height: 100%;
-  aspect-ratio: 1;
-  border-radius: 3px;
-  background: var(--paper);
-  box-shadow: inset 0 0 0 1px var(--line);
-  display: block;
-  overflow: hidden;
-}
+.toc-thumb { flex-shrink: 0; width: 52px; height: 52px; border-radius: 6px; background: #eef0f1; display: block; overflow: hidden; }
 .toc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.toc-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.toc-name { font-family: var(--font-hand); font-size: 20px; line-height: 1.2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.toc-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.toc-name { font-family: var(--font-hand); font-size: 20px; line-height: 1.25; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .toc-meta { font-size: 14px; color: var(--text-dim); }
-.toc-empty { grid-row: 1 / -1; align-self: center; margin: 0; text-align: center; font-family: var(--font-title); font-size: 19px; color: var(--text-dim); }
-.toc-foot { flex-shrink: 0; height: 22px; line-height: 24px; text-align: center; font-size: 14px; color: var(--text-dim); }
-.toc-tip { flex-shrink: 0; margin: 8px 0 0; text-align: center; font-size: 12px; line-height: 1.35; color: var(--text-dim); }
+.toc-empty { margin: 48px 0 0; text-align: center; font-family: var(--font-title); font-size: 19px; color: var(--text-dim); }
+.toc-tip { margin: 22px 0 0; text-align: center; font-size: 13px; line-height: 1.4; color: var(--text-dim); }
 .toc-tip .text-btn { font-size: inherit; }
 
-/* The open notebook around the pages in the editor. */
+/* The editor: the photos on plain white, the full width of the screen. */
 /* Pinned by its edges, not 100dvh: on iOS 26 100dvh stops a status bar short
    of the bottom of the screen. Everything sits inside the notebook's frame. */
-.editor { --ed-in: 20px; height: auto; padding: calc(var(--nb-t) + var(--nb-rim)) 0 calc(var(--nb-b) + var(--nb-rim)); background: var(--bg); }
-body[data-route="edit"] { background: var(--bg); }
+.editor { --ed-in: 16px; height: auto; padding: var(--nb-t) 0 var(--nb-b); background: var(--paper); }
+body[data-route="edit"] { background: var(--paper); }
 .ws { z-index: 1; background: none; scrollbar-width: none; }
 .ws::-webkit-scrollbar { display: none; }
 .ws-inner { overflow: hidden; }
-.nb-open { position: absolute; left: 0; top: var(--nb-t); bottom: var(--nb-b); display: flex; pointer-events: none; filter: drop-shadow(0 8px 16px rgba(60, 40, 20, 0.16)); }
-.nb-open > span {
-  position: relative;
-  flex: 1;
-  box-sizing: border-box;
-  border-style: solid;
-  border-width: var(--nb-rim) var(--nb-rim) var(--nb-rim) 0;
-  border-image: var(--book-block) 46 46 46 1 fill / var(--nb-rim) var(--nb-rim) var(--nb-rim) 0 stretch;
-}
-.nb-open > span:first-of-type { transform: scaleX(-1); }
-/* The page: a sheet of warm, ruled paper with rounded outer corners lying in
-   the notebook, a 7px band of the notebook's colour showing round it, with two
-   more sheets under it showing toward the outer edge and the bottom for
-   thickness, the deeper shade of the colour hugging them. Blue lines every
-   --lh from the page's top edge and a red double margin 23px and 26px in from
-   the outer edge; the lines stop above the tools at the bottom (--foot).
-   Drawn in the box's own frame, where +x is outward (--o) and the margin is
-   on the --mdir side. --ex and --ey are one screen pixel across and down; the
-   3D book sets its own, so its pages land exactly on the contents' frame. The
+/* Measures the room the pages have (js/editor.js); nothing shows. */
+.nb-open { position: absolute; left: 0; top: var(--nb-t); bottom: var(--nb-b); pointer-events: none; visibility: hidden; }
+/* The 3D book's two open pages: plain white paper with rounded outer
+   corners, a band of the notebook's colour round them. --ex and --ey are one
+   screen pixel across and down once the book has zoomed in (js/book.js). The
    big ring of the notebook's colour hides the art's soft inner edge. */
-.nb-open > span { --ex: 1px; --ey: 1px; }
-.nb-open > span, .nb-block { --o: 1; --mdir: 270deg; }
-.nb-open > span::after,
 .nb-block::after,
-.nb-inside::after,
-.flip-page {
-  background:
-    linear-gradient(var(--mdir), transparent calc(var(--ex) * 23), var(--margin) calc(var(--ex) * 23) calc(var(--ex) * 24.2), transparent calc(var(--ex) * 24.2) calc(var(--ex) * 26), var(--margin) calc(var(--ex) * 26) calc(var(--ex) * 27), transparent calc(var(--ex) * 27)),
-    repeating-linear-gradient(180deg, transparent 0 calc(var(--ey) * (var(--lhn) - 1)), var(--rule) calc(var(--ey) * (var(--lhn) - 1)) calc(var(--ey) * var(--lhn))),
-    var(--grain), var(--paper);
-  background-repeat: no-repeat, no-repeat, repeat, no-repeat;
-  background-size: 100% 100%, 100% calc(100% - var(--foot, 0px)), auto, auto;
-  background-size: 100% 100%, 100% round(down, 100% - var(--foot, 0px), calc(var(--ey) * var(--lhn))), auto, auto;
-}
-.nb-open > span::after,
+.nb-inside::after { background: var(--paper); }
 .nb-block::after,
 .nb-inside::after {
   content: '';
@@ -1884,40 +1818,9 @@ body[data-route="edit"] { background: var(--bg); }
   right: calc(var(--ex) * -3);
   border-radius: 0 calc(var(--ex) * 20) calc(var(--ex) * 20) 0 / 0 calc(var(--ey) * 20) calc(var(--ey) * 20) 0;
   box-shadow:
-    0 0 0 calc(var(--ex) * 1) rgba(90, 70, 40, .16),
-    calc(var(--o) * var(--ex)) var(--ey) calc(var(--ex) * 2) rgba(60, 40, 20, .12),
-    calc(var(--o) * var(--ex) * 2.5) calc(var(--ey) * 1.6) 0 0 var(--sheet-2),
-    calc(var(--o) * var(--ex) * 2.5) calc(var(--ey) * 1.6) 0 calc(var(--ex) * .6) rgba(90, 70, 40, .3),
-    calc(var(--o) * var(--ex) * 4.5) calc(var(--ey) * 3) 0 0 var(--sheet-1),
-    calc(var(--o) * var(--ex) * 4.5) calc(var(--ey) * 3) 0 calc(var(--ex) * 1.5) var(--ink-deep),
     0 0 0 calc((var(--ex) + var(--ey)) * 30) var(--book-rim);
   clip-path: inset(calc(var(--ey) * -3) calc(var(--ex) * -6.5) calc(var(--ey) * -5) 0 round 0 calc(var(--ex) * 9) calc(var(--ex) * 9) 0);
   pointer-events: none;
-}
-/* Turning pages get the same round outer corners. */
-.flip-under.is-left,
-.flip-back { border-radius: 20px 0 0 20px; --mdir: 90deg; }
-.flip-under.is-right,
-.flip-front { border-radius: 0 20px 20px 0; --mdir: 270deg; }
-.nb-spine {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 40px;
-  margin-left: -20px;
-  /* A real crease: each page darkens into the spine, with a thin hard line where they meet. */
-  background: linear-gradient(90deg, rgba(70, 50, 30, 0) 0, rgba(70, 50, 30, .05) 30%, rgba(70, 50, 30, .2) 49.2%, rgba(50, 35, 20, .42) 50%, rgba(70, 50, 30, .12) 50.8%, rgba(70, 50, 30, .03) 70%, rgba(70, 50, 30, 0) 100%);
-}
-.ed-flips { position: absolute; z-index: 2; left: 0; top: var(--nb-t); bottom: var(--nb-b); pointer-events: none; }
-.strip { box-shadow: none; }
-.nb-gutter {
-  position: absolute;
-  width: 40px;
-  margin-left: -20px;
-  pointer-events: none;
-  /* The crease over the photos: the same shape in grey, so it never tints a photo. */
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, .04) 30%, rgba(0, 0, 0, .16) 49.2%, rgba(0, 0, 0, .36) 50%, rgba(0, 0, 0, .1) 50.8%, rgba(0, 0, 0, .02) 70%, rgba(0, 0, 0, 0) 100%);
 }
 .ws-labels { z-index: 1; }
 .ws-label { height: 26px; line-height: 26px; font-family: var(--font-body); font-size: 16px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--text); }
@@ -1942,41 +1845,6 @@ body[data-route="edit"] { background: var(--bg); }
 }
 .ed-name.is-over button { background: var(--paper); }
 .ed-name span { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-
-/* Turning the page. */
-.flip { position: absolute; z-index: 2; perspective: 1500px; pointer-events: none; }
-.flip-page { --ex: 1px; --ey: 1px; position: absolute; top: 0; bottom: 0; overflow: hidden; } /* paper and lines: see .nb-open > span::after */
-.flip-page canvas { display: block; width: 100%; height: 100%; }
-.flip-under { width: 50%; }
-.flip-under.is-left { left: 0; }
-.flip-under.is-right { left: 50%; }
-.flip-leaf {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 50%;
-  transform-origin: 0 50%;
-  transform-style: preserve-3d;
-}
-.flip-front,
-.flip-back {
-  left: 0;
-  width: 100%;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-.flip-front { transform: translateZ(calc(var(--t) / 2)); }
-.flip-back { transform: rotateY(180deg) translateZ(calc(var(--t) / 2)); }
-/* The page's thickness: thin paper edges joining its two faces. */
-.flip-edge { position: absolute; display: block; background: repeating-linear-gradient(90deg, var(--paper) 0 1px, #d4d4d4 1px 2px); }
-.flip-edge.is-out { top: 0; bottom: 0; left: calc(100% - var(--t) / 2); width: var(--t); transform: rotateY(90deg); }
-.flip-edge.is-top,
-.flip-edge.is-bottom { left: 0; right: 0; height: var(--t); background: repeating-linear-gradient(180deg, var(--paper) 0 1px, #d4d4d4 1px 2px); transform: rotateX(90deg); }
-.flip-edge.is-top { top: calc(var(--t) / -2); }
-.flip-edge.is-bottom { bottom: calc(var(--t) / -2); }
-.flip-shade { position: absolute; inset: 0; background: linear-gradient(90deg, #000, rgba(0, 0, 0, 0.25)); opacity: 0; }
-.flip-back .flip-shade { background: linear-gradient(270deg, #000, rgba(0, 0, 0, 0.25)); }
 
 /* The bottom bar: no band, just Berry Blade black on the white page. */
 .tray,
@@ -2016,9 +1884,9 @@ body[data-route="edit"] { background: var(--bg); }
 /* While a photo is moved: the frame's middle lines, shown when it catches. */
 .guide.in-frame { background: var(--text); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85); }
 
-/* Sheets: white paper and thin lines. */
-.sheet { border-top: none; background: var(--grain), var(--paper); }
-.sheet-header { background: var(--grain), var(--paper); border-bottom: 1px solid var(--line); }
+/* Sheets: white, with thin lines. */
+.sheet { border-top: none; background: var(--paper); }
+.sheet-header { background: var(--paper); border-bottom: 1px solid var(--line); }
 .sheet-header h2 { color: var(--text); font-family: var(--head); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
 .choice, .tpl-card { border: 1px solid var(--text); border-radius: 8px; }
 .choice-label, .row-name { text-transform: none; font-weight: 500; letter-spacing: 0; }
@@ -2053,47 +1921,3 @@ body[data-route="edit"] { background: var(--bg); }
 .pdfv-row { display: flex; align-items: center; gap: 8px; }
 .pdfv-count { flex: 1; font-size: 15px; color: var(--text); }
 .pdfv-thumb { width: 48px; height: 48px; flex-shrink: 0; object-fit: cover; }
-
-/* ---------- Writing on the ruled lines ----------
-   Every height and gap on a page is a whole number of lines (--lh), measured
-   from the page's top edge, and js/lines.js nudges each kind of text (data-sit)
-   so it rests --sit-gap above a line. Writing starts 34px in from the outer
-   edge, 12px from the spine. Pop-ups keep plain paper. */
-[data-sit] { position: relative; }
-/* Text cut off at its edge (an ellipsis) keeps room below for descenders. */
-.toc-name[data-sit], .ws-label > span, .ed-name span { padding-bottom: 8px; margin-bottom: -8px; }
-/* The contents: under a blank first line, the title on two lines, then the
-   chapters, two lines each; the tip and the page number at the bottom. The
-   tools sit below the lines (--foot). */
-.nb-toc .nb-open { --foot: 61px; }
-.toc-page {
-  top: calc(var(--nb-rim) - 3px + var(--lh));
-  bottom: auto;
-  width: calc(var(--page) - var(--nb-rim) - 43px);
-  height: calc(100% - 2 * var(--nb-rim) + 6px - var(--lh) - var(--foot));
-  height: round(down, 100% - 2 * var(--nb-rim) + 6px - var(--lh) - var(--foot), var(--lh));
-}
-.toc-page.is-left { left: calc(var(--nb-rim) + 31px); }
-.toc-page.is-right { left: calc(var(--page) + 12px); }
-.toc-page.is-face { top: var(--lh); bottom: auto; width: auto; height: calc(100% - var(--lh) - var(--foot)); height: round(down, 100% - var(--lh) - var(--foot), var(--lh)); }
-.flip-under.is-left .toc-page.is-face, .flip-back .toc-page.is-face { left: 34px; right: 12px; }
-.flip-under.is-right .toc-page.is-face, .flip-front .toc-page.is-face { left: 12px; right: 34px; }
-.nb-head { height: calc(var(--lh) * 2); margin: 0; padding: 0; border-bottom: 0; font: 500 clamp(18px, calc((var(--page) - var(--nb-rim) - 43px) / 12), 26px)/calc(var(--lh) * 2) var(--head); text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
-.toc-list { display: block; }
-.toc-row { height: calc(var(--lh) * 2); align-items: flex-start; border-bottom: 0; }
-.toc-open { align-items: flex-start; padding: 0; }
-/* Thumbnails taped in: a white border, a small shadow, a slight tilt. */
-.toc-thumb { width: 50px; height: 50px; margin-top: 7px; aspect-ratio: auto; border: 2px solid #fff; border-radius: 1px; box-shadow: 0 1px 2px rgba(60, 40, 20, .25); transform: rotate(-1.2deg); }
-.toc-row:nth-child(odd) .toc-thumb { transform: rotate(1deg); }
-.toc-text { gap: 0; }
-.toc-name, .toc-meta { display: block; line-height: var(--lh); }
-.toc-empty { margin: calc(var(--lh) * 3) 0 0; line-height: var(--lh); }
-.toc-tip { margin: 0; line-height: var(--lh); }
-.toc-tip .text-btn { padding: 0; min-height: 0; line-height: inherit; vertical-align: baseline; }
-.toc-foot { height: var(--lh); line-height: var(--lh); }
-/* The editor: the photos' top edge lies along a line (js/editor.js), the
-   label on the line above it, the chapter's name on a line below. */
-.ws-label { height: var(--lh); line-height: var(--lh); overflow: visible; }
-.ws-label > span { display: block; }
-.ed-name { height: var(--lh); }
-.ed-name button { line-height: var(--lh); }

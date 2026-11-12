@@ -1,25 +1,29 @@
-// The notebook: floating shut on white with its two tabs, then open at the
-// Table of contents. Routes: #/ (shut), #/contents. Each draft is a chapter.
+// The notebook: floating shut on white with its two tabs. Opened, it zooms in
+// until its first page covers the screen, and the Table of contents is a plain
+// page that scrolls. Routes: #/ (shut), #/contents. Each draft is a chapter.
 import { listProjects } from './db.js';
 import { openSheet, sheetIsOpen } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, shortDate, isIOS, isStandalone } from './util.js';
 import { pageWord } from './model.js';
 import { openNotebookExport } from './export.js';
-import { OUT, RIM, bookSize, bookLeft } from './frame.js';
-import { playFlip } from './flip.js';
 import { mountStickers, openStickers } from './stickers.js';
 import { makeTurnable } from './turn.js';
 import { navHtml, mountNav } from './navicon.js';
 
 const TIP_KEY = 'contact-sheet-home-tip';
 const RATIO = 1000 / 1360; // the notebook art's width over its height
-const PER_PAGE = 6;
-const TIP = `<p class="toc-tip" data-sit="tip"><b>Keep your chapters safe:</b> add Contact Sheet to your Home Screen. Safari can clear the photos of sites that aren't on it. <button type="button" class="text-btn" data-tip-off>Got it</button></p>`;
+const TIP = `<p class="toc-tip"><b>Keep your chapters safe:</b> add Contact Sheet to your Home Screen. Safari can clear the photos of sites that aren't on it. <button type="button" class="text-btn" data-tip-off>Got it</button></p>`;
 const STACK = 16; // sheets drawn for the thickness of the shut book
 const TURNED = (20 * Math.PI) / 180; // the shut book's turn; matches style.css
 const PERSPECTIVE = 1100; // matches .nb in style.css
 const TAB_OUT = 0.06; // how far the tabs stick out, of the book's width
+// Zoomed in, the open book's coloured edge is this many screen pixels wide and
+// its paper starts PAPER_IN inside it. The page zooms OVER past the screen's
+// edges, so its paper, round corners and all, covers the whole screen.
+const RIM = 10;
+const PAPER_IN = 7;
+const OVER = PAPER_IN + 12;
 const OPEN_MS = 860; // the cover swinging open and the book zooming in
 const ZOOM_MS = 760;
 const BOOK_KEY = 'contact-sheet-book'; // also read in index.html, before the first paint
@@ -122,7 +126,6 @@ export function mountBook(view, startMode, onNew) {
   document.body.dataset.route = 'book';
   view.innerHTML = `
     <div class="nb no-anim${startMode === 'closed' ? ' is-waiting' : ''}" data-mode="${startMode}">
-      <div class="nb-probe"></div>
       <div class="nb-ground"></div>
       <div class="nb-float">
         <div class="nb-book">
@@ -147,12 +150,7 @@ export function mountBook(view, startMode, onNew) {
         ${TABS.map(([key, name]) => `<button type="button" class="nb-tabhit" data-tab="${key}" aria-label="${name}"></button>`).join('')}
       </div>
       <div class="nb-toc" hidden>
-        <div class="nb-open" data-tocbook>
-          <span></span><span></span>
-          <i class="nb-spine"></i>
-          <div class="toc-page is-left" data-left></div>
-          <div class="toc-page is-right" data-right></div>
-        </div>
+        <div class="toc-page" data-tocbook data-left></div>
         <nav class="ed-tools" aria-label="Contents">
           ${navHtml()}
           <button type="button" class="tool" data-toc="new"><span class="tool-icon">${ICONS.plus}</span><span class="tool-label">New chapter</span></button>
@@ -166,26 +164,16 @@ export function mountBook(view, startMode, onNew) {
   // notebook waits for its art to fade in.
   const sun = view.querySelector('.nb-sun');
   const toc = root.querySelector('.nb-toc');
-  const probe = root.querySelector('.nb-probe');
   const tocBook = root.querySelector('[data-tocbook]');
   const leftEl = root.querySelector('[data-left]');
-  const rightEl = root.querySelector('[data-right]');
   const sideTabs = root.querySelector('.nb-side-tabs');
   const tabHits = root.querySelector('.nb-tabhits');
   const stickers = mountStickers(root, root.querySelector('.nb-front'));
   let geo = { W: 300, H: 400 };
-  let page = 300; // one page of the open notebook, from the spine out
-  let two = false; // both pages in view at once
-  let left = OUT;
-  let frameH = 700;
-  let maxPan = 0;
-  let pan = 0;
   let timer = 0;
   let destroyed = false;
   let chapters = [];
   let thumbs = new Map();
-  let tocPage = 0;
-  let turning = false;
   let swipe = null;
   let swiped = false;
   let showTip = false;
@@ -211,34 +199,26 @@ export function mountBook(view, startMode, onNew) {
   function measure() {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const frame = probe.getBoundingClientRect();
-    frameH = frame.height;
-    const size = bookSize(vw, frameH);
-    two = size.two;
-    page = size.one;
-    left = bookLeft(vw, page);
-    maxPan = Math.max(0, 2 * page + 2 * left - vw);
     const { W, shutX } = shutBook(vw, vh);
     const H = W / RATIO;
     geo = { W, H };
-    const kx = page / W;
-    const ky = frameH / H;
+    // Zoomed in, a page reaches OVER past three edges of the screen and the
+    // spine lies along the fourth.
+    const kx = (vw + OVER) / W;
+    const ky = (vh + 2 * OVER) / H;
     const set = (k, v) => root.style.setProperty(k, v);
     set('--W', `${W}px`);
     set('--H', `${H}px`);
     set('--shut-x', `${shutX}px`);
-    // Zoomed in, a page lands exactly on the frame the contents draw.
     set('--kx', String(kx));
     set('--ky', String(ky));
     set('--rx', `${RIM / kx}px`);
     set('--ry', `${RIM / ky}px`);
-    set('--toc-x', `${left + page - vw / 2}px`);
-    set('--new-x', `${left + page - maxPan - vw / 2}px`);
-    set('--toc-y', `${frame.top + frameH / 2 - vh / 2}px`);
-    set('--page', `${page}px`);
-    tocBook.style.width = `${2 * page}px`;
-    if (fitRows() && chapters.length) drawPages();
-    showCamera(panOf(tocPage));
+    // The contents open on the left-hand page (the spine on the right edge),
+    // a new chapter on the right-hand one (the spine on the left edge).
+    set('--toc-x', `${vw / 2}px`);
+    set('--new-x', `${-vw / 2}px`);
+    set('--toc-y', '0px');
   }
 
   // Where the tabs land on screen with the book shut. Measured in that pose
@@ -260,40 +240,6 @@ export function mountBook(view, startMode, onNew) {
     void root.offsetWidth;
   }
 
-  const pageCount = () => Math.max(1, Math.ceil(chapters.length / perPage));
-  // How many chapters a page holds: as many two-line rows as fit on the ruled
-  // lines between the title (two lines) and the page number (one), and the tip
-  // while it shows; six at most.
-  let perPage = PER_PAGE;
-  function fitRows() {
-    const lh = parseFloat(getComputedStyle(root).getPropertyValue('--lh')) || 32;
-    const foot = parseFloat(getComputedStyle(tocBook).getPropertyValue('--foot')) || 0;
-    let lines = Math.floor((frameH - 2 * (RIM - 3) - lh - foot) / lh + 0.01) - 3;
-    if (showTip) {
-      const probe = document.createElement('div');
-      probe.className = 'toc-page is-left';
-      probe.style.visibility = 'hidden';
-      probe.innerHTML = TIP;
-      root.append(probe);
-      lines -= Math.ceil(probe.firstElementChild.offsetHeight / lh - 0.02);
-      probe.remove();
-    }
-    const per = Math.max(1, Math.min(PER_PAGE, Math.floor(lines / 2)));
-    if (per === perPage) return false;
-    perPage = per;
-    tocPage = Math.min(tocPage, pageCount() - 1);
-    return true;
-  }
-  const panOf = (n) => (two || n % 2 === 0 ? 0 : maxPan);
-  const spreadOf = (n) => Math.floor(n / 2);
-
-  // The notebook slides under the screen: left page, then right page.
-  function showCamera(x, ms = 0) {
-    pan = x;
-    tocBook.style.transition = ms ? `transform ${ms}ms cubic-bezier(.22,.61,.36,1)` : 'none';
-    tocBook.style.transform = `translateX(${left - x}px)`;
-  }
-
   function rowHtml(p) {
     const u = thumbs.get(p.id);
     return `
@@ -301,30 +247,24 @@ export function mountBook(view, startMode, onNew) {
         <a class="toc-open" href="#/edit/${esc(p.id)}" draggable="false">
           <span class="toc-thumb">${u ? `<img src="${u}" alt="" draggable="false" />` : ''}</span>
           <span class="toc-text">
-            <span class="toc-name" data-sit="tname">${esc(p.name)}</span>
-            <span class="toc-meta" data-sit="tmeta">${p.slides} ${esc(pageWord(p, p.slides !== 1))} · ${esc(shortDate(p.updatedAt))}</span>
+            <span class="toc-name">${esc(p.name)}</span>
+            <span class="toc-meta">${p.slides} ${esc(pageWord(p, p.slides !== 1))} · ${esc(shortDate(p.updatedAt))}</span>
           </span>
         </a>
       </div>`;
   }
 
-  function pageHtml(n) {
-    const total = pageCount();
-    if (n >= total) return '';
-    const rows = chapters.slice(n * perPage, (n + 1) * perPage).map(rowHtml).join('');
-    const tip = n === 0 && showTip ? TIP : '';
+  // Every chapter on one page that scrolls; the tip at the end.
+  function pageHtml() {
+    const rows = chapters.map(rowHtml).join('');
     return `
-      <h2 class="nb-head" data-sit="head">Table of contents</h2>
-      <div class="toc-list">${rows || '<p class="toc-empty" data-sit="empty">No chapters yet.</p>'}</div>
-      ${tip}
-      <div class="toc-foot" data-sit="foot">${total > 1 ? `${n + 1} / ${total}` : ''}</div>`;
+      <h2 class="nb-head">Table of contents</h2>
+      <div class="toc-list">${rows || '<p class="toc-empty">No chapters yet.</p>'}</div>
+      ${showTip ? TIP : ''}`;
   }
 
   function drawPages() {
-    const first = spreadOf(tocPage) * 2;
-    leftEl.innerHTML = pageHtml(first);
-    rightEl.innerHTML = pageHtml(first + 1);
-    root.classList.toggle('at-right', panOf(tocPage) > 0);
+    leftEl.innerHTML = pageHtml();
   }
 
   function releaseThumbs() {
@@ -338,7 +278,6 @@ export function mountBook(view, startMode, onNew) {
     releaseThumbs();
     chapters = projects;
     chapters.forEach((p) => p.thumb && thumbs.set(p.id, URL.createObjectURL(p.thumb)));
-    tocPage = Math.min(tocPage, pageCount() - 1);
     showTip = (() => {
       if (!isIOS() || isStandalone()) return false;
       try {
@@ -347,59 +286,13 @@ export function mountBook(view, startMode, onNew) {
         return true;
       }
     })();
-    fitRows();
     drawPages();
-    showCamera(panOf(tocPage));
   }
 
-  // Goes to a page the way a chapter does: across to the other side of the
-  // spread, or a page turn to the next one.
-  function goPage(n) {
-    if (turning) return;
-    // Swiping back from the first page shuts the notebook.
-    if (n < 0) {
-      location.hash = '#/';
-      return;
-    }
-    if (n >= pageCount()) {
-      showCamera(panOf(tocPage), 240);
-      return;
-    }
-    const from = spreadOf(tocPage);
-    const to = spreadOf(n);
-    if (from === to) {
-      tocPage = n;
-      root.classList.toggle('at-right', panOf(n) > 0);
-      showCamera(panOf(n), 260);
-      return;
-    }
-    const x0 = pan;
-    const x1 = panOf(n);
-    tocPage = n;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      drawPages();
-      showCamera(x1);
-      return;
-    }
-    turning = true;
-    const face = (k) => {
-      const el = document.createElement('div');
-      el.innerHTML = `<div class="toc-page is-face">${pageHtml(k)}</div>`;
-      return el;
-    };
-    playFlip({
-      host: tocBook,
-      // The pages' paper: 3px into the frame's rim, as drawn (style.css).
-      rect: { left: RIM - 3, top: RIM - 3, width: 2 * (page - RIM + 3), height: frameH - 2 * (RIM - 3) },
-      oldL: from * 2,
-      newL: to * 2,
-      face,
-      onStep: (t) => showCamera(x0 + (x1 - x0) * t),
-      onDone: () => (turning = false),
-    });
-    drawPages();
-  }
-  const step = (dir) => goPage(two ? (spreadOf(tocPage) + dir) * 2 : tocPage + dir);
+  // Swiping back (right) from the contents shuts the notebook.
+  const step = (dir) => {
+    if (dir < 0) location.hash = '#/';
+  };
 
   function setMode(next, instant = false) {
     nav.reset();
@@ -422,10 +315,6 @@ export function mountBook(view, startMode, onNew) {
     } else {
       toc.hidden = true;
       root.classList.remove('is-reading');
-      if (next === 'closed') {
-        tocPage = 0;
-        root.classList.remove('at-right');
-      }
       root.dataset.mode = next;
     }
     if (instant) setTimeout(() => root.classList.remove('no-anim'), 60);
@@ -457,9 +346,9 @@ export function mountBook(view, startMode, onNew) {
     onShut: () => (location.hash = '#/'),
     onSwiped: () => (swiped = true),
   });
+  // A sideways swipe on the contents; up and down it scrolls.
   tocBook.addEventListener('pointerdown', (e) => {
-    if (turning) return;
-    swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, base: pan, moved: false, samples: [] };
+    swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false, samples: [] };
   });
   tocBook.addEventListener('pointermove', (e) => {
     if (!swipe || swipe.id !== e.pointerId) return;
@@ -475,11 +364,6 @@ export function mountBook(view, startMode, onNew) {
     }
     swipe.samples.push({ t: e.timeStamp, x: e.clientX });
     if (swipe.samples.length > 6) swipe.samples.shift();
-    if (two) return;
-    // The page follows the finger, and gives a little past the last one.
-    const hi = spreadOf(tocPage) * 2 + 1 < pageCount() ? maxPan : 0;
-    const x = swipe.base - dx;
-    showCamera(x < 0 ? x * 0.4 : x > hi ? hi + (x - hi) * 0.4 : x);
   });
   tocBook.addEventListener('pointerup', (e) => {
     if (!swipe || swipe.id !== e.pointerId) return;
@@ -492,11 +376,9 @@ export function mountBook(view, startMode, onNew) {
     const b = was.samples[was.samples.length - 1];
     const v = a && b && b.t > a.t && e.timeStamp - b.t < 60 ? (b.x - a.x) / (b.t - a.t) : 0;
     const flick = Math.abs(v) > 0.35 && Math.sign(v) === Math.sign(dx);
-    if (Math.abs(dx) > (two ? 36 : page * 0.28) || flick) step(dx < 0 ? 1 : -1);
-    else showCamera(panOf(tocPage), 240);
+    if (Math.abs(dx) > window.innerWidth * 0.28 || flick) step(dx < 0 ? 1 : -1);
   });
   tocBook.addEventListener('pointercancel', () => {
-    if (swipe && swipe.moved) showCamera(panOf(tocPage), 240);
     swipe = null;
   });
 
@@ -515,7 +397,7 @@ export function mountBook(view, startMode, onNew) {
     // Placing a sticker: the cover and tabs wait until OK.
     if (root.classList.contains('is-sticking')) return;
     // The end of a swipe is not a tap on whatever it finished over.
-    if (swiped || turning) {
+    if (swiped) {
       swiped = false;
       e.preventDefault();
       return;
@@ -529,9 +411,8 @@ export function mountBook(view, startMode, onNew) {
     const t = e.target.closest('[data-toc]');
     if (t) {
       if (t.dataset.toc === 'shut') nav.shut();
-      else if (t.dataset.toc === 'first') {
-        if (tocPage) goPage(0);
-      } else startNew();
+      else if (t.dataset.toc === 'first') leftEl.scrollTo({ top: 0, behavior: 'smooth' });
+      else startNew();
       return;
     }
     if (e.target.closest('[data-tip-off]')) {
@@ -539,7 +420,6 @@ export function mountBook(view, startMode, onNew) {
         localStorage.setItem(TIP_KEY, 'off');
       } catch {}
       showTip = false;
-      fitRows();
       drawPages();
       return;
     }
@@ -558,10 +438,6 @@ export function mountBook(view, startMode, onNew) {
   };
   window.addEventListener('resize', refit);
   measure();
-  // The tip's lines depend on the handwriting having loaded.
-  document.fonts?.ready.then(() => {
-    if (!destroyed && fitRows() && chapters.length) drawPages();
-  });
   setMode(startMode, true);
   placeTabHits();
   Promise.race([Promise.all([artReady(), stickers.ready]), new Promise((done) => setTimeout(done, 1500))]).then(() => root.classList.remove('is-waiting'));
