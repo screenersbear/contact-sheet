@@ -13,8 +13,12 @@
   "art/orange-block.webp": "28aaa50ce8f604a23b29a86cee7569cbab107a5b9efc679edf182cd571ef657e",
   "art/orange-cover.webp": "48985368f222d0fff351958eaa590785ed44cbe4742c04a598820bc5a6b46a7a",
   "df-data.js": "1cad9ae40b73e73e84ea309cfeac24f1d480bf248ddfc04feda5f23912955f09",
+  "fonts/ArchivoBlack-OFL.txt": "3173acd82f8c6159b5b1037b539fcbd4edff68e65c2ea8b9412b5a5ca97b08ff",
+  "fonts/Inter-OFL.txt": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57",
   "fonts/KaiseiDecol-OFL.txt": "6c5445d4febbf6d84025b874a85c51e7e4bfa7495279eccdb4c317a6de857b46",
   "fonts/KleeOne-OFL.txt": "e376b0df8e8a2345a9533db6f0a5333a1107975569ad9d1973a7ee557161ca38",
+  "fonts/archivo-black-latin.woff2": "4eca2abdbbc1998c3a286e2e83a2256be5263ccb801aa93b00c64fea891efd3a",
+  "fonts/inter-latin.woff2": "c940764593d0fe5d596be327ca7558855e018039fb78509aa21921fd3644c3e4",
   "fonts/kaisei-decol-500-latin.woff2": "2f00d1bb96cacdc475812bdae1bb29f3e65196a2f62a6a598619682d10c90759",
   "fonts/klee-one-latin.woff": "01bf56463a14928517b79628e2a3925fd0444940643c21b0f14d12f635ee8b6c",
   "icons/icon-180.png": "ecc5eccc0954e029e7c8fd4d98e678423b7e05d21d884153bca56fef1f24c6d2",
@@ -46,8 +50,8 @@
   "js/welcome.js": "16b48286ada81e986a7c5bfbab32e0906de19057fdf4147550d61c27209b507d",
   "js/zip.js": "4f298d7018597d3884ca0f3ca74c8af3b79c4a953b251f0f9838a473dc910d82",
   "manifest.json": "b2f2f1757c929c6d39e5f346141519dc4dc5b0cd657653cc96ad050215ca6e99",
-  "style.css": "789e7239f6e121424616a40223c6e9b4caedbe2fecd4f1b4b66403115b653873",
-  "sw.js": "634597b88e0075ffb47d667e076fb9104ed0f679d23f174617309ec60f6e8353"
+  "style.css": "74538642696561caa3e4d2511000b30d5211db5053d3ec13083a4faa0def5596",
+  "sw.js": "634b4b1f90d4913cda0acbb409ede780e4649201bda79c3492e1c0a9724a8133"
  },
  "keep": [
   ".DS_Store",
@@ -64,6 +68,6 @@
  ],
  "name": "Contact Sheet",
  "notebook": "contact-sheet",
- "suite": "2265a5a + changes not committed",
+ "suite": "9679f87",
  "suite_folder": "../Documenting Fictions"
 }
