@@ -1296,8 +1296,9 @@ body[data-route="edit"] .toast { bottom: calc(136px + var(--sa-b)); }
    Everything else is Berry Blade black on white. These come after the
    dark-mode tokens so the notebook always wins. */
 @font-face {
-  font-family: "Mansalva";
-  src: url("fonts/mansalva-latin.woff2") format("woff2");
+  font-family: "Klee One";
+  src: url("fonts/klee-one-latin.woff2") format("woff2");
+  size-adjust: 89%; /* Klee One runs wider than Mansalva did: this keeps every line the same length */
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -1324,7 +1325,7 @@ body[data-route="edit"] .toast { bottom: calc(136px + var(--sa-b)); }
   --overlay: rgba(49, 61, 69, 0.42);
   --canvas: var(--bg);
   --canvas-label: #313d45;
-  --font-hand: "Mansalva", "Bradley Hand", "Noteworthy", cursive;
+  --font-hand: "Klee One", "Bradley Hand", "Noteworthy", cursive;
   --font-title: var(--font-hand);
   --font-body: var(--font-hand);
   --book-cover: url(art/orange-cover.webp);

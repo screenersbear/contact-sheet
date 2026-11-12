@@ -49,7 +49,7 @@ function artReady() {
     img.src = `art/${book}-${part}.webp`;
     return img.decode().catch(() => {});
   });
-  if (document.fonts && document.fonts.load) ready.push(document.fonts.load('16px Mansalva').catch(() => {}));
+  if (document.fonts && document.fonts.load) ready.push(document.fonts.load('16px "Klee One"').catch(() => {}));
   return Promise.race([Promise.all(ready), new Promise((done) => setTimeout(done, 1200))]);
 }
 

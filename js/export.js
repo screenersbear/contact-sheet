@@ -230,7 +230,7 @@ async function contentsSheets(rows) {
     const { c, ctx } = whiteCanvas(2200, 1700);
     ctx.fillStyle = INK;
     ctx.textAlign = 'center';
-    ctx.font = '112px Mansalva, "Bradley Hand", cursive';
+    ctx.font = '112px "Klee One", "Bradley Hand", cursive';
     ctx.fillText('Table of contents', 1100, 250);
     ctx.fillStyle = '#d6dadd';
     ctx.fillRect(300, 320, 1600, 3);
@@ -238,10 +238,10 @@ async function contentsSheets(rows) {
       const y = 320 + n * 128;
       ctx.fillStyle = INK;
       ctx.textAlign = 'left';
-      ctx.font = '68px Mansalva, "Bradley Hand", cursive';
+      ctx.font = '68px "Klee One", "Bradley Hand", cursive';
       ctx.fillText(fitText(ctx, row.name, 1360), 320, y + 90);
       ctx.textAlign = 'right';
-      ctx.font = '60px Mansalva, "Bradley Hand", cursive';
+      ctx.font = '60px "Klee One", "Bradley Hand", cursive';
       ctx.fillText(String(row.page), 1880, y + 88);
       ctx.fillStyle = '#d6dadd';
       ctx.fillRect(300, y + 128, 1600, 3);
@@ -255,7 +255,7 @@ async function nameStrip(name) {
   const { c, ctx } = whiteCanvas(1400, 72);
   ctx.fillStyle = INK;
   ctx.textBaseline = 'middle';
-  ctx.font = '46px Mansalva, "Bradley Hand", cursive';
+  ctx.font = '46px "Klee One", "Bradley Hand", cursive';
   ctx.fillText(fitText(ctx, name, 1380), 0, 38);
   return { ...(await finishCanvas(c)), x: 36, y: 12, w: 504, h: 25.92 };
 }
@@ -266,7 +266,7 @@ async function numberMark(str) {
   ctx.fillStyle = INK;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  ctx.font = '46px Mansalva, "Bradley Hand", cursive';
+  ctx.font = '46px "Klee One", "Bradley Hand", cursive';
   ctx.fillText(str, 156, 38);
   return { ...(await finishCanvas(c)), x: SHEET_W - 36 - 57.6, y: 12, w: 57.6, h: 25.92 };
 }
@@ -276,7 +276,7 @@ async function numberMark(str) {
 export async function makeNotebook(onProgress, stillOpen = () => true) {
   const chapters = await listProjects();
   if (!chapters.length) return null;
-  if (document.fonts && document.fonts.load) await document.fonts.load('60px Mansalva').catch(() => {});
+  if (document.fonts && document.fonts.load) await document.fonts.load('60px "Klee One"').catch(() => {});
   const total = chapters.reduce((sum, p) => sum + p.slides, 0);
   let page = 1;
   const rows = chapters.map((p) => {
