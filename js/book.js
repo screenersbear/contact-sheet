@@ -427,7 +427,7 @@ export function mountBook(view, startMode, onNew) {
       Math.abs(e.clientX - window.innerWidth / 2) <= geo.W * 0.62 &&
       Math.abs(e.clientY - window.innerHeight / 2) <= geo.H * 0.56,
   });
-  // The navigation icon on the bottom row: its right triangle shuts the book.
+  // The navigation icon on the bottom row: its left triangle shuts the book.
   const nav = mountNav(toc.querySelector('.ed-tools'), {
     onShut: () => (location.hash = '#/'),
     onSwiped: () => (swiped = true),

@@ -1,9 +1,10 @@
 // The navigation icon on the contents' bottom row, the same idea as Callback's:
-// one icon with a little triangle beside it. The triangle on the right shuts
-// the notebook: a tap on it does, or a swipe along the bar to the left, the
-// icon sliding over to the shut book as the finger goes. Nothing is left of
-// the contents, so the left triangle stays hidden (its room keeps the icon
-// over its name). A tap on the icon goes back to the first page.
+// one icon with a little triangle beside it. The triangle on the left shuts
+// the notebook, as in Documenting Fictions and Ref Notebook: a tap on it does,
+// or a swipe along the bar to the right, the icon sliding over to the shut book
+// as the finger goes. Nothing is right of the contents, so the right triangle
+// stays hidden (its room keeps the icon over its name). A tap on the icon goes
+// back to the first page.
 import { ICONS } from './icons.js';
 
 const STEP = 30; // px from one icon to the next on the strip
@@ -16,9 +17,9 @@ const TRI = '<svg viewBox="0 0 10 12" aria-hidden="true"><path d="M2.3 1.5Q5.6 3
 export const navHtml = () => `
   <div class="tool nb-nav">
     <div class="slider">
-      <button type="button" class="slide-arrow is-prev is-off" tabindex="-1" aria-hidden="true" disabled>${TRI}</button>
-      <button type="button" class="slide-now" data-toc="first" aria-label="Table of contents, first page"><span class="slide-strip" aria-hidden="true"><span class="slide-icon">${ICONS.contents}</span><span class="slide-icon">${ICONS.shut}</span></span></button>
-      <button type="button" class="slide-arrow is-next" data-toc="shut" aria-label="Close the notebook">${TRI}</button>
+      <button type="button" class="slide-arrow is-prev" data-toc="shut" aria-label="Close the notebook">${TRI}</button>
+      <button type="button" class="slide-now" data-toc="first" aria-label="Table of contents, first page"><span class="slide-strip" aria-hidden="true" style="transform: translateX(-${STEP}px)"><span class="slide-icon">${ICONS.shut}</span><span class="slide-icon">${ICONS.contents}</span></span></button>
+      <button type="button" class="slide-arrow is-next is-off" tabindex="-1" aria-hidden="true" disabled>${TRI}</button>
     </div>
     <span class="tool-label" data-nav-label>Contents</span>
   </div>`;
@@ -32,24 +33,26 @@ export function mountNav(bar, { onShut, onSwiped }) {
   let busy = false;
   let timer = 0;
 
+  // x: how far the strip has moved right from rest (contents showing). The
+  // shut book's icon sits one STEP to the left, so x = STEP shows it.
   const to = (x, moving = false) => {
     strip.classList.toggle('is-moving', moving);
-    strip.style.transform = `translateX(${x.toFixed(1)}px)`;
-    label.textContent = x < -STEP / 2 ? 'Close' : 'Contents';
+    strip.style.transform = `translateX(${(x - STEP).toFixed(1)}px)`;
+    label.textContent = x > STEP / 2 ? 'Close' : 'Contents';
   };
   // Toward the shut book the strip follows the finger, giving a little past
   // it; the other way there's nothing, so it gives a little and stops.
   const along = (dx) => {
     const f = far();
-    if (dx >= 0) return 6 * (1 - Math.exp(-dx / 40));
-    if (-dx <= f) return (STEP * dx) / f;
-    return -STEP - 6 * (1 - Math.exp((dx + f) / 40));
+    if (dx <= 0) return -6 * (1 - Math.exp(dx / 40));
+    if (dx <= f) return (STEP * dx) / f;
+    return STEP + 6 * (1 - Math.exp(-(dx - f) / 40));
   };
 
   function shut() {
     if (busy) return;
     busy = true;
-    to(-STEP, true);
+    to(STEP, true);
     clearTimeout(timer);
     timer = setTimeout(onShut, SLIDE_MS);
   }
@@ -93,8 +96,8 @@ export function mountNav(bar, { onShut, onSwiped }) {
     drag = null;
     if (!d.moved) return;
     onSwiped();
-    const flick = d.v < -0.45 && d.dx < -24;
-    if (e.type === 'pointerup' && (along(d.dx) < -STEP / 2 || flick)) shut();
+    const flick = d.v > 0.45 && d.dx > 24;
+    if (e.type === 'pointerup' && (along(d.dx) > STEP / 2 || flick)) shut();
     else to(0, true);
   };
   bar.addEventListener('pointerup', end);
