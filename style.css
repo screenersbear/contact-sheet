@@ -1297,8 +1297,7 @@ body[data-route="edit"] .toast { bottom: calc(136px + var(--sa-b)); }
    dark-mode tokens so the notebook always wins. */
 @font-face {
   font-family: "Klee One";
-  src: url("fonts/klee-one-latin.woff2") format("woff2");
-  size-adjust: 89%; /* Klee One runs wider than Mansalva did: this keeps every line the same length */
+  src: url("fonts/klee-one-latin.woff") format("woff"); /* Klee One, resized inside the file to Mansalva's width and line height (Safari has no ascent-override), so no layout moved */
   font-weight: 400;
   font-style: normal;
   font-display: swap;
