@@ -2,7 +2,7 @@
 // until its first page covers the screen, and the Table of contents is a plain
 // page that scrolls. Routes: #/ (shut), #/contents. Each draft is a chapter.
 import { listProjects } from './db.js';
-import { openSheet, sheetIsOpen } from './ui.js';
+import { openSheet, sheetIsOpen, confirmSheet, toast } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, shortDate, isIOS, isStandalone } from './util.js';
 import { pageWord } from './model.js';
@@ -85,13 +85,16 @@ function openOptions(stickers) {
       </div>
       <span class="field-label opt-gap">Stickers</span>
       <button type="button" class="btn secondary opt-wide" data-stickers>Stickers</button>
-      <span class="field-label opt-gap">Always start</span>
+      ${window.DF_SUITE ? '' : `<span class="field-label opt-gap">Always start</span>
       <div class="opt-seg" role="group" aria-label="Always start">
         <button type="button" data-start="notebook" aria-pressed="${!first}">In the notebook</button>
         <button type="button" data-start="first" aria-pressed="${first}">On the first page</button>
-      </div>
+      </div>`}
       <span class="field-label opt-gap">Export</span>
-      <button type="button" class="btn secondary opt-wide" data-pdf>Whole notebook as PDF</button>`,
+      <button type="button" class="btn secondary opt-wide" data-pdf>Whole notebook as PDF</button>
+      <span class="field-label opt-gap">Backup</span>
+      <button type="button" class="btn secondary opt-wide" data-save-backup>Save a backup</button>
+      <button type="button" class="btn secondary opt-wide" data-restore-backup>Restore a backup</button>`,
   });
   s.body.addEventListener('click', (e) => {
     const color = e.target.closest('[data-color]');
@@ -114,7 +117,39 @@ function openOptions(stickers) {
       s.close();
       openNotebookExport();
     }
+    else if (e.target.closest('[data-save-backup]')) saveBackup();
+    else if (e.target.closest('[data-restore-backup]')) restoreBackup(() => s.close());
   });
+}
+
+// Everything in the notebook as one file, and back (df-data.js, shared by
+// the notebooks of Documenting Fictions).
+async function saveBackup() {
+  const D = window.DFData;
+  try {
+    const file = await D.exportDb('contact-sheet', { app: 'contact-sheet', filename: `contact-sheet-backup-${D.todayStr()}.json`, extra: { book: document.documentElement.dataset.book || '' } });
+    const how = await D.saveFile(file);
+    if (how !== 'cancelled') toast('Backup saved');
+  } catch (err) {
+    console.error(err);
+    toast(err.message || 'The backup wasn\'t saved.');
+  }
+}
+async function restoreBackup(close) {
+  const D = window.DFData;
+  const file = await D.pickFile(); // straight from the tap, or iOS won't open the picker
+  if (!file) return;
+  if (!(await confirmSheet({ title: 'Restore backup', message: 'Everything in Contact Sheet now is swapped for what\'s in the file.', confirmLabel: 'Restore', danger: true }))) return;
+  try {
+    const { extra } = await D.importDb(file, 'contact-sheet', { app: 'contact-sheet', replace: true });
+    if (extra && extra.book) { try { localStorage.setItem('contact-sheet-book', extra.book); } catch {} }
+    close();
+    toast('Backup restored');
+    setTimeout(() => location.reload(), 700); // everything on screen read fresh
+  } catch (err) {
+    console.error(err);
+    toast(err.message || 'That backup couldn\'t be restored.');
+  }
 }
 
 export function modeOfHash(h) {

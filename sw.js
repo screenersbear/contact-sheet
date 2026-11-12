@@ -1,11 +1,20 @@
 // Bump CACHE_NAME with every deploy so installed copies pick up new files.
-const CACHE_NAME = 'contact-sheet-v43';
+const CACHE_NAME = 'contact-sheet-v44';
+// The same notebook can live twice on one website (inside the Documenting
+// Fictions suite and as its own app), and both workers see every cache there:
+// each name carries the folder this copy lives in, and each copy only ever
+// clears its own (and its own old ones from before names carried a folder).
+const HERE = new URL(self.registration.scope).pathname;
+const CACHE = `${CACHE_NAME} ${HERE}`;
+const PREFIX = 'contact-sheet-v';
+const mine = (k) => k !== CACHE && (k.endsWith(` ${HERE}`) || (k.startsWith(PREFIX) && !k.includes(' ')));
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './manifest.json',
   './js/app.js',
+  './df-data.js',
   './js/book.js',
   './js/db.js',
   './js/editor.js',
@@ -46,13 +55,13 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter(mine).map((k) => caches.delete(k))))
   );
   self.clients.claim();
 });
@@ -68,7 +77,7 @@ self.addEventListener('fetch', (event) => {
       .then((res) => {
         if (res && res.status === 200 && res.type === 'basic') {
           const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+          caches.open(CACHE).then((cache) => cache.put(req, copy));
         }
         return res;
       })
