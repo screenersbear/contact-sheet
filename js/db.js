@@ -20,9 +20,7 @@ const DB_VERSION = 1;
 
 let dbPromise = null;
 
-// Also used by backup.js, so a backup restored into a new notebook finds
-// its stores made.
-export function openDb() {
+function openDb() {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);

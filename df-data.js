@@ -308,6 +308,620 @@
     return { extra: data.extra || {}, counts: Object.fromEntries(names.map((n) => [n, unpacked[n].length])) };
   }
 
+  // ---------- A notebook as a zip, and back ----------
+  // The backups the notebooks make now (and the shelf's, of all four): a
+  // plain .zip the phone never holds in memory. backup.json says what's in
+  // every store, and each photo goes in as a file of its own:
+  //   { format: 'df-backup', version: 1, app, kind ('notebook' or 'suite'), exportedAt, extra,
+  //     databases: { [name]: { version, stores: { [store]: { meta, rows: [[key, value]] } } } },
+  //     local: { [localStorage key]: text } }
+  // In a row, a photo is { __file: 'files/000012', as, ... }: as 'blob' (with
+  // type, name, lastModified), 'buf', 'view' (with view, the typed array's
+  // name) or 'text' (a long string, like The Eye's photos). Photos stored as
+  // Blobs go in as they are: they're on disk already. Ones kept as bytes or
+  // text are first put in a scratch database of the backup's own, a few at a
+  // time, so they're on disk too when the zip is put together from them.
+  // Safari keeps whatever it has read of a Blob in memory for as long as that
+  // Blob is kept, so a photo's checksum is worked out from a second copy of
+  // its row, read and let go, and the zip is made of copies never read.
+  // A phone hands a file over through the share sheet, which reads all of it
+  // into memory (three times over, in Safari), so there a big backup is made
+  // as a few files of PART at most, saved one tap each; each has part.json
+  // ({ format: 'df-backup-part', id, part, of }), the first has backup.json
+  // too (parts: { id, of }), and they're picked together to restore.
+  // Restoring, each photo is copied out of the zip a few MB at a time and
+  // they go in a few at a time. Contact Sheet's first zips (format
+  // 'contact-sheet-backup', one database) read the same way. Backups made the
+  // first way (one .json, exportDb above) still go back in with importDb.
+  const ZIP = { format: 'df-backup', version: 1 };
+  const MANIFEST = 'backup.json';
+  const CHUNK = 4 * 1024 * 1024; // read and copied this much at a time
+  const BATCH = 24 * 1024 * 1024; // stored this much at a time
+  const PAGE = 10; // rows read at a time
+  const BIG_TEXT = 64 * 1024; // a string longer than this goes in as a file
+  const MAX32 = 0xffffffff; // the mark for "in the zip64 extra instead"
+  const ZIP_LIMIT = MAX32; // sizes and places from here on need zip64
+  const SCRATCH = 'df-backup-scratch-';
+  const PART = 200 * 1024 * 1024; // the most a phone is handed at once
+  const PART_NAME = 'part.json';
+
+  const dbNames = async () => (indexedDB.databases ? new Set((await indexedDB.databases()).map((d) => d.name)) : null);
+  const dropDb = (name) => new Promise((ok) => { const r = indexedDB.deleteDatabase(name); r.onsuccess = r.onerror = r.onblocked = () => ok(); });
+
+  const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  // Read as a stream, a little at a time, so what's been read is let go of
+  // as it goes (pieces read as slices piled up before they were freed).
+  const crcAdd = (c, bytes) => { for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8); return c; };
+  const crcBytes = (bytes) => (crcAdd(0xffffffff, bytes) ^ 0xffffffff) >>> 0;
+  async function crcOf(blob, onBytes = () => {}) {
+    let c = 0xffffffff;
+    const eat = (bytes) => {
+      c = crcAdd(c, bytes);
+      onBytes(bytes.length);
+    };
+    if (typeof blob.stream === 'function') {
+      const reader = blob.stream().getReader();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        eat(value);
+      }
+    } else {
+      for (let at = 0; at < blob.size; at += CHUNK) eat(new Uint8Array(await blob.slice(at, at + CHUNK).arrayBuffer()));
+    }
+    return (c ^ 0xffffffff) >>> 0;
+  }
+  // 64-bit numbers as two halves (sizes past 4 GB need them).
+  const set64 = (dv, at, n) => { dv.setUint32(at, n % 0x100000000, true); dv.setUint32(at + 4, Math.floor(n / 0x100000000), true); };
+  const get64 = (dv, at) => dv.getUint32(at, true) + dv.getUint32(at + 4, true) * 0x100000000;
+
+  function dosTime(d) {
+    return {
+      time: (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1),
+      date: ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(),
+    };
+  }
+
+  // entries: [{ name, blob }], stored as they are. The Blob that comes back is
+  // made of the entries' own Blobs.
+  async function zipOf(entries, onBytes) {
+    const enc = new TextEncoder();
+    const { time, date } = dosTime(new Date());
+    const parts = [];
+    const central = [];
+    let offset = 0;
+    for (const e of entries) {
+      const name = enc.encode(e.name);
+      const size = e.blob.size;
+      const crc = e.crc != null ? e.crc : await crcOf(e.blob, onBytes);
+      const big = size >= ZIP_LIMIT;
+      const far = offset >= ZIP_LIMIT;
+      const local = new DataView(new ArrayBuffer(30 + (big ? 20 : 0)));
+      local.setUint32(0, 0x04034b50, true);
+      local.setUint16(4, big ? 45 : 20, true);
+      local.setUint16(6, 0x0800, true); // names are UTF-8
+      local.setUint16(8, 0, true); // stored
+      local.setUint16(10, time, true);
+      local.setUint16(12, date, true);
+      local.setUint32(14, crc, true);
+      local.setUint32(18, big ? MAX32 : size, true);
+      local.setUint32(22, big ? MAX32 : size, true);
+      local.setUint16(26, name.length, true);
+      local.setUint16(28, big ? 20 : 0, true);
+      if (big) {
+        local.setUint16(30, 0x0001, true);
+        local.setUint16(32, 16, true);
+        set64(local, 34, size);
+        set64(local, 42, size);
+      }
+      // The local header's name goes after its fixed part, before the extra.
+      const fixed = new Uint8Array(local.buffer, 0, 30);
+      const extra = new Uint8Array(local.buffer, 30);
+      parts.push(fixed, name, extra, e.blob);
+
+      const wide = big || far;
+      const cen = new DataView(new ArrayBuffer(46 + (wide ? 28 : 0)));
+      cen.setUint32(0, 0x02014b50, true);
+      cen.setUint16(4, wide ? 45 : 20, true);
+      cen.setUint16(6, wide ? 45 : 20, true);
+      cen.setUint16(8, 0x0800, true);
+      cen.setUint16(10, 0, true);
+      cen.setUint16(12, time, true);
+      cen.setUint16(14, date, true);
+      cen.setUint32(16, crc, true);
+      cen.setUint32(20, wide ? MAX32 : size, true);
+      cen.setUint32(24, wide ? MAX32 : size, true);
+      cen.setUint16(28, name.length, true);
+      cen.setUint16(30, wide ? 28 : 0, true);
+      cen.setUint32(42, wide ? MAX32 : offset, true);
+      if (wide) {
+        cen.setUint16(46, 0x0001, true);
+        cen.setUint16(48, 24, true);
+        set64(cen, 50, size);
+        set64(cen, 58, size);
+        set64(cen, 66, offset);
+      }
+      central.push(new Uint8Array(cen.buffer, 0, 46), name, new Uint8Array(cen.buffer, 46));
+      offset += 30 + name.length + extra.length + size;
+    }
+    const cenSize = central.reduce((n, p) => n + p.byteLength, 0);
+    const tail = [];
+    if (offset >= ZIP_LIMIT || cenSize >= ZIP_LIMIT || entries.length >= 0xffff) {
+      const z = new DataView(new ArrayBuffer(56 + 20));
+      z.setUint32(0, 0x06064b50, true);
+      set64(z, 4, 44);
+      z.setUint16(12, 45, true);
+      z.setUint16(14, 45, true);
+      set64(z, 24, entries.length);
+      set64(z, 32, entries.length);
+      set64(z, 40, cenSize);
+      set64(z, 48, offset);
+      z.setUint32(56, 0x07064b50, true);
+      set64(z, 64, offset + cenSize);
+      z.setUint32(72, 1, true);
+      tail.push(z);
+    }
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true);
+    end.setUint16(8, Math.min(entries.length, 0xffff), true);
+    end.setUint16(10, Math.min(entries.length, 0xffff), true);
+    end.setUint32(12, Math.min(cenSize, MAX32), true);
+    end.setUint32(16, Math.min(offset, MAX32), true);
+    tail.push(end);
+    return new Blob([...parts, ...central, ...tail], { type: 'application/zip' });
+  }
+
+  // The files in a zip, read from its end; each is cut out of `file` when asked for.
+  async function readZip(file) {
+    const view = async (at, n) => new DataView(await file.slice(at, at + n).arrayBuffer());
+    const tailLen = Math.min(file.size, 22 + 0xffff);
+    const tail = await view(file.size - tailLen, tailLen);
+    let e = -1;
+    for (let i = tailLen - 22; i >= 0; i--) if (tail.getUint32(i, true) === 0x06054b50) { e = i; break; }
+    if (e < 0) throw new Error("That file isn't a notebook backup.");
+    let count = tail.getUint16(e + 10, true);
+    let cenSize = tail.getUint32(e + 12, true);
+    let cenAt = tail.getUint32(e + 16, true);
+    if ((count === 0xffff || cenSize === MAX32 || cenAt === MAX32) && e >= 20 && tail.getUint32(e - 20, true) === 0x07064b50) {
+      const z = await view(get64(tail, e - 20 + 8), 56);
+      count = get64(z, 32);
+      cenSize = get64(z, 40);
+      cenAt = get64(z, 48);
+    }
+    const cen = await view(cenAt, cenSize);
+    const dec = new TextDecoder();
+    const byName = new Map();
+    for (let p = 0, i = 0; i < count && p + 46 <= cenSize; i++) {
+      if (cen.getUint32(p, true) !== 0x02014b50) break;
+      const method = cen.getUint16(p + 10, true);
+      let packed = cen.getUint32(p + 20, true);
+      let size = cen.getUint32(p + 24, true);
+      const nameLen = cen.getUint16(p + 28, true);
+      const extraLen = cen.getUint16(p + 30, true);
+      const noteLen = cen.getUint16(p + 32, true);
+      let at = cen.getUint32(p + 42, true);
+      const name = dec.decode(new Uint8Array(cen.buffer, cen.byteOffset + p + 46, nameLen));
+      // Zip64: the sizes and place that didn't fit, in this order.
+      for (let x = p + 46 + nameLen; x + 4 <= p + 46 + nameLen + extraLen;) {
+        const id = cen.getUint16(x, true);
+        const len = cen.getUint16(x + 2, true);
+        if (id === 0x0001) {
+          let y = x + 4;
+          if (size === MAX32) { size = get64(cen, y); y += 8; }
+          if (packed === MAX32) { packed = get64(cen, y); y += 8; }
+          if (at === MAX32) { at = get64(cen, y); }
+        }
+        x += 4 + len;
+      }
+      byName.set(name, { method, packed, size, at });
+      p += 46 + nameLen + extraLen + noteLen;
+    }
+    return {
+      has: (name) => byName.has(name),
+      async get(name) {
+        const f = byName.get(name);
+        if (!f) throw new Error('Part of that backup is missing.');
+        const head = await view(f.at, 30);
+        const start = f.at + 30 + head.getUint16(26, true) + head.getUint16(28, true);
+        const part = file.slice(start, start + f.packed);
+        if (f.method === 0) return part;
+        // Zipped up again somewhere, squeezed: opened up as it's read.
+        if (f.method === 8 && typeof DecompressionStream === 'function') return new Response(part.stream().pipeThrough(new DecompressionStream('deflate-raw'))).blob();
+        throw new Error("That backup was changed after it was saved and can't be read.");
+      },
+    };
+  }
+
+  // Where a backup keeps its photos made of bytes or text until the zip is
+  // saved: entries wait here in memory until there's a batch, then they're
+  // stored, and once they all are, swapped for the stored copies (files on
+  // disk). Not straight after each batch: in Safari a copy read back as soon
+  // as it's written keeps its bytes in memory (750 MB for 960 MB of photos;
+  // read back at the end, nothing).
+  function scratch() {
+    const name = `${SCRATCH}${Date.now()}-${uid().slice(0, 8)}`;
+    let db = null;
+    let waiting = [];
+    let size = 0;
+    let stored = [];
+    const flush = async () => {
+      if (!waiting.length) return;
+      if (!db) db = await open(name, 1, (d) => d.createObjectStore('f'));
+      const list = waiting;
+      waiting = [];
+      size = 0;
+      const tx = db.transaction('f', 'readwrite');
+      list.forEach((e) => tx.objectStore('f').put(e.blob, e.name));
+      await finish(tx);
+      list.forEach((e) => { e.size = e.blob.size; e.blob = null; });
+      stored = stored.concat(list);
+    };
+    return {
+      add(e) { waiting.push(e); size += e.blob.size; },
+      full: () => size >= BATCH,
+      flush,
+      // Everything stored, then the stored copies in.
+      async readBack() {
+        await flush();
+        for (let i = 0; i < stored.length; i += PAGE) {
+          const read = db.transaction('f').objectStore('f');
+          const list = stored.slice(i, i + PAGE);
+          const got = await Promise.all(list.map((e) => ask(read.get(e.name))));
+          list.forEach((e, j) => {
+            if (!(got[j] instanceof Blob) || got[j].size !== e.size) throw new Error("The backup couldn't be put together. Try again.");
+            e.blob = got[j];
+          });
+        }
+        stored = [];
+      },
+      async drop() { if (db) db.close(); db = null; await dropDb(name); },
+    };
+  }
+  // Scratch left by a backup that never finished (the app was closed), an hour on.
+  async function sweepScratch() {
+    const names = await dbNames().catch(() => null);
+    if (!names) return;
+    for (const n of names) {
+      const m = typeof n === 'string' && n.startsWith(SCRATCH) ? /^(\d+)-/.exec(n.slice(SCRATCH.length)) : null;
+      if (m && Date.now() - Number(m[1]) > 3600000) dropDb(n);
+    }
+  }
+
+  // Values into backup.json, the photos in them set aside as files, each
+  // with its checksum. w is the same value read a second time: a Blob's
+  // checksum is read from that copy (see above).
+  function zipPacker(files, spare) {
+    const put = (blob, crc, as, more) => {
+      const e = { name: `files/${String(files.length).padStart(6, '0')}`, blob, crc };
+      files.push(e);
+      if (as !== 'blob') spare.add(e);
+      return { __file: e.name, as, ...more };
+    };
+    const pack = async (v, w) => {
+      if (v instanceof Blob) return put(v, await crcOf(w instanceof Blob && w.size === v.size ? w : v), 'blob', { type: v.type || '', name: v.name || undefined, lastModified: v.lastModified || undefined });
+      if (v instanceof ArrayBuffer) return put(new Blob([v]), crcBytes(new Uint8Array(v)), 'buf');
+      if (ArrayBuffer.isView(v)) { const u = new Uint8Array(v.buffer, v.byteOffset, v.byteLength); return put(new Blob([u]), crcBytes(u), 'view', { view: v.constructor.name }); }
+      if (typeof v === 'string' && v.length > BIG_TEXT) { const u = new TextEncoder().encode(v); return put(new Blob([u], { type: 'text/plain' }), crcBytes(u), 'text'); }
+      if (v instanceof Date) return { __date: v.toISOString() };
+      if (Array.isArray(v)) { const out = []; for (let i = 0; i < v.length; i++) out.push(await pack(v[i], Array.isArray(w) ? w[i] : undefined)); return out; }
+      if (v && typeof v === 'object') { const out = {}; for (const k of Object.keys(v)) out[k] = await pack(v[k], w && typeof w === 'object' ? w[k] : undefined); return out; }
+      return v;
+    };
+    return pack;
+  }
+  async function rowCount(dbName) {
+    const db = await open(dbName);
+    try {
+      let n = 0;
+      for (const s of [...db.objectStoreNames]) n += await ask(db.transaction(s).objectStore(s).count());
+      return n;
+    } finally {
+      db.close();
+    }
+  }
+  const hasBlob = (v) => v instanceof Blob || (Array.isArray(v) ? v.some(hasBlob) : !!v && typeof v === 'object' && !(v instanceof ArrayBuffer) && !ArrayBuffer.isView(v) && !(v instanceof Date) && Object.values(v).some(hasBlob));
+  // One database's stores and rows, read a few rows at a time (rows with
+  // photos stored as files twice: one copy for the zip, one to read the
+  // checksums from).
+  async function zipDb(dbName, pack, spare, onRow) {
+    const db = await open(dbName);
+    try {
+      const out = { version: db.version, stores: {} };
+      for (const s of [...db.objectStoreNames]) {
+        const os = db.transaction(s).objectStore(s);
+        const meta = { keyPath: os.keyPath, autoIncrement: os.autoIncrement, indexes: [...os.indexNames].map((n) => { const ix = os.index(n); return { name: n, keyPath: ix.keyPath, unique: ix.unique, multiEntry: ix.multiEntry }; }) };
+        const list = [];
+        let range = null;
+        for (;;) {
+          const page = db.transaction(s).objectStore(s);
+          const [keys, vals] = await Promise.all([ask(page.getAllKeys(range, PAGE)), ask(page.getAll(range, PAGE))]);
+          let twins = [];
+          if (vals.some(hasBlob)) {
+            const again = db.transaction(s).objectStore(s);
+            const [k2, v2] = await Promise.all([ask(again.getAllKeys(range, PAGE)), ask(again.getAll(range, PAGE))]);
+            if (k2.length === keys.length && k2.every((k, i) => indexedDB.cmp(k, keys[i]) === 0)) twins = v2; // the same rows (or no twins: checksums from the copy itself)
+          }
+          for (let i = 0; i < keys.length; i++) { list.push([await pack(keys[i]), await pack(vals[i], twins[i])]); onRow(); }
+          if (spare.full()) await spare.flush();
+          if (keys.length < PAGE) break;
+          range = IDBKeyRange.lowerBound(keys[keys.length - 1], true);
+        }
+        out.stores[s] = { meta, rows: list };
+      }
+      return out;
+    } finally {
+      db.close();
+    }
+  }
+  // A phone hands files over through the share sheet; elsewhere they're
+  // downloaded (read a little at a time, so a backup can be one file).
+  function handsOverByShare() {
+    try {
+      return !!(navigator.canShare && matchMedia('(pointer: coarse)').matches && navigator.canShare({ files: [new File([''], 'backup.zip', { type: 'application/zip' })] }));
+    } catch (e) {
+      return false;
+    }
+  }
+  const sizeText = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1)} GB` : n >= 1e6 ? `${Math.max(1, Math.round(n / 1e6))} MB` : `${Math.max(1, Math.round(n / 1e3))} KB`);
+
+  // The backup: { parts (Files), size, release(i), done }, or null when
+  // there's nothing to back up. One part, unless it's to be handed to a
+  // phone's share sheet and is bigger than PART. release(i) once part i is
+  // saved; done() once they all are, or the backup's given up on: two
+  // minutes on (a download may still be reading it), the scratch is cleared.
+  // `databases` that aren't on this device are left out (opening one would
+  // make it); `local` is localStorage keys to bring along. onProgress(0..1)
+  // while the rows are read, the long part.
+  async function zipBackup({ app, kind = 'notebook', databases = [], local = [], extra = {}, filename, partSize = handsOverByShare() ? PART : Infinity, onProgress = () => {} } = {}) {
+    sweepScratch();
+    const files = [];
+    const spare = scratch();
+    try {
+      const have = await dbNames();
+      const use = databases.filter((n) => !have || have.has(n));
+      let total = 0;
+      for (const n of use) total += await rowCount(n);
+      let did = 0;
+      const pack = zipPacker(files, spare);
+      const dbs = {};
+      for (const n of use) dbs[n] = await zipDb(n, pack, spare, () => onProgress(Math.min(1, ++did / (total || 1))));
+      const loc = {};
+      for (const k of local) {
+        let v = null;
+        try { v = localStorage.getItem(k); } catch (e) { /* private mode */ }
+        if (v != null) loc[k] = await pack(v);
+      }
+      if (!Object.keys(dbs).length && !Object.keys(loc).length) { await spare.drop(); return null; }
+      await spare.readBack();
+      // Into parts of partSize at most (a photo bigger than that gets one of its own).
+      const groups = [[]];
+      let size = 0;
+      for (const e of files) {
+        const last = groups[groups.length - 1];
+        if (last.length && size + e.blob.size > partSize) { groups.push([e]); size = e.blob.size; } else { last.push(e); size += e.blob.size; }
+      }
+      const of = groups.length;
+      const id = uid();
+      const manifest = { ...ZIP, app, kind, exportedAt: nowIso(), extra, parts: { id, of }, databases: dbs, local: loc };
+      const json = (o) => { const u = new TextEncoder().encode(JSON.stringify(o)); return { blob: new Blob([u], { type: 'application/json' }), crc: crcBytes(u) }; };
+      const base = (filename || `${app}-backup-${todayStr()}.zip`).replace(/\.zip$/i, '');
+      const parts = [];
+      for (let i = 0; i < of; i++) {
+        const head = [{ name: PART_NAME, ...json({ format: 'df-backup-part', id, part: i + 1, of }) }];
+        if (i === 0) head.unshift({ name: MANIFEST, ...json(manifest) });
+        parts.push(new File([await zipOf([...head, ...groups[i]])], of === 1 ? `${base}.zip` : `${base} (${i + 1} of ${of}).zip`, { type: 'application/zip' }));
+      }
+      return {
+        parts,
+        size: parts.reduce((n, f) => n + f.size, 0),
+        release(i) { parts[i] = null; groups[i].forEach((e) => { e.blob = null; }); },
+        done: (wait = 120000) => new Promise((ok) => setTimeout(() => spare.drop().then(ok), wait)),
+      };
+    } catch (err) {
+      await spare.drop();
+      throw err;
+    }
+  }
+  // Handing a backup over, a file a tap: { label, note, tap() } for the
+  // button and the line above it. tap() resolves true once the last file's
+  // been saved (false if that one was cancelled or there are more to go).
+  function backupSteps(made) {
+    const n = made.parts.length;
+    const share = handsOverByShare();
+    let next = 0;
+    return {
+      get label() { return n === 1 ? 'Save the backup' : `Save file ${Math.min(next + 1, n)} of ${n}`; },
+      note: n === 1 ? `Ready: ${sizeText(made.size)}.` : `Ready: ${sizeText(made.size)}, in ${n} files. Save all ${n} to the same place: they go back in together.`,
+      async tap() {
+        if (next >= n) return true;
+        const how = await saveFile(made.parts[next], { share });
+        if (how === 'cancelled') return false;
+        made.release(next);
+        next += 1;
+        return next >= n;
+      },
+    };
+  }
+
+  // True for a zip (a backup made by zipBackup); the first kind is JSON.
+  async function isZipFile(file) {
+    const b = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+    return b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04;
+  }
+  // A backup opened (its one zip, or all the files it was saved as), and
+  // checked before anything is changed: what kind it is, and every file it
+  // names there.
+  async function openBackupZip(input) {
+    const bad = () => new Error("That file isn't a notebook backup.");
+    const zips = [];
+    for (const f of Array.isArray(input) ? input : [input]) {
+      try { zips.push(await readZip(f)); } catch (e) { throw bad(); }
+    }
+    const head = zips.find((z) => z.has(MANIFEST));
+    const partOf = async (z) => { try { return JSON.parse(await (await z.get(PART_NAME)).text()); } catch (e) { return null; } };
+    if (!head) {
+      const p = zips.length && zips[0].has(PART_NAME) ? await partOf(zips[0]) : null;
+      if (p && p.of > 1) throw new Error(`That backup is in ${p.of} files, and the first one wasn't picked. Pick all ${p.of} together.`);
+      throw bad();
+    }
+    let m;
+    try { m = JSON.parse(await (await head.get(MANIFEST)).text()); } catch (e) { throw bad(); }
+    if (m && m.format === 'contact-sheet-backup' && m.database && m.stores) {
+      m = { ...ZIP, app: m.app || 'contact-sheet', kind: 'notebook', exportedAt: m.exportedAt, extra: m.extra || {}, databases: { [m.database]: { version: m.version, stores: m.stores } }, local: {} };
+    }
+    if (!m || m.format !== ZIP.format || !m.databases) throw bad();
+    if (m.version > ZIP.version) throw new Error('That backup was made by a newer version of the notebooks. Update this app, then try again.');
+    let use = [head];
+    const of = (m.parts && m.parts.of) || 1;
+    if (of > 1) {
+      const got = new Map();
+      for (const z of zips) {
+        const p = z.has(PART_NAME) ? await partOf(z) : null;
+        if (p && p.id === m.parts.id) got.set(p.part, z);
+      }
+      if (got.size < of) throw new Error(`That backup is in ${of} files, and ${got.size} of them ${got.size === 1 ? 'was' : 'were'} picked. Pick all ${of} together.`);
+      use = [...got.values()];
+    }
+    const zip = { has: (n) => use.some((z) => z.has(n)), get: (n) => (use.find((z) => z.has(n)) || head).get(n) };
+    const names = [];
+    const walk = (v) => {
+      if (Array.isArray(v)) v.forEach(walk);
+      else if (v && typeof v === 'object') { if (typeof v.__file === 'string') names.push(v.__file); else Object.values(v).forEach(walk); }
+    };
+    walk(m.databases);
+    walk(m.local || {});
+    if (names.some((n) => !zip.has(n))) throw new Error('Part of that backup is missing, so nothing was changed.');
+    return { manifest: m, zip };
+  }
+  // Safari keeps only which file a stored Blob came from, not which piece of
+  // it: a piece of the backup stored as it is comes back as the start of the
+  // whole backup. So each photo is copied out first, a few MB at a time, and
+  // only the copy is stored.
+  async function copiedOut(part, v) {
+    const chunks = [];
+    for (let at = 0; at < part.size; at += CHUNK) chunks.push(new Blob([await part.slice(at, at + CHUNK).arrayBuffer()]));
+    const type = v.type || '';
+    return v.name != null ? new File(chunks, v.name, { type, lastModified: v.lastModified || Date.now() }) : new Blob(chunks, { type });
+  }
+  // A value out of backup.json, its photos read out of the zip. `sizes.n`
+  // adds up how much was read.
+  async function unzipValue(v, zip, sizes) {
+    if (Array.isArray(v)) { const out = []; for (const x of v) out.push(await unzipValue(x, zip, sizes)); return out; }
+    if (v && typeof v === 'object') {
+      if (typeof v.__file === 'string') {
+        const part = await zip.get(v.__file);
+        sizes.n += part.size;
+        const as = v.as || (v.buf ? 'buf' : v.view ? 'view' : 'blob');
+        if (as === 'text') return part.text();
+        if (as === 'buf' || as === 'view') {
+          const buf = await part.arrayBuffer();
+          return as === 'view' && typeof self[v.view] === 'function' ? new self[v.view](buf) : buf;
+        }
+        return copiedOut(part, v);
+      }
+      if (typeof v.__date === 'string') return new Date(v.__date);
+      const out = {};
+      for (const k of Object.keys(v)) out[k] = await unzipValue(v[k], zip, sizes);
+      return out;
+    }
+    return v;
+  }
+  const keyText = (k) => JSON.stringify(k instanceof Date ? { d: k.getTime() } : k);
+  const atPath = (v, p) => p.split('.').reduce((o, f) => (o == null ? o : o[f]), v);
+  // One database swapped for its part of the backup. Rows go in a few at a
+  // time over what's there; once they're all in, whatever the backup doesn't
+  // have is taken out. A database this device doesn't have yet is made as
+  // the backup says it was.
+  async function unzipDb(b, dbName, onRow) {
+    const part = b.manifest.databases[dbName];
+    const have = await dbNames();
+    const fresh = have ? !have.has(dbName) : false;
+    const db = await open(dbName, fresh ? part.version || 1 : undefined, fresh ? (made) => {
+      for (const [name, s] of Object.entries(part.stores)) {
+        if (made.objectStoreNames.contains(name)) continue;
+        const m = s.meta || {};
+        const os = made.createObjectStore(name, m.keyPath == null ? { autoIncrement: !!m.autoIncrement } : { keyPath: m.keyPath, autoIncrement: !!m.autoIncrement });
+        (m.indexes || []).forEach((ix) => os.createIndex(ix.name, ix.keyPath, { unique: !!ix.unique, multiEntry: !!ix.multiEntry }));
+      }
+    } : null);
+    try {
+      const names = Object.keys(part.stores).filter((n) => db.objectStoreNames.contains(n));
+      const keep = {};
+      for (const n of names) {
+        keep[n] = new Set();
+        const keyPath = db.transaction(n).objectStore(n).keyPath;
+        const keyOf = (k, v) => (keyPath == null ? k : Array.isArray(keyPath) ? keyPath.map((p) => atPath(v, p)) : atPath(v, keyPath));
+        let batch = [];
+        const sizes = { n: 0 };
+        const write = async () => {
+          const tx = db.transaction(n, 'readwrite');
+          const os = tx.objectStore(n);
+          batch.forEach(([k, v]) => { if (keyPath == null) os.put(v, k); else os.put(v); });
+          await finish(tx);
+          batch = [];
+          sizes.n = 0;
+        };
+        for (const [pk, pv] of part.stores[n].rows || []) {
+          const k = await unzipValue(pk, b.zip, sizes);
+          const v = await unzipValue(pv, b.zip, sizes);
+          keep[n].add(keyText(keyOf(k, v)));
+          batch.push([k, v]);
+          if (sizes.n >= BATCH || batch.length >= 40) await write();
+          onRow();
+        }
+        if (batch.length) await write();
+      }
+      for (const n of names) {
+        const keys = await ask(db.transaction(n).objectStore(n).getAllKeys());
+        const gone = keys.filter((k) => !keep[n].has(keyText(k)));
+        if (!gone.length) continue;
+        const tx = db.transaction(n, 'readwrite');
+        gone.forEach((k) => tx.objectStore(n).delete(k));
+        await finish(tx);
+      }
+      return Object.fromEntries(names.map((n) => [n, (part.stores[n].rows || []).length]));
+    } finally {
+      db.close();
+    }
+  }
+  // Puts `databases` back from a backup (a zip, or all of the files it was
+  // saved as: `file` can be a list; the ones it has; none of them
+  // is an error, unless `kind` says which backup it has to be). Resolves
+  // with { manifest, extra, counts, local(key) }, local(key) the text kept
+  // for that localStorage key, or null. check(local), when given, runs
+  // before anything is changed and throws if the file won't do. If it stops
+  // partway, restoring again finishes it.
+  async function restoreZip(file, { databases = [], kind, check, onProgress = () => {} } = {}) {
+    const b = await openBackupZip(file);
+    if (kind && b.manifest.kind !== kind) throw new Error(kind === 'suite' ? "That file isn't a backup of all four. A single notebook's backup goes back in from that notebook's options." : 'That file is a backup of a different notebook.');
+    const want = databases.filter((n) => b.manifest.databases[n]);
+    if (!want.length && !kind) throw new Error('That file is a backup of a different notebook.');
+    const local = async (key) => {
+      const v = (b.manifest.local || {})[key];
+      return v == null ? null : typeof v === 'string' ? v : unzipValue(v, b.zip, { n: 0 });
+    };
+    if (check) await check(local);
+    const rowsIn = (n) => Object.values(b.manifest.databases[n].stores).reduce((m, s) => m + (s.rows || []).length, 0);
+    const total = want.reduce((n, d) => n + rowsIn(d), 0) || 1;
+    let did = 0;
+    const counts = {};
+    try {
+      for (const n of want) counts[n] = await unzipDb(b, n, () => onProgress(++did / total));
+    } catch (err) {
+      console.error(err);
+      throw new Error("The backup didn't all go in. Restore it again to finish it.");
+    }
+    return { manifest: b.manifest, extra: b.manifest.extra || {}, counts, local };
+  }
+
   // ---------- Links: a Ref board sent to a shoot in The Eye ----------
   // Its own database, df-links, so neither notebook writes into the other's:
   //   links     { id, fromApp, fromId, toApp, toId, type, createdAt, updatedAt,
@@ -389,8 +1003,8 @@
 
   // ---------- Handing a file over ----------
   // The share sheet where there is one (Save to Files on a phone), else a download.
-  async function saveFile(file) {
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+  async function saveFile(file, { share = true } = {}) {
+    if (share && navigator.canShare && navigator.canShare({ files: [file] })) {
       try { await navigator.share({ files: [file], title: file.name }); return 'shared'; } catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; }
     }
     const url = URL.createObjectURL(file);
@@ -399,6 +1013,16 @@
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
     return 'downloaded';
+  }
+  // Asks for files (as many as wanted); resolves with them, [] if none.
+  function pickFiles(accept = 'application/json,.json') {
+    return new Promise((ok) => {
+      const input = document.createElement('input');
+      input.type = 'file'; input.accept = accept; input.multiple = true; input.style.display = 'none';
+      input.addEventListener('change', () => { ok(input.files ? [...input.files] : []); input.remove(); });
+      document.body.appendChild(input);
+      input.click();
+    });
   }
   // Asks for a file; resolves with it, or null if none was picked.
   function pickFile(accept = 'application/json,.json') {
@@ -421,7 +1045,8 @@
     overthoughts, reflectionId, linkId, saveReflections, dropReflections, reflections,
     eyeState, eyeShootName, eyeBackupFile, readEyeFile,
     journalMoved, somethingToMove, moveJournal,
-    exportDb, importDb, saveFile, pickFile,
+    exportDb, importDb, saveFile, pickFile, pickFiles,
+    zipBackup, backupSteps, isZipFile, restoreZip, sizeText,
     inSuite, notebookUrl,
     linksWhere, getLink, saveLink, linkPictures, dropLinks, pictureUrl, boardFile, readBoardFile,
   };
