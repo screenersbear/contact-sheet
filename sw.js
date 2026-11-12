@@ -1,5 +1,5 @@
 // Bump CACHE_NAME with every deploy so installed copies pick up new files.
-const CACHE_NAME = 'contact-sheet-v41';
+const CACHE_NAME = 'contact-sheet-v42';
 const ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const ASSETS = [
   './js/flip.js',
   './js/frame.js',
   './js/icons.js',
+  './js/lines.js',
   './js/model.js',
   './js/pdf.js',
   './js/pdfview.js',
@@ -39,6 +40,7 @@ const ASSETS = [
   './art/ink-cover.webp',
   './art/ink-block.webp',
   './fonts/klee-one-latin.woff',
+  './fonts/kaisei-decol-500-latin.woff2',
   './icons/icon.svg',
   './icons/icon-180.png',
   './icons/icon-192.png',

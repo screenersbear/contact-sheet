@@ -15,6 +15,7 @@ import { navHtml, mountNav } from './navicon.js';
 const TIP_KEY = 'contact-sheet-home-tip';
 const RATIO = 1000 / 1360; // the notebook art's width over its height
 const PER_PAGE = 6;
+const TIP = `<p class="toc-tip" data-sit="tip"><b>Keep your chapters safe:</b> add Contact Sheet to your Home Screen. Safari can clear the photos of sites that aren't on it. <button type="button" class="text-btn" data-tip-off>Got it</button></p>`;
 const STACK = 16; // sheets drawn for the thickness of the shut book
 const TURNED = (20 * Math.PI) / 180; // the shut book's turn; matches style.css
 const PERSPECTIVE = 1100; // matches .nb in style.css
@@ -236,6 +237,7 @@ export function mountBook(view, startMode, onNew) {
     set('--toc-y', `${frame.top + frameH / 2 - vh / 2}px`);
     set('--page', `${page}px`);
     tocBook.style.width = `${2 * page}px`;
+    if (fitRows() && chapters.length) drawPages();
     showCamera(panOf(tocPage));
   }
 
@@ -258,7 +260,30 @@ export function mountBook(view, startMode, onNew) {
     void root.offsetWidth;
   }
 
-  const pageCount = () => Math.max(1, Math.ceil(chapters.length / PER_PAGE));
+  const pageCount = () => Math.max(1, Math.ceil(chapters.length / perPage));
+  // How many chapters a page holds: as many two-line rows as fit on the ruled
+  // lines between the title (two lines) and the page number (one), and the tip
+  // while it shows; six at most.
+  let perPage = PER_PAGE;
+  function fitRows() {
+    const lh = parseFloat(getComputedStyle(root).getPropertyValue('--lh')) || 32;
+    const foot = parseFloat(getComputedStyle(tocBook).getPropertyValue('--foot')) || 0;
+    let lines = Math.floor((frameH - 2 * (RIM - 3) - lh - foot) / lh + 0.01) - 3;
+    if (showTip) {
+      const probe = document.createElement('div');
+      probe.className = 'toc-page is-left';
+      probe.style.visibility = 'hidden';
+      probe.innerHTML = TIP;
+      root.append(probe);
+      lines -= Math.ceil(probe.firstElementChild.offsetHeight / lh - 0.02);
+      probe.remove();
+    }
+    const per = Math.max(1, Math.min(PER_PAGE, Math.floor(lines / 2)));
+    if (per === perPage) return false;
+    perPage = per;
+    tocPage = Math.min(tocPage, pageCount() - 1);
+    return true;
+  }
   const panOf = (n) => (two || n % 2 === 0 ? 0 : maxPan);
   const spreadOf = (n) => Math.floor(n / 2);
 
@@ -276,8 +301,8 @@ export function mountBook(view, startMode, onNew) {
         <a class="toc-open" href="#/edit/${esc(p.id)}" draggable="false">
           <span class="toc-thumb">${u ? `<img src="${u}" alt="" draggable="false" />` : ''}</span>
           <span class="toc-text">
-            <span class="toc-name">${esc(p.name)}</span>
-            <span class="toc-meta">${p.slides} ${esc(pageWord(p, p.slides !== 1))} · ${esc(shortDate(p.updatedAt))}</span>
+            <span class="toc-name" data-sit="tname">${esc(p.name)}</span>
+            <span class="toc-meta" data-sit="tmeta">${p.slides} ${esc(pageWord(p, p.slides !== 1))} · ${esc(shortDate(p.updatedAt))}</span>
           </span>
         </a>
       </div>`;
@@ -286,15 +311,13 @@ export function mountBook(view, startMode, onNew) {
   function pageHtml(n) {
     const total = pageCount();
     if (n >= total) return '';
-    const rows = chapters.slice(n * PER_PAGE, (n + 1) * PER_PAGE).map(rowHtml).join('');
-    const tip = n === 0 && showTip
-      ? `<p class="toc-tip"><b>Keep your chapters safe:</b> add Contact Sheet to your Home Screen. Safari can clear the photos of sites that aren't on it. <button type="button" class="text-btn" data-tip-off>Got it</button></p>`
-      : '';
+    const rows = chapters.slice(n * perPage, (n + 1) * perPage).map(rowHtml).join('');
+    const tip = n === 0 && showTip ? TIP : '';
     return `
-      <h2 class="nb-head">Table of contents</h2>
-      <div class="toc-list">${rows || '<p class="toc-empty">No chapters yet.</p>'}</div>
+      <h2 class="nb-head" data-sit="head">Table of contents</h2>
+      <div class="toc-list">${rows || '<p class="toc-empty" data-sit="empty">No chapters yet.</p>'}</div>
       ${tip}
-      <div class="toc-foot">${total > 1 ? `${n + 1} / ${total}` : ''}</div>`;
+      <div class="toc-foot" data-sit="foot">${total > 1 ? `${n + 1} / ${total}` : ''}</div>`;
   }
 
   function drawPages() {
@@ -324,6 +347,7 @@ export function mountBook(view, startMode, onNew) {
         return true;
       }
     })();
+    fitRows();
     drawPages();
     showCamera(panOf(tocPage));
   }
@@ -365,7 +389,8 @@ export function mountBook(view, startMode, onNew) {
     };
     playFlip({
       host: tocBook,
-      rect: { left: RIM, top: RIM, width: 2 * (page - RIM), height: frameH - 2 * RIM },
+      // The pages' paper: 3px into the frame's rim, as drawn (style.css).
+      rect: { left: RIM - 3, top: RIM - 3, width: 2 * (page - RIM + 3), height: frameH - 2 * (RIM - 3) },
       oldL: from * 2,
       newL: to * 2,
       face,
@@ -514,6 +539,7 @@ export function mountBook(view, startMode, onNew) {
         localStorage.setItem(TIP_KEY, 'off');
       } catch {}
       showTip = false;
+      fitRows();
       drawPages();
       return;
     }
@@ -532,6 +558,10 @@ export function mountBook(view, startMode, onNew) {
   };
   window.addEventListener('resize', refit);
   measure();
+  // The tip's lines depend on the handwriting having loaded.
+  document.fonts?.ready.then(() => {
+    if (!destroyed && fitRows() && chapters.length) drawPages();
+  });
   setMode(startMode, true);
   placeTabHits();
   Promise.race([Promise.all([artReady(), stickers.ready]), new Promise((done) => setTimeout(done, 1500))]).then(() => root.classList.remove('is-waiting'));

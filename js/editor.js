@@ -29,7 +29,9 @@ import { playFlip } from './flip.js';
 
 const SNAP_PX = 9;
 const ROOM = 34; // kept above and below the photos, for the labels and the name
-const NAME_H = 34; // the chapter name under the photos
+// One ruled line of the notebook's paper (style.css --lh): the labels and the
+// name sit on the lines.
+const lineH = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lh')) || 32;
 const SAFE_KEY = 'contact-sheet-safe-zone';
 const SNAP_KEYS = ['name', ...LAYOUT_KEYS, 'frames', 'photoIds'];
 
@@ -192,7 +194,7 @@ export async function mountEditor(view, id) {
         </div>
       </div>
       <button type="button" class="ws-add" data-act="add-slide" aria-label="Add a slide">${ICONS.plus}</button>
-      <div class="ed-name" data-name><button type="button" data-act="rename" aria-label="Rename this chapter"><span>${esc(p.name)}</span></button></div>
+      <div class="ed-name" data-name><button type="button" data-act="rename" aria-label="Rename this chapter"><span data-sit="ename">${esc(p.name)}</span></button></div>
       <div class="ed-adjust" data-adjust hidden>
         <span class="ed-adjust-label">Zoom</span>
         <input type="range" min="1" max="5" step="0.01" value="1" data-zoom aria-label="Photo zoom" />
@@ -263,9 +265,16 @@ export async function mountEditor(view, id) {
     bookX = bookLeft(w, pw);
     pageLeft = bookX + pw - sw; // the two pages meet at the spine
     margX = pageLeft - spread * both;
-    margY = Math.max(ROOM, (h - sh) / 2);
+    const room = Math.max(ROOM, (h - sh) / 2);
+    // The photos' top edge lies along a ruled line, so their label sits on the
+    // line above. The lines start at the paper's top edge, 3px into the rim.
+    const lh = lineH();
+    const sink = ws.offsetTop - nbEl.offsetTop - RIM + 3;
+    margY = Math.max(lh - sink, Math.round((room + sink) / lh) * lh - sink);
     inner.style.width = `${2 * pw + 2 * bookX}px`;
-    inner.style.height = `${Math.max(h, sh + 2 * margY)}px`;
+    inner.style.height = `${Math.max(h, sh + margY + room)}px`;
+    // The lines stop above the tray and the tools.
+    editorEl.style.setProperty('--foot', `${nbEl.offsetTop + nbEl.offsetHeight - RIM + 3 - ws.offsetTop - h}px`);
     strip.style.left = `${margX}px`;
     strip.style.top = `${margY}px`;
     strip.style.width = `${total}px`;
@@ -296,11 +305,16 @@ export async function mountEditor(view, id) {
   // The chapter name sits in the middle of the space under the photos.
   function placeName() {
     const { h } = wsSize();
+    const lh = lineH();
     const under = Math.min(h, margY + H() * z);
-    const mid = Math.min((under + h) / 2, h - NAME_H / 2);
-    nameEl.style.top = `${ws.offsetTop + mid - NAME_H / 2}px`;
+    const mid = Math.min((under + h) / 2, h - lh / 2);
+    // On the ruled line nearest the middle, kept above the tray.
+    const top0 = nbEl.offsetTop + RIM - 3;
+    let top = top0 + Math.round((ws.offsetTop + mid - lh / 2 - top0) / lh) * lh;
+    if (top + lh > ws.offsetTop + h) top -= lh;
+    nameEl.style.top = `${top}px`;
     // Zoomed in, the photos reach behind it and it needs a backing.
-    nameEl.classList.toggle('is-over', under > h - NAME_H);
+    nameEl.classList.toggle('is-over', ws.offsetTop + under > top);
   }
 
   // The add-a-slide button stays in the bottom-right corner of the page, so
@@ -419,7 +433,7 @@ export async function mountEditor(view, id) {
     const px = Math.round(Math.min(1200, sh * Math.min(2, window.devicePixelRatio || 1)));
     const pw = pageW();
     // A whole notebook page turns, with the photos where they sit on it.
-    const photoTop = ws.offsetTop + margY - ws.scrollTop - nbEl.offsetTop - RIM;
+    const photoTop = ws.offsetTop + margY - ws.scrollTop - nbEl.offsetTop - RIM + 3;
     const word = pageTitle(p);
     const face = (k) => {
       const el = document.createElement('div');
@@ -430,8 +444,8 @@ export async function mountEditor(view, id) {
       el.appendChild(c);
       const label = document.createElement('div');
       label.className = `ws-label${p.slides > 1 ? ' has-del' : ''}`;
-      label.style.cssText = `${side};top:${photoTop - 30}px;width:${sw}px`;
-      label.innerHTML = `<span>${sw >= 90 ? `${word} ${k + 1}` : k + 1}</span>${p.slides > 1 ? `<i class="ws-del">${ICONS.trash}</i>` : ''}`;
+      label.style.cssText = `${side};top:${photoTop - lineH()}px;width:${sw}px`;
+      label.innerHTML = `<span data-sit="wslabel">${sw >= 90 ? `${word} ${k + 1}` : k + 1}</span>${p.slides > 1 ? `<i class="ws-del">${ICONS.trash}</i>` : ''}`;
       el.appendChild(label);
       return el;
     };
@@ -441,7 +455,8 @@ export async function mountEditor(view, id) {
     const x1 = land(page);
     playFlip({
       host: flipsEl,
-      rect: { left: RIM, top: RIM, width: 2 * (pw - RIM), height: nbEl.offsetHeight - 2 * RIM },
+      // The pages' paper: 3px into the frame's rim, as drawn (style.css).
+      rect: { left: RIM - 3, top: RIM - 3, width: 2 * (pw - RIM + 3), height: nbEl.offsetHeight - 2 * (RIM - 3) },
       oldL,
       newL,
       face,
@@ -619,7 +634,7 @@ export async function mountEditor(view, id) {
       const del = p.slides > 1 && sw >= 60
         ? `<button type="button" class="ws-del" data-act="del-slide" data-k="${i}" aria-label="Delete ${word.toLowerCase()} ${i + 1}">${ICONS.trash}</button>`
         : '';
-      html += `<div class="ws-label${del ? ' has-del' : ''}" style="left:${margX + i * sw}px;top:${margY - 30}px;width:${sw}px"><span>${sw >= 90 ? `${word} ${i + 1}` : i + 1}</span>${del}</div>`;
+      html += `<div class="ws-label${del ? ' has-del' : ''}" style="left:${margX + i * sw}px;top:${margY - lineH()}px;width:${sw}px"><span data-sit="wslabel">${sw >= 90 ? `${word} ${i + 1}` : i + 1}</span>${del}</div>`;
     }
     labelsEl.innerHTML = html;
   }

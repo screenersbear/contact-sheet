@@ -7,6 +7,7 @@ import { mountBook, modeOfHash, startsOnFirstPage } from './book.js';
 import { openSheet, choiceSheet, confirmSheet, promptSheet, closeAllSheets } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, shortDate } from './util.js';
+import './lines.js';
 
 const view = document.getElementById('view');
 let destroyCurrent = null;
