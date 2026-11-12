@@ -10,6 +10,8 @@ import { openNotebookExport } from './export.js';
 import { mountStickers, openStickers } from './stickers.js';
 import { makeTurnable } from './turn.js';
 import { navHtml, mountNav } from './navicon.js';
+import { openIntro } from './intro.js';
+import { makeBackup, isZipBackup, restoreBackup as restoreZip } from './backup.js';
 
 const TIP_KEY = 'contact-sheet-home-tip';
 const RATIO = 1000 / 1360; // the notebook art's width over its height
@@ -83,8 +85,8 @@ function openOptions(stickers) {
             <span>${name}</span>
           </button>`).join('')}
       </div>
-      <span class="field-label opt-gap">Stickers</span>
-      <button type="button" class="btn secondary opt-wide" data-stickers>Stickers</button>
+      ${window.DF_SUITE ? '' : `<span class="field-label opt-gap">Stickers</span>
+      <button type="button" class="btn secondary opt-wide" data-stickers>Stickers</button>`}
       ${window.DF_SUITE ? '' : `<span class="field-label opt-gap">Always start</span>
       <div class="opt-seg" role="group" aria-label="Always start">
         <button type="button" data-start="notebook" aria-pressed="${!first}">In the notebook</button>
@@ -94,7 +96,8 @@ function openOptions(stickers) {
       <button type="button" class="btn secondary opt-wide" data-pdf>Whole notebook as PDF</button>
       <span class="field-label opt-gap">Backup</span>
       <button type="button" class="btn secondary opt-wide" data-save-backup>Save a backup</button>
-      <button type="button" class="btn secondary opt-wide" data-restore-backup>Restore a backup</button>`,
+      <button type="button" class="btn secondary opt-wide" data-restore-backup>Restore a backup</button>
+      <button type="button" class="btn secondary opt-wide opt-gap" data-intro>How it works</button>`,
   });
   s.body.addEventListener('click', (e) => {
     const color = e.target.closest('[data-color]');
@@ -117,31 +120,62 @@ function openOptions(stickers) {
       s.close();
       openNotebookExport();
     }
+    else if (e.target.closest('[data-intro]')) {
+      s.close();
+      openIntro();
+    }
     else if (e.target.closest('[data-save-backup]')) saveBackup();
     else if (e.target.closest('[data-restore-backup]')) restoreBackup(() => s.close());
   });
 }
 
-// Everything in the notebook as one file, and back (df-data.js, shared by
-// the notebooks of Documenting Fictions).
-async function saveBackup() {
+// Everything in the notebook as one file, and back (backup.js: a zip the
+// phone never has to hold in memory). Made first, then saved from a tap of
+// its own, as an iPhone only shares a file straight from a tap.
+const sizeText = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1)} GB` : n >= 1e6 ? `${Math.max(1, Math.round(n / 1e6))} MB` : `${Math.max(1, Math.round(n / 1e3))} KB`);
+function saveBackup() {
   const D = window.DFData;
-  try {
-    const file = await D.exportDb('contact-sheet', { app: 'contact-sheet', filename: `contact-sheet-backup-${D.todayStr()}.json`, extra: { book: document.documentElement.dataset.book || '' } });
-    const how = await D.saveFile(file);
-    if (how !== 'cancelled') toast('Backup saved');
-  } catch (err) {
+  let open = true;
+  const s = openSheet({
+    title: 'Save a backup',
+    className: 'sheet-small sheet-options',
+    body: '<p class="sheet-message" data-msg>Putting it together</p>',
+    onClose: () => (open = false),
+  });
+  const msg = s.body.querySelector('[data-msg]');
+  makeBackup({
+    extra: { book: document.documentElement.dataset.book || '' },
+    onProgress: (f) => { if (open) msg.textContent = `Putting it together, ${Math.floor(f * 100)}%`; },
+  }).then((file) => {
+    if (!open) return;
+    msg.textContent = `Ready: ${sizeText(file.size)}.`;
+    msg.insertAdjacentHTML('afterend', '<button type="button" class="btn secondary opt-wide" data-save>Save the backup</button>');
+    s.body.querySelector('[data-save]').addEventListener('click', async () => {
+      try {
+        const how = await D.saveFile(file);
+        if (how === 'cancelled') return;
+        s.close();
+        toast('Backup saved');
+      } catch (err) {
+        console.error(err);
+        toast(err.message || 'The backup wasn\'t saved.');
+      }
+    });
+  }).catch((err) => {
     console.error(err);
-    toast(err.message || 'The backup wasn\'t saved.');
-  }
+    if (open) msg.textContent = err.message || 'The backup couldn\'t be made.';
+  });
 }
 async function restoreBackup(close) {
   const D = window.DFData;
-  const file = await D.pickFile(); // straight from the tap, or iOS won't open the picker
+  const file = await D.pickFile('.zip,application/zip,.json,application/json'); // straight from the tap, or iOS won't open the picker
   if (!file) return;
   if (!(await confirmSheet({ title: 'Restore backup', message: 'Everything in Contact Sheet now is swapped for what\'s in the file.', confirmLabel: 'Restore', danger: true }))) return;
+  toast('Restoring the backup', { ms: 600000 });
   try {
-    const { extra } = await D.importDb(file, 'contact-sheet', { app: 'contact-sheet', replace: true });
+    const { extra } = (await isZipBackup(file))
+      ? await restoreZip(file)
+      : await D.importDb(file, 'contact-sheet', { app: 'contact-sheet', replace: true });
     if (extra && extra.book) { try { localStorage.setItem('contact-sheet-book', extra.book); } catch {} }
     close();
     toast('Backup restored');
@@ -293,7 +327,7 @@ export function mountBook(view, startMode, onNew) {
   function pageHtml() {
     const rows = chapters.map(rowHtml).join('');
     return `
-      <h2 class="nb-head">Table of contents</h2>
+      ${window.DF_SUITE ? `<h2 class="nb-head has-menu"><button type="button" class="toc-menu" data-app-menu aria-label="Menu">${ICONS.menu}</button>Table of contents</h2>` : '<h2 class="nb-head">Table of contents</h2>'}
       <div class="toc-list">${rows || '<p class="toc-empty">No chapters yet.</p>'}</div>
       ${showTip ? TIP : ''}`;
   }
@@ -427,6 +461,10 @@ export function mountBook(view, startMode, onNew) {
   sun.addEventListener('click', () => {
     if (root.dataset.mode === 'closed' && !root.classList.contains('is-sticking')) openOptions(stickers);
   });
+  // Inside Documenting Fictions: Options from the menu at the top of the contents.
+  root.addEventListener('click', (e) => {
+    if (e.target.closest('[data-app-menu]') && root.dataset.mode === 'toc' && !sheetIsOpen()) { e.stopPropagation(); openOptions(stickers); }
+  }, true);
 
   root.addEventListener('click', async (e) => {
     // Placing a sticker: the cover and tabs wait until OK.

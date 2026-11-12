@@ -537,6 +537,13 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 
 .sheet-message { margin: 0 0 14px; font-size: 16px; }
 .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+/* The tour's cards (intro.js) and the first visit's (welcome.js), as Ref's. */
+.sheet-actions.one { grid-template-columns: 1fr; }
+.wz-dots { display: flex; gap: 6px; padding: 0 4px; }
+.wz-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+.wz-dots i.on { background: var(--ink); }
+.intro-dots { justify-content: center; }
+.intro .sheet-message { min-height: 5.6em; }
 
 .choice-list { display: flex; flex-direction: column; gap: 8px; }
 .choice {
@@ -1738,6 +1745,11 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb.is-reading .nb-toc { opacity: 1; }
 .nb-toc[hidden] { display: none; }
 .nb-toc .ed-tools { position: absolute; left: 20px; right: 20px; bottom: var(--nb-b); margin: 0; touch-action: none; }
+/* The navigation icon sits 25px + the bottom safe area (10px at least) above
+   the screen's edge, as in the other notebooks and on the shelf; its name
+   below it keeps 10px clear of the edge. */
+.nb-toc .ed-tools { bottom: max(10px, calc(var(--sa-b) - 14px)); }
+html.is-short .nb-toc .ed-tools { bottom: 10px; }
 /* The navigation icon (navicon.js): the icon in the same 21px row as the
    other tools' icons, the triangles tucked up against it, its name below. */
 .nb-nav .tool-label { line-height: normal; }
@@ -1771,6 +1783,11 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   text-align: center;
   color: var(--text);
 }
+/* Inside Documenting Fictions: Options, in a menu at the heading's left. Out
+   of the text's way, so the heading stays in the middle. */
+.nb-head.has-menu { position: relative; }
+.toc-menu { position: absolute; left: -20px; top: 50%; margin-top: -22px; width: 44px; height: 44px; display: grid; place-items: center; border: 0; padding: 0; background: none; color: var(--text); cursor: pointer; }
+.toc-menu svg { width: 21px; height: 21px; display: block; } /* the size of the tools' icons at the foot */
 .toc-row { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
 .toc-open {
   flex: 1;

@@ -22,13 +22,15 @@
   "icons/icon-512.png": "178439aa2d2876e7bb118bade150e47d747ead74ceff614799b168c76893057b",
   "icons/icon.svg": "ea9ae8952133e5dd87ab70c5b95419cb1eec1baf1ab656ec24803689bfdeba6c",
   "index.html": "91f13c27eed67cc38b8f22253b917f4f3a52880778880354d669a84db00dd0e9",
-  "js/app.js": "b5c52cc6eb11e723fb6fc42f0c8f62401d1edd8b71cbbeaf3e6e36b7d600eebb",
-  "js/book.js": "3391571f1f9ea2cfc6deb9cd38344f56c6c6ce1f89ea611f76e1884cb2bb5589",
-  "js/db.js": "24cbb50e5a5a24cac9e53555cbcc42515f3931031b78c8768bb3f60fffcd9c88",
+  "js/app.js": "d03762355a928f669b7407b2f32abac145ec90294087cb905e52a4ece4fd1319",
+  "js/backup.js": "3505163b08ae0fc1ee77aa73ab8766d212a1935e7ec9af57fec5975c9111b038",
+  "js/book.js": "21f5604ea5a62c17d9def76b35e65ddc9da4d1f30dcefbb914143b333cbbf5a2",
+  "js/db.js": "a87f0cc68af854ec9ece7b199d0e5365ab3d2ac93f3366aa116f67818a202014",
   "js/editor.js": "cd1b54db9f888079cf78ae07fc4c4f71faf9315f248e5e2fd0949060ee991f5e",
   "js/export.js": "cf9a8a41f430245680b802171be0c2d0b4e6ec0c7a134e66518b278ef40a03a4",
   "js/frame.js": "8418fb30835704cac6c1ba0a6feebf24e4ade6f98e19a2acced9f2b7db59f1fa",
-  "js/icons.js": "e357b6feeb13ed6994f86606a7c4856dd3f74fd199897c32a0cc2ad939a4262e",
+  "js/icons.js": "a362ac99dd1ae2f383b719cc635918aa8841f985fae372d99c108ea45bb08502",
+  "js/intro.js": "e4fdf00c178f4b963ff8900062a2b91ad8175b4a2781571a943262e4baea2296",
   "js/model.js": "cbc050ea0724a4b3513007f8d98d19904cba48737eaa15f0c4b1384c1e181dbe",
   "js/navicon.js": "636d81b7e6da46be8f15172df123a30c804dde9036ea4a1e3cfc00738a02563e",
   "js/pdf.js": "123f2bfaaf883711368b100e91a4111dbcdf4a3b89eafcbea35d93358dbde117",
@@ -41,10 +43,11 @@
   "js/upright.js": "feb0b7faf467f5d81d50954e85570100a7b06fc93296abea67995cd949282b88",
   "js/util.js": "82b8d150ea6304e722581c66b69dd4690f9e61bc8beff3d8e08cb2e15a956e08",
   "js/videoexport.js": "cdd3184809c9f93a81d71cd01e161297132b8637d47003756e7210536febe5b3",
+  "js/welcome.js": "16b48286ada81e986a7c5bfbab32e0906de19057fdf4147550d61c27209b507d",
   "js/zip.js": "4f298d7018597d3884ca0f3ca74c8af3b79c4a953b251f0f9838a473dc910d82",
   "manifest.json": "b2f2f1757c929c6d39e5f346141519dc4dc5b0cd657653cc96ad050215ca6e99",
-  "style.css": "f1a4da6722786d27f165e0e6f5869cc8b1aae4237755d96613c0ae3d3a4a4c84",
-  "sw.js": "7ef985fdd567727ee512a02734c6899f7da6638fde03ce0a5ac633c339958693"
+  "style.css": "789e7239f6e121424616a40223c6e9b4caedbe2fecd4f1b4b66403115b653873",
+  "sw.js": "634597b88e0075ffb47d667e076fb9104ed0f679d23f174617309ec60f6e8353"
  },
  "keep": [
   ".DS_Store",
@@ -61,6 +64,6 @@
  ],
  "name": "Contact Sheet",
  "notebook": "contact-sheet",
- "suite": "e945955 + changes not committed",
+ "suite": "2265a5a + changes not committed",
  "suite_folder": "../Documenting Fictions"
 }

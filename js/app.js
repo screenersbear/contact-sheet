@@ -7,6 +7,8 @@ import { mountBook, modeOfHash, startsOnFirstPage } from './book.js';
 import { openSheet, choiceSheet, confirmSheet, promptSheet, closeAllSheets } from './ui.js';
 import { ICONS } from './icons.js';
 import { esc, shortDate } from './util.js';
+import { openIntro } from './intro.js';
+import { welcome } from './welcome.js';
 
 const view = document.getElementById('view');
 let destroyCurrent = null;
@@ -156,14 +158,13 @@ async function templateMenu(id, redraw) {
 
 // ---------- Routing ----------
 
-// Inside Documenting Fictions (../suite.js) the shelf is the shut notebook.
+// Inside Documenting Fictions (../suite.js) the shelf is the shut notebook,
+// and Options are in the menu at the top of the Table of contents.
 const suite = window.DF_SUITE;
-let suiteOpened = !(suite && suite.options);
 
 async function route() {
   const h0 = (location.hash || '#/').slice(1) || '/';
-  if (suite && h0 === '/' && suiteOpened) { suite.home(); return; }
-  if (h0 !== '/') suiteOpened = true;
+  if (suite && h0 === '/') { suite.home(); return; }
   const token = ++routeToken;
   if (destroyCurrent) {
     destroyCurrent();
@@ -194,12 +195,12 @@ async function route() {
 
 window.addEventListener('hashchange', route);
 // Set in Options: open on the Table of contents instead of the shut notebook.
-if (suite ? !suite.options : startsOnFirstPage()) { if ((location.hash || '#/') === '#/') history.replaceState(null, '', '#/contents'); }
+if (suite || startsOnFirstPage()) { if ((location.hash || '#/') === '#/') history.replaceState(null, '', '#/contents'); }
 route();
-if (suite && suite.options) {
-  setTimeout(() => document.querySelector('.nb-sun')?.click(), 60);
-  suite.whenOptionsDone(() => !!document.querySelector('.is-sticking, .crop-layer') || (location.hash || '#/') !== '#/');
-} else if (suite && suite.at === 'new') setTimeout(newChapter, 400);
+if (suite && suite.at === 'new') setTimeout(newChapter, 400);
+// Inside Documenting Fictions, the first time: how to get back to the shelf,
+// and the tour if it's wanted.
+else if (suite && suite.firstVisit) setTimeout(() => { if (!document.querySelector('.sheet-overlay')) welcome('Contact Sheet', openIntro); }, 900);
 
 // Always upright, quietly. The manifest asks for it once the app is
 // installed; where a browser allows a lock, this holds it. iPhone home-screen
