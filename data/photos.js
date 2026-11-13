@@ -1,0 +1,189 @@
+// Bringing photos in. The original file is stored untouched for export; a
+// downscaled preview keeps editing fast, and a small thumb fills the tray.
+//
+// Orientation: browsers apply a photo's EXIF orientation when they draw it
+// (to an <img> and to a canvas), so naturalWidth/Height are the upright size
+// and the preview is drawn upright with no EXIF left in it. Colour: canvases
+// are sRGB, so a Display P3 iPhone photo is converted on the way in.
+import { addPhoto } from './db.js';
+import { loadImage, canvasToBlob } from '../components/util.js';
+
+const PREVIEW_MAX = 1600;
+const THUMB_MAX = 480; // sharp in the bigger tray and picker
+
+// Draws `src` at w x h, halving first while it's more than twice as big, so
+// a 24 megapixel photo shrinks smoothly instead of turning to grain.
+export function downscale(src, srcW, srcH, w, h) {
+  let cur = src;
+  let cw = srcW;
+  let ch = srcH;
+  const temps = [];
+  while (cw / 2 >= w && ch / 2 >= h) {
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(cw / 2));
+    c.height = Math.max(1, Math.round(ch / 2));
+    const x = c.getContext('2d', { colorSpace: 'srgb' });
+    x.imageSmoothingQuality = 'high';
+    x.drawImage(cur, 0, 0, c.width, c.height);
+    temps.push(c);
+    cur = c;
+    cw = c.width;
+    ch = c.height;
+  }
+  const out = document.createElement('canvas');
+  out.width = Math.max(1, Math.round(w));
+  out.height = Math.max(1, Math.round(h));
+  const ctx = out.getContext('2d', { colorSpace: 'srgb' });
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(cur, 0, 0, out.width, out.height);
+  // Hand the memory back now: iOS Safari has a small budget for canvases.
+  temps.forEach((c) => {
+    c.width = 0;
+    c.height = 0;
+  });
+  return out;
+}
+
+const fit = (w, h, max) => {
+  const k = Math.min(1, max / Math.max(w, h));
+  return [Math.round(w * k), Math.round(h * k)];
+};
+
+// The editing copy and the tray's thumb, from a photo or a video's still.
+async function stillsOf(src, width, height) {
+  const [pw, ph] = fit(width, height, PREVIEW_MAX);
+  const pc = downscale(src, width, height, pw, ph);
+  const preview = await canvasToBlob(pc, 'image/jpeg', 0.86);
+  const [tw, th] = fit(width, height, THUMB_MAX);
+  const tc = downscale(pc, pw, ph, tw, th);
+  const thumb = await canvasToBlob(tc, 'image/jpeg', 0.8);
+  pc.width = pc.height = tc.width = tc.height = 0;
+  return { preview, previewW: pw, previewH: ph, thumb };
+}
+
+async function importFile(projectId, file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await loadImage(url);
+    const width = img.naturalWidth;
+    const height = img.naturalHeight;
+    if (!width || !height) throw new Error('empty');
+    const stills = await stillsOf(img, width, height);
+    img.src = '';
+    return addPhoto({ projectId, name: file.name || 'photo', type: file.type || '', original: file, width, height, ...stills });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+const VIDEO_NAME = /\.(mov|mp4|m4v|webm|3gp)$/i;
+const isVideoFile = (f) => (f.type || '').startsWith('video/') || (!f.type && VIDEO_NAME.test(f.name || ''));
+
+// A muted video that is ready to draw. release() lets its memory go.
+export function openVideo(blob, wait = 20000) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const video = document.createElement('video');
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('muted', '');
+    video.preload = 'auto';
+    const release = () => {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      URL.revokeObjectURL(url);
+    };
+    const timer = setTimeout(() => fail(), wait);
+    function fail() {
+      clearTimeout(timer);
+      release();
+      reject(new Error('Could not open the video'));
+    }
+    video.onerror = fail;
+    video.onloadedmetadata = async () => {
+      video.onloadedmetadata = null;
+      // An iPhone holds back the picture until a video has played.
+      try {
+        await video.play();
+        video.pause();
+      } catch {}
+      clearTimeout(timer);
+      video.onerror = null;
+      resolve({ video, release });
+    };
+    video.src = url;
+    video.load();
+  });
+}
+
+function seek(video, t) {
+  return new Promise((done) => {
+    const finish = () => {
+      clearTimeout(timer);
+      video.removeEventListener('seeked', finish);
+      done();
+    };
+    const timer = setTimeout(finish, 5000);
+    video.addEventListener('seeked', finish);
+    video.currentTime = t;
+  });
+}
+
+// The original is stored untouched, with a still from just after the start
+// that stands in for it in thumbs, page turns and print.
+async function importVideo(projectId, file) {
+  const { video, release } = await openVideo(file);
+  try {
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+    if (!width || !height) throw new Error('empty');
+    const duration = Number.isFinite(video.duration) ? video.duration : 0;
+    await seek(video, Math.min(0.1, duration / 2));
+    const stills = await stillsOf(video, width, height);
+    return addPhoto({ projectId, kind: 'video', duration, name: file.name || 'video', type: file.type || '', original: file, width, height, ...stills });
+  } finally {
+    release();
+  }
+}
+
+// One at a time, so a phone never holds more than one full-size photo.
+export async function importFiles(projectId, files, onProgress) {
+  const photos = [];
+  const failed = [];
+  const list = [...files].filter((f) => !f.type || f.type.startsWith('image/') || isVideoFile(f));
+  for (let i = 0; i < list.length; i++) {
+    if (onProgress) onProgress(i, list.length);
+    try {
+      photos.push(await (isVideoFile(list[i]) ? importVideo : importFile)(projectId, list[i]));
+    } catch {
+      failed.push(list[i].name || 'photo');
+    }
+  }
+  return { photos, failed, skipped: files.length - list.length };
+}
+
+// Opens the camera roll (or the file picker on a computer).
+export function pickFiles({ multiple = true, accept = 'image/*,video/*' } = {}) {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    input.multiple = multiple;
+    input.style.display = 'none';
+    input.addEventListener('change', () => {
+      const files = [...(input.files || [])];
+      input.remove();
+      resolve(files);
+    });
+    // Closing the picker without choosing fires no change event on some
+    // browsers; "cancel" covers the rest.
+    input.addEventListener('cancel', () => {
+      input.remove();
+      resolve([]);
+    });
+    document.body.appendChild(input);
+    input.click();
+  });
+}

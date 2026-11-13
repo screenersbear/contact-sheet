@@ -1,0 +1,31 @@
+/* Options' labels. */
+/* Options (pages/options.js): its labels as Ref Notebook's, in the handwriting. */
+.sheet-options .field-label { margin-bottom: 0; font-size: 17px; font-weight: 400; letter-spacing: 0.3px; text-transform: none; }
+.opt-wide { display: block; width: 100%; margin-top: 8px; }
+.opt-seg { display: flex; margin-top: 8px; border: 1px solid var(--text); border-radius: 8px; overflow: hidden; }
+.opt-seg button { flex: 1; min-height: 44px; padding: 0 6px; border: none; background: var(--paper); color: var(--text); font-family: var(--font-body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.opt-seg button + button { border-left: 1px solid var(--text); }
+.opt-seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.sheet .modal-cta.secondary { background: var(--paper); color: var(--text); font-family: var(--font-body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; border: 1px solid var(--text); border-radius: 8px; }
+.choice-heading { margin-top: 10px; }
+.opt-book {
+  width: 48px;
+  height: 65px;
+  border-radius: 0 5px 5px 0;
+  background: center / 100% 100% no-repeat;
+}
+.opt-color[aria-pressed="true"] .opt-book { outline: 1.5px solid var(--text); outline-offset: 3px; }
+.nb-book {
+  position: absolute;
+  left: 0;
+  top: calc(var(--H) / -2);
+  width: var(--W);
+  height: var(--H);
+  transform-origin: 0 50%;
+  transform-style: preserve-3d;
+  transition: transform 0.72s cubic-bezier(0.45, 0.05, 0.25, 1);
+}
+.nb-block,
+.nb-leaf,
+.nb-front,
+.nb-inside { position: absolute; inset: 0; }

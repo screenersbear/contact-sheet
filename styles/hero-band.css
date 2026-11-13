@@ -1,0 +1,96 @@
+/* The hero band at the top of a list, and the strip of colour a pull shows. */
+/* ---------- Hero band (Drafts) ---------- */
+
+.hero-band {
+  background: var(--hero);
+  width: var(--turn-w, 100vw);
+  margin-left: calc(50% - var(--turn-w, 100vw) / 2);
+  margin-top: calc(-1 * var(--sa-t));
+  margin-bottom: 20px;
+  padding: calc(var(--sa-t) + 20px) max(16px, calc(var(--turn-w, 100vw) / 2 - 264px)) 20px;
+  border-bottom: 4px solid var(--accent);
+  position: relative;
+}
+
+/* Pulling the page down past the top shows a strip of header colour, so
+   the header seems to stretch instead of flashing white. */
+.hero-band::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: var(--turn-h, 100vh);
+  background: var(--hero);
+  pointer-events: none;
+}
+
+/* fitBrandTitle() in app.js sets this row's font size so the logo and title
+   fill the header's width; both are sized in em from it. */
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  margin-bottom: 18px;
+  font-size: 28px;
+}
+.brand-row:last-child { margin-bottom: 0; }
+
+.brand-logo-wrap {
+  width: 1.3em;
+  height: 1.3em;
+  flex-shrink: 0;
+}
+
+.brand-logo { width: 100%; height: 100%; display: block; }
+
+.brand-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 1em;
+  font-weight: 900;
+  color: var(--accent);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1.1;
+}
+
+.shine-sweep { position: relative; overflow: hidden; }
+.shine-sweep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.75) 50%, transparent 100%);
+  animation: shine-sweep-move 8s ease-in-out infinite;
+  will-change: transform;
+  pointer-events: none;
+}
+@keyframes shine-sweep-move {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  12% { transform: translateX(260%) skewX(-20deg); }
+  100% { transform: translateX(260%) skewX(-20deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shine-sweep::after { animation: none; display: none; }
+}
+
+.hero-cta {
+  display: block;
+  width: 100%;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 2px solid var(--magenta);
+  padding: 16px;
+  font-size: 19px;
+  font-weight: 700;
+  font-family: var(--font-title);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-align: center;
+  text-decoration: none;
+}

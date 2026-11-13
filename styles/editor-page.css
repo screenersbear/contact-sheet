@@ -1,0 +1,131 @@
+/* The editor on its notebook page: the pages, the name, the bottom bar,
+   the guides, its sheets and the PDF preview. */
+/* The editor: the photos on plain white, the full width of the screen. */
+/* Pinned by its edges, not 100dvh: on iOS 26 100dvh stops a status bar short
+   of the bottom of the screen. Everything sits inside the notebook's frame. */
+.editor { --ed-in: 16px; height: auto; padding: var(--nb-t) 0 var(--nb-b); background: var(--paper); }
+body[data-route="edit"] { background: var(--paper); }
+.ws { z-index: 1; background: none; scrollbar-width: none; }
+.ws::-webkit-scrollbar { display: none; }
+.ws-inner { overflow: hidden; }
+/* Measures the room the pages have (pages/editor.js); nothing shows. */
+.nb-open { position: absolute; left: 0; top: var(--nb-t); bottom: var(--nb-b); pointer-events: none; visibility: hidden; }
+/* The 3D book's two open pages: plain white paper with rounded outer
+   corners, a band of the notebook's colour round them. --ex and --ey are one
+   screen pixel across and down once the book has zoomed in (js/book.js). The
+   big ring of the notebook's colour hides the art's soft inner edge. */
+.nb-block::after,
+.nb-inside::after { background: var(--paper); }
+.nb-block::after,
+.nb-inside::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--ey) * -3);
+  bottom: calc(var(--ey) * -3);
+  left: 0;
+  right: calc(var(--ex) * -3);
+  border-radius: 0 calc(var(--ex) * 20) calc(var(--ex) * 20) 0 / 0 calc(var(--ey) * 20) calc(var(--ey) * 20) 0;
+  box-shadow:
+    0 0 0 calc((var(--ex) + var(--ey)) * 30) var(--book-rim);
+  clip-path: inset(calc(var(--ey) * -3) calc(var(--ex) * -6.5) calc(var(--ey) * -5) 0 round 0 calc(var(--ex) * 9) calc(var(--ex) * 9) 0);
+  pointer-events: none;
+}
+.ws-labels { z-index: 1; }
+.ws-label { height: 26px; line-height: 26px; font-family: var(--font-body); font-size: 16px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--text); }
+.ws-label.has-del { gap: 4px; padding-left: 34px; }
+.ws-del { width: 30px; height: 26px; color: var(--text); }
+.ws-del svg { width: 21px; height: 21px; }
+/* The chapter's name, written under the photos. Tap to rename. */
+.ed-name { position: absolute; z-index: 3; left: 66px; right: 66px; height: 34px; display: flex; justify-content: center; pointer-events: none; }
+.ed-name button {
+  max-width: 100%;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-hand);
+  font-size: 21px;
+  letter-spacing: 0;
+  line-height: 34px;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+.ed-name.is-over button { background: var(--paper); }
+.ed-name span { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* The bottom bar: no band, just Berry Blade black on the white page. */
+.tray,
+.ed-tools {
+  z-index: 3;
+  background: none;
+  border-top: none;
+  margin-left: var(--ed-in);
+  margin-right: var(--ed-in);
+}
+.tray { padding: 8px 0; }
+.ed-tools { position: relative; padding: 2px 0 4px; }
+.ed-adjust { position: relative; z-index: 3; margin-left: var(--ed-in); margin-right: var(--ed-in); }
+.ed-tools .tool {
+  color: var(--text);
+  padding-bottom: 2px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.ed-tools .tool.is-on::before { top: -2px; height: 2px; background: var(--text); }
+.tool-sm { flex: 0 0 34px; justify-content: center; padding: 6px 0; }
+.tray-hint { color: var(--text); }
+.tray-add {
+  background: var(--paper);
+  color: var(--text);
+  border: 1.5px solid var(--text);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.ws-add { background: var(--paper); color: var(--text); border: 1.5px solid var(--text); box-shadow: none; }
+/* While a photo is moved: the frame's middle lines, shown when it catches. */
+.guide.in-frame { background: var(--text); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85); }
+
+/* Sheets: white, with thin lines. */
+.sheet { border-top: none; background: var(--paper); }
+.sheet-header { background: var(--paper); border-bottom: 1px solid var(--line); }
+.sheet-header h2 { color: var(--text); font-family: var(--head); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
+.choice, .tpl-card { border: 1px solid var(--text); border-radius: 8px; }
+.choice-label, .row-name { text-transform: none; font-weight: 500; letter-spacing: 0; }
+.lay-sky { fill: #e2e6e9; }
+.btn { font-family: var(--font-body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; border-width: 1px; border-color: var(--text); border-radius: 8px; }
+.btn.primary { background: var(--paper); color: var(--text); border-width: 1.5px; border-color: var(--text); }
+.order-note { background: none; color: var(--text-dim); border: none; padding: 0 0 4px; font-family: var(--font-body); font-size: 14px; letter-spacing: 0; text-transform: none; }
+.order-note b { color: var(--text); font-family: inherit; font-weight: 600; text-transform: none; }
+.sheet .primary { background: var(--paper); color: var(--text); font-family: var(--font-body); font-weight: 600; letter-spacing: 0; text-transform: none; border: 1.5px solid var(--text); border-radius: 8px; }
+
+/* The PDF preview: the whole screen on a phone, a big panel on a computer. */
+.sheet.sheet-pdf { max-width: none; height: var(--vv-height, 100svh); max-height: none; }
+.sheet-pdf .sheet-header { padding-top: calc(14px + var(--sa-t)); }
+.sheet-pdf .sheet-body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+@media (min-width: 600px) {
+  :where(html:not(.is-turned)) .sheet.sheet-pdf { max-width: 900px; height: calc(var(--vv-height, 100vh) * 0.92); }
+}
+.pdfv-notice { flex-shrink: 0; width: 100%; margin: 0; padding: 10px 16px; border: none; background: var(--surface); color: var(--text); font-size: 14px; line-height: 1.3; text-align: left; letter-spacing: 0; text-transform: none; }
+.pdfv-notice b { font-weight: 600; }
+.pdfv-notice.is-low { border-left: 5px solid var(--danger); }
+.pdfv-scroll { position: relative; flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y; background: #e4e6e8; }
+.pdfv-pages { box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; width: calc(var(--z, 1) * 100%); padding: 12px; }
+.pdfv-sheet { position: relative; flex-shrink: 0; width: 100%; aspect-ratio: 792 / 612; overflow: hidden; background: #fff; box-shadow: 0 1px 5px rgba(49, 61, 69, 0.3); container-type: inline-size; }
+.pdfv-sheet img { position: absolute; display: block; -webkit-user-drag: none; user-select: none; }
+.pdfv-sheet img.has-edge { box-shadow: 0 0 0 0.5px #d1d1d1; }
+.pdfv-text { position: absolute; color: #313d45; font-family: var(--font-hand); line-height: 1; white-space: nowrap; transform: translateY(0.2em); }
+.pdfv-mark { position: absolute; box-sizing: border-box; border: 2px dashed #fff; outline: 2px dashed var(--text); outline-offset: -2px; pointer-events: none; }
+.pdfv-mark.is-blurry { outline-color: var(--danger); }
+.pdfv-mark.is-flash { animation: pdfv-flash 0.5s ease 3; }
+@keyframes pdfv-flash { 50% { opacity: 0; } }
+.pdfv-foot { flex-shrink: 0; padding: 8px 16px calc(var(--sa-b) + 10px); background: var(--surface); }
+.pdfv-row { display: flex; align-items: center; gap: 8px; }
+.pdfv-count { flex: 1; font-size: 15px; color: var(--text); }
+.pdfv-thumb { width: 48px; height: 48px; flex-shrink: 0; object-fit: cover; }

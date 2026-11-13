@@ -1,0 +1,24 @@
+/* Section blocks. */
+/* ---------- Section blocks ---------- */
+
+.section-block { margin-bottom: 26px; }
+
+.section-block h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 19px;
+  text-transform: uppercase;
+  letter-spacing: -0.3px;
+  padding: 8px 18px;
+  margin: 0 0 12px;
+  user-select: none;
+}
+
+.section-block h2.heading-yellow {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-left: 11px solid var(--magenta);
+}
+
+.card-list { display: flex; flex-direction: column; gap: 10px; }

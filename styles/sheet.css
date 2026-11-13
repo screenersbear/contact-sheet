@@ -1,0 +1,117 @@
+/* Sheets, the tour cards and the button that stays in reach. */
+/* ---------- Sheets ---------- */
+
+.sheet-overlay {
+  position: fixed;
+  /* The visible part of the screen, above the keyboard when it's up. */
+  top: var(--vv-top, 0px);
+  left: 0;
+  right: 0;
+  height: var(--vv-height, 100%);
+  background: var(--overlay);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fade 0.15s ease;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Only the body scrolls, so pulling a long sheet down past its top moves
+   the content, never the header off the top. */
+.sheet {
+  background: var(--surface);
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(var(--vv-height, 100svh) * 0.92);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 4px solid var(--accent);
+  animation: slideUp 0.2s ease;
+  outline: none;
+}
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.sheet-header {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--hero);
+  padding: 14px 16px 14px 20px;
+}
+.sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  padding: 16px 20px calc(var(--sa-b) + 20px);
+}
+.sheet-header h2 {
+  margin: 0;
+  font-size: 19px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: var(--on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  padding: 0;
+}
+.x-icon { width: 0.6em; height: 0.6em; display: block; }
+
+.sheet-message { margin: 0 0 14px; font-size: 16px; }
+.sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+/* The tour's cards (intro.js) and the first visit's (welcome.js), as Ref's. */
+.sheet-actions.one { grid-template-columns: 1fr; }
+.wz-dots { display: flex; gap: 6px; padding: 0 4px; }
+.wz-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+.wz-dots i.on { background: var(--ink); }
+.intro-dots { justify-content: center; }
+.intro .sheet-message { min-height: 5.6em; }
+
+.choice-list { display: flex; flex-direction: column; gap: 8px; }
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border: 3px solid var(--ink);
+  background: var(--surface);
+  padding: 12px 14px;
+  letter-spacing: 0;
+}
+.choice.current { background: var(--accent); color: var(--on-accent); border-color: var(--magenta); }
+.choice.is-danger .choice-label { color: var(--danger); }
+.choice-text { display: flex; flex-direction: column; gap: 2px; }
+.choice-label { font-family: var(--font-title); font-size: 17px; text-transform: uppercase; letter-spacing: 0.5px; }
+.choice-detail { font-size: 14px; opacity: 0.8; }
+
+/* The main button stays in reach however long the list is. */
+.sheet.has-footer .sheet-body { padding-bottom: 0; }
+.sheet-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+  margin: 12px -20px 0;
+  padding: 8px 20px calc(var(--sa-b) + 16px);
+  border-top: 3px solid var(--ink);
+}

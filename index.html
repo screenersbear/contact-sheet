@@ -6,8 +6,18 @@
 <title>Contact Sheet</title>
 <meta name="description" content="Build Instagram carousels and Stories from your photos, with photos that run across slides." />
 
-<!-- What the notebooks share (copied in from the suite's shared/df-data.js). -->
-<script src="df-data.js"></script>
+<!-- What the notebooks share, window.DFData (copied in from the suite's shared/data/). -->
+<script src="data/shared/basics.js"></script>
+<script src="data/shared/files.js"></script>
+<script src="data/shared/overthoughts.js"></script>
+<script src="data/shared/the-eye.js"></script>
+<script src="data/shared/journal-move.js"></script>
+<script src="data/shared/json-backup.js"></script>
+<script src="data/shared/zip-format.js"></script>
+<script src="data/shared/zip-backup.js"></script>
+<script src="data/shared/zip-restore.js"></script>
+<script src="data/shared/links.js"></script>
+<script src="data/shared/df-data.js"></script>
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#f3f3f3" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -18,10 +28,31 @@
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
 <link rel="icon" type="image/png" href="icons/icon-192.png" />
 <script>try { var book = localStorage.getItem('contact-sheet-book'); if (book) document.documentElement.dataset.book = book; } catch (e) {}</script>
-<script src="js/upright.js"></script>
+<script src="components/upright.js"></script>
 <link rel="preload" href="fonts/klee-one-latin.woff" as="font" type="font/woff" crossorigin />
 <link rel="preload" href="fonts/kaisei-decol-500-latin.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="styles/base.css" />
+<link rel="stylesheet" href="styles/hero-band.css" />
+<link rel="stylesheet" href="styles/top-bar.css" />
+<link rel="stylesheet" href="styles/sections.css" />
+<link rel="stylesheet" href="styles/buttons.css" />
+<link rel="stylesheet" href="styles/chapters.css" />
+<link rel="stylesheet" href="styles/sheet.css" />
+<link rel="stylesheet" href="styles/forms.css" />
+<link rel="stylesheet" href="styles/editor-sheets.css" />
+<link rel="stylesheet" href="styles/editor.css" />
+<link rel="stylesheet" href="styles/editor-frames.css" />
+<link rel="stylesheet" href="styles/editor-video.css" />
+<link rel="stylesheet" href="styles/toast.css" />
+<link rel="stylesheet" href="styles/wide.css" />
+<link rel="stylesheet" href="styles/notebook.css" />
+<link rel="stylesheet" href="styles/options.css" />
+<link rel="stylesheet" href="styles/cover.css" />
+<link rel="stylesheet" href="styles/stickers.css" />
+<link rel="stylesheet" href="styles/cover-depth.css" />
+<link rel="stylesheet" href="styles/contents.css" />
+<link rel="stylesheet" href="styles/editor-page.css" />
+<link rel="stylesheet" href="styles/header-band.css" />
 </head>
 <!-- data-route="book" from the start: the book (or the editor, just as wide) is always the first screen, so the page doesn't open as a narrow column and jump wide once the script runs. -->
 <body data-route="book">
@@ -33,6 +64,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <noscript><p class="noscript">Contact Sheet needs JavaScript turned on.</p></noscript>
-<script type="module" src="js/app.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

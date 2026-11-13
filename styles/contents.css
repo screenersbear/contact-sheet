@@ -1,0 +1,86 @@
+/* The Table of contents: the page, its bottom bar and the navigation icon,
+   the menu and the plus at its heading. */
+/* Table of contents: a plain white page that scrolls, the tools at the bottom. */
+.nb-toc {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  opacity: 0;
+  transition: opacity 0.22s;
+}
+.nb.is-reading .nb-toc { opacity: 1; }
+.nb-toc[hidden] { display: none; }
+.nb-toc .ed-tools { position: absolute; left: 20px; right: 20px; bottom: var(--nb-b); margin: 0; touch-action: none; }
+/* The contents' bar is the navigation icon alone (New chapter is the plus at
+   the top, user 11-12). Its middle sits where an iPhone's home button used to
+   be: the bottom safe area + 6px, 30px at least, above the screen's edge, as
+   in the other notebooks and on the shelf. The row is the icon's own 21px. */
+.nb-toc { --toc-icon: max(30px, calc(var(--sa-b) + 6px)); --toc-bar: calc(var(--toc-icon) + 25px); }
+html.is-short .nb-toc { --toc-icon: 30px; }
+.nb-toc .ed-tools { bottom: calc(var(--toc-icon) - 10.5px); padding: 0; border-top: 0; background: none; }
+.nb-toc .ed-tools .nb-nav { padding: 0; }
+/* Installed, the bars and the sun show once iOS has its height right (components/screen-fit.js
+   adds .settled), so they never show high and then drop. */
+@media (display-mode: standalone) { html:not(.settled) :is(.ed-tools, .nb-sun) { visibility: hidden; } }
+/* The navigation icon (navicon.js): the icon in the same 21px row as the
+   other tools' icons, the triangles tucked up against it, its name below. */
+.nb-nav .slider { display: flex; align-items: center; justify-content: center; height: 21px; }
+.nb-nav .slide-arrow { appearance: none; -webkit-appearance: none; border: 0; background: none; padding: 0; width: 26px; height: 44px; margin: -11.5px 0; display: grid; align-items: center; color: var(--text); position: relative; z-index: 1; }
+.nb-nav .slide-arrow.is-prev { justify-items: end; margin-right: -3px; }
+.nb-nav .slide-arrow.is-next { justify-items: start; margin-left: -3px; }
+.nb-nav .slide-arrow.is-off { visibility: hidden; }
+.nb-nav .slide-arrow:active { opacity: 0.5; }
+.nb-nav .slide-arrow svg { width: 8px; height: 10px; display: block; }
+.nb-nav .slide-arrow.is-prev svg { transform: scaleX(-1); }
+.nb-nav .slide-now { appearance: none; -webkit-appearance: none; border: 0; background: none; padding: 0; display: block; flex: none; width: 30px; height: 21px; overflow: hidden; color: var(--text); -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%); }
+.nb-nav .slide-strip { display: flex; }
+.nb-nav .slide-strip.is-moving { transition: transform 0.2s cubic-bezier(0.3, 0.6, 0.3, 1); }
+.nb-nav .slide-icon { flex: 0 0 30px; height: 21px; display: grid; place-items: center; }
+.nb-nav .slide-icon svg { width: 21px; height: 21px; display: block; }
+.toc-page {
+  position: absolute;
+  inset: 0 0 var(--toc-bar);
+  box-shadow: 0 2px 0 var(--line); /* a line under the list, where the bar starts (user, 11-12) */
+  box-sizing: border-box;
+  padding: calc(var(--sa-t) + 28px) max(20px, calc((100% - 560px) / 2)) 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+.nb-head {
+  margin: 0 0 14px;
+  font: 500 26px/1.25 var(--head);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  text-align: center;
+  color: var(--text);
+}
+/* Inside Documenting Fictions: Options, in a menu at the heading's left. Out
+   of the text's way, so the heading stays in the middle. */
+.nb-head.has-menu { position: relative; }
+.toc-menu { position: absolute; left: -20px; top: 50%; margin-top: -22px; width: 44px; height: 44px; display: grid; place-items: center; border: 0; padding: 0; background: none; color: var(--text); cursor: pointer; }
+.toc-menu svg { width: 21px; height: 21px; display: block; } /* the size of the tools' icons at the foot */
+/* New chapter: a plus at the heading's right, opposite the menu. */
+.nb-head.has-plus { position: relative; }
+.toc-plus { position: absolute; right: -20px; top: 50%; margin-top: -22px; width: 44px; height: 44px; display: grid; place-items: center; border: 0; padding: 0; background: none; color: var(--text); cursor: pointer; }
+.toc-plus svg { width: 24px; height: 24px; display: block; }
+.toc-row { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
+.toc-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  color: var(--text);
+  text-decoration: none;
+  -webkit-user-drag: none;
+}
+.toc-thumb { flex-shrink: 0; width: 52px; height: 52px; border-radius: 6px; background: #eef0f1; display: block; overflow: hidden; }
+.toc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.toc-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.toc-name { font-family: var(--font-hand); font-size: 20px; line-height: 1.25; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.toc-meta { font-size: 14px; color: var(--text-dim); }
+.toc-empty { margin: 48px 0 0; text-align: center; font-family: var(--font-title); font-size: 19px; color: var(--text-dim); }
+.toc-tip { margin: 22px 0 0; text-align: center; font-size: 13px; line-height: 1.4; color: var(--text-dim); }
+.toc-tip .text-btn { font-size: inherit; }

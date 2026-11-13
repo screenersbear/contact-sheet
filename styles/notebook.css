@@ -1,0 +1,188 @@
+/* The notebook: its frame, the sideways iPhone, the float and its shadow. */
+/* ---------- The notebook ---------- */
+/* A flat card notebook with white pages, in the color picked in Options.
+   Everything else is Berry Blade black on white. These come after the
+   dark-mode tokens so the notebook always wins. */
+@font-face {
+  font-family: "Klee One";
+  src: url("../fonts/klee-one-latin.woff") format("woff"); /* Klee One, resized inside the file to Mansalva's width and line height (Safari has no ascent-override), so no layout moved */
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face { font-family: "Kaisei Decol"; src: url("../fonts/kaisei-decol-500-latin.woff2") format("woff2"); font-weight: 500; font-display: swap; size-adjust: 85.4%; } /* the headers, in capitals: Kaisei Decol Medium, sized so its capitals stand as tall as Klee One's */
+:root[data-book] {
+  color-scheme: light;
+  --ink: #313d45;
+  --hero: #313d45;
+  --on-ink: #fff;
+  --accent: #313d45;
+  --on-accent: #fff;
+  --magenta: #313d45;
+  --text: #313d45;
+  --text-dim: rgba(49, 61, 69, 0.66);
+  /* A very soft grey behind everything (less light than white, and it still
+     reads as white), and paper one shade lighter: the notebook's pages, the
+     sheets, fields and buttons on them. White lettering stays white, and so
+     do marks drawn over photos and anything that shows the export itself. */
+  --bg: #f3f3f3;
+  --paper: #ffffff; /* the open notebook's pages: plain white */
+  --surface: var(--paper);
+  --line: #d6dadd;
+  --field: var(--paper);
+  --overlay: rgba(49, 61, 69, 0.42);
+  --canvas: var(--bg);
+  --canvas-label: #313d45;
+  --font-hand: "Klee One", "Bradley Hand", "Noteworthy", cursive;
+  --font-title: var(--font-hand);
+  --font-body: var(--font-hand);
+  --book-cover: url(../art/orange-cover.webp);
+  --book-block: url(../art/orange-block.webp);
+  --book-back: #d9641a;
+  --book-rim: #ec701e; /* the frame's coloured band, measured off its art */
+  --book-pale: #fbe2d2; /* a fifth of the colour on white: the pale tab */
+  --book-shadow: 0 16px 34px rgba(60, 40, 20, 0.2), 0 3px 8px rgba(60, 40, 20, 0.14);
+}
+:root[data-book="mango"] { --book-cover: url(../art/mango-cover.webp); --book-block: url(../art/mango-block.webp); --book-back: #e0b012; --book-rim: #f9c614; --book-pale: #fef4d0; }
+:root[data-book="berry"] { --book-cover: url(../art/berry-cover.webp); --book-block: url(../art/berry-block.webp); --book-back: #a80a73; --book-rim: #bf0b83; --book-pale: #f2cee6; }
+:root[data-book="fern"] { --book-cover: url(../art/fern-cover.webp); --book-block: url(../art/fern-block.webp); --book-back: #286b4a; --book-rim: #2e7a55; --book-pale: #d5e4dd; }
+:root[data-book="ocean"] { --book-cover: url(../art/ocean-cover.webp); --book-block: url(../art/ocean-block.webp); --book-back: #1f5095; --book-rim: #235caa; --book-pale: #d3deee; }
+:root[data-book="ink"] { --book-cover: url(../art/ink-cover.webp); --book-block: url(../art/ink-block.webp); --book-back: #2a353c; --book-rim: #303d44; --book-pale: #d6d8da; }
+
+/* The notebook's frame, the same in the contents and every chapter. */
+:root {
+  --sa-t: env(safe-area-inset-top);
+  --sa-b: env(safe-area-inset-bottom);
+  --nb-t: max(var(--sa-t), 10px);
+  --nb-b: max(calc(var(--sa-b) + 2px), 10px);
+  --nb-rim: 0px; /* no notebook edge round the open pages */
+  --head: "Kaisei Decol", "Klee One", Georgia, serif; /* headers, always in capitals */
+  --lh: 32px; /* a slide's label sits this far above it */
+  --ink-deep: color-mix(in srgb, var(--book-rim) 78%, #000);
+}
+html.is-short { --nb-b: 10px; }
+/* The handwriting has one weight: no smeared fake bold. */
+html { background: var(--bg); font-synthesis: none; -webkit-font-synthesis: none; }
+/* For a moment as the iPhone app opens (components/screen-fit.js): taller than the screen, so
+   iOS measures the screen again. */
+html.ios-nudge body { min-height: calc(var(--screen-h, 100vh) + 160px); overflow: visible; }
+/* A sideways iPhone (components/upright.js): the page is laid out at its upright
+   size and drawn a quarter turn round, so it stays the way up it is in your
+   hand. The phone's top edge keeps the top's room and the bottom a home bar's
+   worth, as upright. */
+html.is-turned {
+  --sa-t: max(env(safe-area-inset-left), env(safe-area-inset-right));
+  --sa-b: min(max(env(safe-area-inset-left), env(safe-area-inset-right)), 34px);
+  --nb-b: max(calc(var(--sa-b) + 2px), 10px);
+  overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+html.is-turned body {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--turn-w);
+  height: var(--turn-h);
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  transform-origin: 0 0;
+}
+html.is-turned-l body { transform: translateY(var(--turn-w)) rotate(-90deg); }
+html.is-turned-r body { transform: translateX(var(--turn-h)) rotate(90deg); }
+
+body[data-route="book"] { overflow: hidden; background: var(--bg); }
+body[data-route="book"] #app { padding: 0; max-width: none; }
+
+.nb {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  perspective: 1100px;
+  perspective-origin: 50% 28%;
+  overflow: hidden;
+  transition: opacity 0.2s;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+/* On the fade: opacity here, not on the book, or its 3D would flatten. */
+.nb.is-waiting { opacity: 0; }
+.nb-float {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+.nb[data-mode="closed"] .nb-float { animation: nb-float 5.2s ease-in-out infinite; }
+@keyframes nb-float {
+  0%, 100% { transform: translateY(-7px) rotateZ(-0.7deg) rotateY(-2deg); }
+  50% { transform: translateY(7px) rotateZ(0.7deg) rotateY(2deg); }
+}
+/* The shadow lies on a floor under the book, turned the same way and seen
+   through the same perspective, so it runs along the book's bottom edge. */
+.nb-ground {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--W);
+  height: calc(var(--W) * 0.36);
+  transform-origin: 0 0;
+  transform: rotateY(calc(-20deg + var(--spin, 0rad))) translate3d(calc(var(--W) / -2 + var(--shut-x, 0px)), calc(var(--H) / 2 + var(--W) * 0.11), calc(var(--W) * -0.26)) rotateX(90deg);
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+.nb-ground::before {
+  content: '';
+  position: absolute;
+  inset: 6% 3%;
+  border-radius: 10px;
+  background: rgba(40, 42, 48, 0.36);
+  filter: blur(calc(var(--W) * 0.04));
+  animation: nb-ground 5.2s ease-in-out infinite;
+}
+.nb:not([data-mode="closed"]) .nb-ground { opacity: 0; }
+.nb:not([data-mode="closed"]) .nb-ground::before { animation: none; }
+/* In time with the float: lighter and wider while the book is up. */
+@keyframes nb-ground {
+  0%, 100% { transform: scale(1.04); opacity: 0.62; }
+  50% { transform: scale(0.97); opacity: 0.92; }
+}
+/* Its middle on the same line as the middles of the contents' bottom icons:
+   their row sits on the frame, and an icon's middle is 38.5px up from the
+   row's foot (row and button padding, the label, the gap, half the icon). */
+.nb-sun {
+  position: fixed;
+  left: 50%;
+  bottom: calc(max(30px, calc(var(--sa-b) + 6px)) - 24px); /* its middle where the bar's icon is */
+  width: 48px;
+  height: 48px;
+  margin-left: -24px;
+  padding: 13.5px;
+  border: none;
+  background: none;
+  color: var(--text);
+  transition: opacity 0.25s;
+}
+/* The same size as the contents' bottom icons. */
+.nb-sun svg { width: 21px; height: 21px; display: block; }
+.nb:not([data-mode="closed"]) ~ .nb-sun { opacity: 0; pointer-events: none; }
+.opt-colors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 8px; margin-top: 10px; }
+.opt-color {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+.opt-gap { margin-top: 18px; }

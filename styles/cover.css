@@ -1,0 +1,31 @@
+/* The notebook's cover and its edge, shut and open. */
+/* The edge is drawn at the width it ends up on screen, so the zoomed page
+   lands exactly on the contents' frame. */
+.nb-block,
+.nb-inside::before {
+  box-sizing: border-box;
+  border-style: solid;
+  border-width: var(--ry) var(--rx) var(--ry) 0;
+  border-image: var(--book-block) 46 46 46 1 fill / var(--ry) var(--rx) var(--ry) 0 stretch;
+}
+.nb-block { transition: box-shadow 0.3s, visibility 0s; }
+/* Shut, the inside isn't drawn at all, so it can never show before the cover
+   has painted. It goes once the cover has swung closed. */
+.nb-inside { transition: visibility 0s; }
+.nb[data-mode="closed"] .nb-block { visibility: hidden; transition: box-shadow 0.3s, visibility 0s 0.82s; }
+.nb[data-mode="closed"] .nb-inside { visibility: hidden; transition: visibility 0s 0.82s; }
+.nb:not([data-mode="closed"]) .nb-block { box-shadow: var(--book-shadow); }
+.nb-leaf {
+  transform: rotateY(0deg) translateZ(1px);
+  transform-origin: 0 50%;
+  transform-style: preserve-3d;
+  transition: transform 0.82s cubic-bezier(0.45, 0.05, 0.25, 1);
+}
+.nb-front {
+  background: var(--book-back) var(--book-cover) center / 100% 100% no-repeat;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+/* Open at a page from the start, the cover's art waits until the book shuts (pages/book.js). */
+.nb.cover-later .nb-front { background-image: none; }

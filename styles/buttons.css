@@ -1,0 +1,70 @@
+/* Buttons. */
+/* ---------- Buttons ---------- */
+
+.btn {
+  border: 2px solid var(--ink);
+  background: var(--surface);
+  color: var(--text);
+  padding: 10px 8px;
+  font-family: var(--font-title);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  line-height: 1.15;
+  min-height: 44px;
+}
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--magenta); }
+.btn.secondary { background: var(--surface); }
+.btn.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+
+.primary { background: var(--accent); color: var(--on-accent); }
+
+.small-btn {
+  border: 2px solid var(--magenta);
+  padding: 9px 14px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 1px;
+  align-self: flex-start;
+  text-align: left;
+}
+.small-btn.secondary { background: var(--surface); color: var(--text); border-color: var(--ink); }
+.small-btn:disabled { opacity: 0.4; cursor: default; }
+
+.modal-cta {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 15px;
+  border: 2px solid var(--magenta);
+  font-size: 17px;
+  font-weight: 700;
+  font-family: var(--font-title);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.modal-cta.secondary { background: var(--surface); color: var(--text); border-color: var(--ink); }
+.modal-cta:disabled { opacity: 0.4; cursor: default; }
+
+.mini-btn {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ink);
+  background: var(--surface);
+  color: var(--text);
+  padding: 0;
+  letter-spacing: 0;
+}
+.mini-btn svg { width: 20px; height: 20px; }
+.mini-btn:disabled { opacity: 0.3; cursor: default; }
+
+.button-stack { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.button-stack.wide { align-items: stretch; }
+.button-stack .modal-cta { margin-top: 0; }

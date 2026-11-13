@@ -1,0 +1,87 @@
+/* The shut notebook seen in depth: its sheets, sides, spine and tabs. */
+/* The thickness of the shut book: thin sheets stacked behind the cover, seen
+   down the right side. They close up flat as the book opens. */
+.nb-stack { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
+.nb-stack i,
+.nb-stack b {
+  position: absolute;
+  transform: translateZ(calc(var(--i) * var(--W) * -0.0112));
+  transition: transform 0.6s, visibility 0s 0.6s;
+}
+.nb-stack i {
+  top: 0.9%;
+  bottom: 0.9%;
+  right: 1.2%;
+  width: 26%;
+  border-radius: 0 calc(var(--W) * 0.034) calc(var(--W) * 0.034) 0;
+  background: var(--paper);
+}
+.nb-stack i:nth-child(even) { background: #e4e4e4; }
+/* The sides that only show once the notebook is turned: the spine, and the
+   tops and bottoms of the pages. */
+.nb-box { position: absolute; text-decoration: none; visibility: hidden; }
+.nb.is-turning .nb-box { visibility: visible; }
+.nb-box.is-spine { left: 1px; top: 0; bottom: 0; width: calc(var(--W) * 0.1904); transform-origin: 0 50%; transform: rotateY(90deg); background: var(--book-back); }
+.nb-box.is-top, .nb-box.is-bottom {
+  left: 1px;
+  right: 1.2%;
+  height: calc(var(--W) * 0.1904);
+  background: repeating-linear-gradient(to bottom, var(--paper) 0, var(--paper) calc(var(--W) * 0.0112), #e4e4e4 calc(var(--W) * 0.0112), #e4e4e4 calc(var(--W) * 0.0224));
+}
+.nb-box.is-top { top: 0.9%; transform-origin: 50% 0; transform: translateZ(-3px) rotateX(-90deg); }
+.nb-box.is-bottom { bottom: 0.9%; transform-origin: 50% 100%; transform: translateZ(-3px) rotateX(90deg); }
+.nb-stack b {
+  inset: 0;
+  border-radius: 0 calc(var(--W) * 0.044) calc(var(--W) * 0.044) 0;
+  background: var(--book-back);
+}
+.nb[data-mode="closed"] .nb-stack i,
+.nb[data-mode="closed"] .nb-stack b { transition: transform 0.6s, visibility 0s; }
+.nb:not([data-mode="closed"]) .nb-stack i,
+.nb:not([data-mode="closed"]) .nb-stack b { transform: translateZ(-1px); visibility: hidden; }
+.nb.no-anim .nb-block,
+.nb.no-anim .nb-inside,
+.nb.no-anim .nb-book,
+.nb.no-anim .nb-leaf,
+.nb.no-anim .nb-stack i,
+.nb.no-anim .nb-stack b { transition: none; }
+
+.nb.is-turning .nb-book { transition: none; }
+.nb[data-mode="closed"] { touch-action: none; }
+.nb[data-mode="closed"] .nb-book { transform: rotateX(var(--tilt, 0rad)) rotateY(calc(-20deg + var(--spin, 0rad))) translate(calc(var(--W) / -2 + var(--shut-x, 0px)), 0) scale(1); }
+.nb[data-mode="toc"] .nb-book { transform: rotateY(0deg) translate(var(--toc-x), var(--toc-y)) scale(var(--kx), var(--ky)); }
+.nb[data-mode="toc"].at-right .nb-book,
+.nb[data-mode="new"] .nb-book { transform: rotateY(0deg) translate(var(--new-x), var(--toc-y)) scale(var(--kx), var(--ky)); }
+.nb:not([data-mode="closed"]) .nb-leaf { transform: rotateY(-180deg) translateZ(1px); }
+
+
+/* The two tabs, on sheets of their own, seen from outside with their names. */
+.nb-side-tabs { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; transition: opacity 0.25s; }
+.nb-side-tabs i {
+  position: absolute;
+  left: 98%;
+  top: calc(22% + var(--t) * 29%);
+  width: 8%;
+  height: 27%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 calc(var(--W) * 0.02) calc(var(--W) * 0.02) 0;
+  background: var(--text);
+  transform: translateZ(calc(var(--i) * var(--W) * -0.0112));
+}
+.nb-side-tabs i span {
+  text-align: center;
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  font-family: var(--font-title);
+  font-size: calc(var(--W) * 0.036);
+  line-height: 1;
+  color: #fff;
+}
+/* The New chapter tab: a very pale shade of the notebook's colour. */
+.nb-side-tabs i.is-new { background: var(--book-pale); }
+.nb-side-tabs i.is-new span { color: var(--text); }
+.nb:not([data-mode="closed"]) .nb-side-tabs { opacity: 0; visibility: hidden; }
+.nb-tabhit { position: fixed; z-index: 6; border: none; padding: 0; background: none; }
+.nb:not([data-mode="closed"]) .nb-tabhits { display: none; }

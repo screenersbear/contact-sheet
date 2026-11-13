@@ -1,0 +1,147 @@
+/* Frames in the editor: the one picked, its handles and x, the tray. */
+/* Padding on the left as wide as the trash keeps the words centred. */
+.ws-label.has-del { display: flex; align-items: center; justify-content: center; gap: 4px; padding-left: 30px; overflow: visible; }
+
+/* Selection: white with a dark edge, readable on any photo. */
+.sel { position: absolute; pointer-events: none; outline: 2px solid #fff; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.45); }
+.sel.is-photo { outline-style: dashed; }
+.sel.is-photo .handle { display: none; }
+.handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+  touch-action: none;
+}
+/* A bigger target for fingers than the square you see. */
+.handle::before { content: ''; position: absolute; inset: -13px; }
+.h-nw { left: -8px; top: -8px; cursor: nwse-resize; }
+.h-n { left: calc(50% - 7px); top: -8px; cursor: ns-resize; }
+.h-ne { right: -8px; top: -8px; cursor: nesw-resize; }
+.h-e { right: -8px; top: calc(50% - 7px); cursor: ew-resize; }
+.h-se { right: -8px; bottom: -8px; cursor: nwse-resize; }
+.h-s { left: calc(50% - 7px); bottom: -8px; cursor: ns-resize; }
+.h-sw { left: -8px; bottom: -8px; cursor: nesw-resize; }
+.h-w { left: -8px; top: calc(50% - 7px); cursor: ew-resize; }
+.sel.is-small .h-n, .sel.is-small .h-s, .sel.is-small .h-e, .sel.is-small .h-w { display: none; }
+/* The x that takes the photo out sits on the top-right corner, in place of
+   that corner's handle. White and black only, like the rest of the canvas. */
+.sel-x {
+  display: none;
+  position: absolute;
+  right: -13px;
+  top: -13px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  background: #fff;
+  color: #222;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  touch-action: manipulation;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.sel-x::before { content: ''; position: absolute; inset: -9px; }
+.sel-x svg { width: 14px; height: 14px; stroke-width: 3; }
+.sel.has-photo .sel-x { display: flex; }
+.sel.has-photo .h-ne { display: none; }
+
+.ed-adjust {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px 6px 16px;
+  background: var(--surface);
+  border-top: 3px solid var(--ink);
+}
+.ed-adjust input[type="range"] { flex: 1; min-width: 0; accent-color: var(--magenta); }
+.ed-adjust-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.ed-adjust .small-btn { align-self: center; padding: 7px 12px; font-size: 13px; text-transform: uppercase; }
+
+.tray {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 3;
+  touch-action: none;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  background: var(--surface);
+  border-top: 3px solid var(--ink);
+}
+.tray-add {
+  flex-shrink: 0;
+  touch-action: manipulation;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 2px solid var(--magenta);
+  font-family: var(--font-title);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.tray-add svg { width: 24px; height: 24px; }
+/* The list reaches up over the canvas (see-through, and taps pass through)
+   so a swelling photo has room to grow without making the tray taller. */
+.tray-list {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-top: -36px;
+  padding: 36px 2px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  touch-action: none;
+  scrollbar-width: none;
+  pointer-events: none;
+}
+.tray-list::-webkit-scrollbar { display: none; }
+.tray-item {
+  position: relative;
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border: none;
+  background: var(--line);
+  touch-action: none;
+  -webkit-touch-callout: none;
+  pointer-events: auto;
+  transform-origin: 50% 100%;
+  transition: transform 0.22s ease-out;
+}
+.tray.is-swell .tray-item { transition: transform 0.06s linear; }
+.tray-hint { pointer-events: auto; align-self: center; }
+.tray-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; -webkit-user-drag: none; }
+.tray-item.is-used img { opacity: 0.5; }
+.tray-used {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 20px;
+  height: 20px;
+  background: var(--hero);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tray-used svg { width: 13px; height: 13px; }

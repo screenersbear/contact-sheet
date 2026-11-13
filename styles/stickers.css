@@ -1,0 +1,105 @@
+/* Stickers on the notebook's cover. */
+/* Stickers. Each is cut off at the cover's edge, curves away there, and the
+   next bit wraps round the edge, standing at right angles to the cover. */
+.nb-stickers, .nb-sticker-edges, .nb-stick-clip, .nb-fold { position: absolute; inset: 0; pointer-events: none; }
+.nb-stickers { transform: translateZ(0.2px); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.nb-sticker-edges { transform-style: preserve-3d; }
+.nb-stick-clip { overflow: hidden; }
+.nb-fold { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.nb-fold[hidden] { display: none; }
+.nb-fold.is-right { transform-origin: 100% 50%; transform: rotateY(90deg); clip-path: inset(0 -1.8% 0 100%); }
+.nb-fold.is-left { transform-origin: 0 50%; transform: rotateY(-90deg); clip-path: inset(0 100% 0 -1.8%); }
+.nb-fold.is-top { transform-origin: 50% 0; transform: rotateX(90deg); clip-path: inset(-1.3% 0 100% 0); }
+.nb-fold.is-bottom { transform-origin: 50% 100%; transform: rotateX(-90deg); clip-path: inset(100% 0 -1.3% 0); }
+.nb-sticker {
+  position: absolute;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 2px rgba(58, 38, 16, 0.32), 0 0 1px rgba(58, 38, 16, 0.3);
+}
+.nb-sticker img { display: block; width: 100%; height: 100%; border-radius: inherit; }
+/* A little raised: light along the top of the paper, shade along the bottom. */
+.nb-sticker::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(58, 38, 16, 0.14);
+}
+.nb-bend { position: absolute; inset: 0; border-radius: inherit; }
+.nb-fold .nb-sticker { box-shadow: none; }
+.nb-fold .nb-sticker::after { box-shadow: none; background: rgba(58, 38, 16, 0.42); }
+.nb-sticker.is-circle, .opt-sticker.is-circle img { border-radius: 50%; }
+.nb-sticker.is-square { border-radius: 5%; }
+.nb.is-sticking .nb-float,
+.nb.is-sticking .nb-ground::before { animation-play-state: paused; }
+.nb.is-sticking ~ .nb-sun,
+.nb.is-sticking .nb-tabhits { display: none; }
+.nb-stickpad { position: absolute; inset: 0; z-index: 7; touch-action: none; }
+.nb-stick-bar {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--sa-b) + 14px);
+  width: 200px;
+  margin-left: -100px;
+  text-align: center;
+}
+.nb-stick-hint { margin: 0 0 6px; font-size: 15px; color: var(--text); pointer-events: none; }
+.opt-shapes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.opt-shape {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 0 14px;
+  border: 1px solid var(--text);
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-title);
+  font-size: 17px;
+}
+.opt-shape i { width: 56px; height: 56px; border: 2px solid var(--text); }
+.opt-shape i.is-circle { border-radius: 50%; }
+.opt-shape i.is-square { border-radius: 5%; }
+.opt-shape i.is-rect { width: 66px; height: 44px; margin: 6px 0; border-radius: 3px; }
+.crop-stage { position: relative; overflow: hidden; touch-action: none; background: var(--paper); }
+.crop-stage canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.crop-hole {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 999px rgba(255, 255, 255, 0.74);
+  outline: 1.5px solid var(--text);
+  pointer-events: none;
+}
+.crop-hole.is-circle { border-radius: 50%; }
+.crop-hint { text-align: center; margin: 8px 0 10px; }
+.opt-stickers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; align-items: center; }
+.opt-sticker { padding: 0; border: none; background: none; }
+.opt-sticker img { display: block; width: 100%; box-shadow: 0 1px 3px rgba(58, 38, 16, 0.4); }
+.nb-inside {
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.nb-inside::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: var(--book-shadow);
+  transform: scaleX(-1);
+}
+/* The page's edge (see .nb-open > span::after), drawn at the size it ends up
+   on screen. The inside of the cover has its outer edge on the left. */
+.nb-block,
+.nb-inside { --ex: calc(var(--rx) / 10); --ey: calc(var(--ry) / 10); }
+.nb .nb-inside::after {
+  top: calc(var(--ey) * 7);
+  bottom: calc(var(--ey) * 7);
+  left: calc(var(--ex) * 7);
+  right: 0;
+  border-radius: calc(var(--ex) * 20) 0 0 calc(var(--ex) * 20) / calc(var(--ey) * 20) 0 0 calc(var(--ey) * 20);
+  clip-path: inset(calc(var(--ey) * -3) 0 calc(var(--ey) * -5) calc(var(--ex) * -6.5) round calc(var(--ex) * 9) 0 0 calc(var(--ex) * 9));
+}
