@@ -28,7 +28,7 @@
   "index.html": "9b3a94dfc34a7a5f3a53f4b8369ca5637c06c916078327d917fff1f06f760ea4",
   "js/app.js": "d03762355a928f669b7407b2f32abac145ec90294087cb905e52a4ece4fd1319",
   "js/backup.js": "81dc97835cdb845706e0fd4d2aeef1b7295cc53e32db1f9975bdd49cee94ae19",
-  "js/book.js": "d351900039da3024d46a5d48cb40784eff93494ed8324cc36d0e218da05d4c9b",
+  "js/book.js": "780231e0a9f8ef038d03329f275162086335322b74903d7e423042f24ce77372",
   "js/db.js": "2f29a5418e95ec79c9f00a31dac76b98f256c684baf4df51a78c6fa0e66e0729",
   "js/editor.js": "cd1b54db9f888079cf78ae07fc4c4f71faf9315f248e5e2fd0949060ee991f5e",
   "js/export.js": "cf9a8a41f430245680b802171be0c2d0b4e6ec0c7a134e66518b278ef40a03a4",
@@ -36,7 +36,7 @@
   "js/icons.js": "a362ac99dd1ae2f383b719cc635918aa8841f985fae372d99c108ea45bb08502",
   "js/intro.js": "e4fdf00c178f4b963ff8900062a2b91ad8175b4a2781571a943262e4baea2296",
   "js/model.js": "cbc050ea0724a4b3513007f8d98d19904cba48737eaa15f0c4b1384c1e181dbe",
-  "js/navicon.js": "636d81b7e6da46be8f15172df123a30c804dde9036ea4a1e3cfc00738a02563e",
+  "js/navicon.js": "2619c1a2e0c91fd43b098ef7db127b20ffa588765e7991c48110418eded8b4eb",
   "js/pdf.js": "123f2bfaaf883711368b100e91a4111dbcdf4a3b89eafcbea35d93358dbde117",
   "js/pdfview.js": "cd17c7410037f84ed692be43e52a774fdf6e63601d03fc568fa77d41da7c8353",
   "js/photos.js": "ef587b98b3e9fee32cf19195ce3910a7be5c79ac8b90b6d8caf0c0f516a8cd21",
@@ -50,8 +50,8 @@
   "js/welcome.js": "16b48286ada81e986a7c5bfbab32e0906de19057fdf4147550d61c27209b507d",
   "js/zip.js": "4f298d7018597d3884ca0f3ca74c8af3b79c4a953b251f0f9838a473dc910d82",
   "manifest.json": "b2f2f1757c929c6d39e5f346141519dc4dc5b0cd657653cc96ad050215ca6e99",
-  "style.css": "67ce054e16dd89a1d1330a06bc05b6f8a3d48674eb830e11893434afa6a311d5",
-  "sw.js": "04bbf0218591ebac6900aad525f240126b09c246deacc1112bcb02ca577ab851"
+  "style.css": "0f420056d76b609fe79ea186510a799e6b76e61e838bfda27675a339b73c4773",
+  "sw.js": "c477912df9e301c309d5a5a04e6c9d8f1364d6dcf6e18b4620b9fb8c9067acb9"
  },
  "keep": [
   ".DS_Store",
@@ -68,6 +68,6 @@
  ],
  "name": "Contact Sheet",
  "notebook": "contact-sheet",
- "suite": "24798a0",
+ "suite": "cca65c6",
  "suite_folder": "../../../../../../../../private/tmp/claude-501/-Users-starkyproductions-Library-CloudStorage-OneDrive-SharedLibraries-Onedrive-Documents-Claude/c95c4b1a-0018-47fd-8e7f-7614c230c7b3/scratchpad/df-export"
 }

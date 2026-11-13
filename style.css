@@ -1457,7 +1457,7 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-sun {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--nb-b) + var(--nb-rim) + 38.5px - 24px);
+  bottom: calc(max(30px, calc(var(--sa-b) + 6px)) - 24px); /* its middle where the bar's icon is */
   width: 48px;
   height: 48px;
   margin-left: -24px;
@@ -1747,19 +1747,19 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb.is-reading .nb-toc { opacity: 1; }
 .nb-toc[hidden] { display: none; }
 .nb-toc .ed-tools { position: absolute; left: 20px; right: 20px; bottom: var(--nb-b); margin: 0; touch-action: none; }
-/* The navigation icon sits 35px + the bottom safe area (10px at least) above
-   the screen's edge, as in the other notebooks and on the shelf (10px up on
-   11-12: the user's mark). Its middle is 33px above this row's foot (the
-   name under it), measured; it used to be taken as 39, which left it 6px
-   below the others. */
-.nb-toc .ed-tools { bottom: max(12px, calc(var(--sa-b) + 2px)); }
-html.is-short .nb-toc .ed-tools { bottom: 10px; }
+/* The contents' bar is the navigation icon alone (New chapter is the plus at
+   the top, user 11-12). Its middle sits where an iPhone's home button used to
+   be: the bottom safe area + 6px, 30px at least, above the screen's edge, as
+   in the other notebooks and on the shelf. The row is the icon's own 21px. */
+.nb-toc { --toc-icon: max(30px, calc(var(--sa-b) + 6px)); --toc-bar: calc(var(--toc-icon) + 25px); }
+html.is-short .nb-toc { --toc-icon: 30px; }
+.nb-toc .ed-tools { bottom: calc(var(--toc-icon) - 10.5px); padding: 0; border-top: 0; background: none; }
+.nb-toc .ed-tools .nb-nav { padding: 0; }
 /* Installed, the bars and the sun show once iOS has its height right (ui.js
    adds .settled), so they never show high and then drop. */
 @media (display-mode: standalone) { html:not(.settled) :is(.ed-tools, .nb-sun) { visibility: hidden; } }
 /* The navigation icon (navicon.js): the icon in the same 21px row as the
    other tools' icons, the triangles tucked up against it, its name below. */
-.nb-nav .tool-label { line-height: normal; }
 .nb-nav .slider { display: flex; align-items: center; justify-content: center; height: 21px; }
 .nb-nav .slide-arrow { appearance: none; -webkit-appearance: none; border: 0; background: none; padding: 0; width: 26px; height: 44px; margin: -11.5px 0; display: grid; align-items: center; color: var(--text); position: relative; z-index: 1; }
 .nb-nav .slide-arrow.is-prev { justify-items: end; margin-right: -3px; }
@@ -1775,7 +1775,8 @@ html.is-short .nb-toc .ed-tools { bottom: 10px; }
 .nb-nav .slide-icon svg { width: 21px; height: 21px; display: block; }
 .toc-page {
   position: absolute;
-  inset: 0 0 calc(var(--nb-b) + 62px);
+  inset: 0 0 var(--toc-bar);
+  box-shadow: 0 2px 0 var(--line); /* a line under the list, where the bar starts (user, 11-12) */
   box-sizing: border-box;
   padding: calc(var(--sa-t) + 28px) max(20px, calc((100% - 560px) / 2)) 24px;
   overflow-y: auto;
@@ -1795,6 +1796,10 @@ html.is-short .nb-toc .ed-tools { bottom: 10px; }
 .nb-head.has-menu { position: relative; }
 .toc-menu { position: absolute; left: -20px; top: 50%; margin-top: -22px; width: 44px; height: 44px; display: grid; place-items: center; border: 0; padding: 0; background: none; color: var(--text); cursor: pointer; }
 .toc-menu svg { width: 21px; height: 21px; display: block; } /* the size of the tools' icons at the foot */
+/* New chapter: a plus at the heading's right, opposite the menu. */
+.nb-head.has-plus { position: relative; }
+.toc-plus { position: absolute; right: -20px; top: 50%; margin-top: -22px; width: 44px; height: 44px; display: grid; place-items: center; border: 0; padding: 0; background: none; color: var(--text); cursor: pointer; }
+.toc-plus svg { width: 24px; height: 24px; display: block; }
 .toc-row { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
 .toc-open {
   flex: 1;

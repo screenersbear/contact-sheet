@@ -21,14 +21,12 @@ export const navHtml = () => `
       <button type="button" class="slide-now" data-toc="first" aria-label="Table of contents, first page"><span class="slide-strip" aria-hidden="true" style="transform: translateX(-${STEP}px)"><span class="slide-icon">${ICONS.shut}</span><span class="slide-icon">${ICONS.contents}</span></span></button>
       <button type="button" class="slide-arrow is-next is-off" tabindex="-1" aria-hidden="true" disabled>${TRI}</button>
     </div>
-    <span class="tool-label" data-nav-label>Contents</span>
   </div>`;
 
 // bar: the whole bottom row (a swipe anywhere along it counts). onShut: shuts
 // the notebook. onSwiped: a swipe has started, so the tap it ends in is not one.
 export function mountNav(bar, { onShut, onSwiped }) {
   const strip = bar.querySelector('.nb-nav .slide-strip');
-  const label = bar.querySelector('[data-nav-label]');
   let drag = null;
   let busy = false;
   let timer = 0;
@@ -38,7 +36,6 @@ export function mountNav(bar, { onShut, onSwiped }) {
   const to = (x, moving = false) => {
     strip.classList.toggle('is-moving', moving);
     strip.style.transform = `translateX(${(x - STEP).toFixed(1)}px)`;
-    label.textContent = x > STEP / 2 ? 'Close' : 'Contents';
   };
   // Toward the shut book the strip follows the finger, giving a little past
   // it; the other way there's nothing, so it gives a little and stops.

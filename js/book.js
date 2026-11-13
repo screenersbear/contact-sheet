@@ -227,7 +227,6 @@ export function mountBook(view, startMode, onNew) {
         <div class="toc-page" data-tocbook data-left></div>
         <nav class="ed-tools" aria-label="Contents">
           ${navHtml()}
-          <button type="button" class="tool" data-toc="new"><span class="tool-icon">${ICONS.plus}</span><span class="tool-label">New chapter</span></button>
         </nav>
       </div>
     </div>
@@ -332,7 +331,7 @@ export function mountBook(view, startMode, onNew) {
   function pageHtml() {
     const rows = chapters.map(rowHtml).join('');
     return `
-      ${window.DF_SUITE ? `<h2 class="nb-head has-menu"><button type="button" class="toc-menu" data-app-menu aria-label="Menu">${ICONS.menu}</button>Table of contents</h2>` : '<h2 class="nb-head">Table of contents</h2>'}
+      <h2 class="nb-head has-plus${window.DF_SUITE ? ' has-menu' : ''}">${window.DF_SUITE ? `<button type="button" class="toc-menu" data-app-menu aria-label="Menu">${ICONS.menu}</button>` : ''}Table of contents<button type="button" class="toc-plus" data-toc="new" aria-label="New chapter">${ICONS.plus}</button></h2>
       <div class="toc-list">${rows || '<p class="toc-empty">No chapters yet.</p>'}</div>
       ${showTip ? TIP : ''}`;
   }
