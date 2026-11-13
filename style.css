@@ -1747,10 +1747,12 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb.is-reading .nb-toc { opacity: 1; }
 .nb-toc[hidden] { display: none; }
 .nb-toc .ed-tools { position: absolute; left: 20px; right: 20px; bottom: var(--nb-b); margin: 0; touch-action: none; }
-/* The navigation icon sits 25px + the bottom safe area (10px at least) above
-   the screen's edge, as in the other notebooks and on the shelf; its name
-   below it keeps 10px clear of the edge. */
-.nb-toc .ed-tools { bottom: max(10px, calc(var(--sa-b) - 14px)); }
+/* The navigation icon sits 35px + the bottom safe area (10px at least) above
+   the screen's edge, as in the other notebooks and on the shelf (10px up on
+   11-12: the user's mark). Its middle is 33px above this row's foot (the
+   name under it), measured; it used to be taken as 39, which left it 6px
+   below the others. */
+.nb-toc .ed-tools { bottom: max(12px, calc(var(--sa-b) + 2px)); }
 html.is-short .nb-toc .ed-tools { bottom: 10px; }
 /* Installed, the bars and the sun show once iOS has its height right (ui.js
    adds .settled), so they never show high and then drop. */

@@ -50,8 +50,8 @@
   "js/welcome.js": "16b48286ada81e986a7c5bfbab32e0906de19057fdf4147550d61c27209b507d",
   "js/zip.js": "4f298d7018597d3884ca0f3ca74c8af3b79c4a953b251f0f9838a473dc910d82",
   "manifest.json": "b2f2f1757c929c6d39e5f346141519dc4dc5b0cd657653cc96ad050215ca6e99",
-  "style.css": "39cd2a2b32b90e993b0a95b7133bf123ee6c9f21bad4bc47cab95f00f4ec25c4",
-  "sw.js": "ca84869ff8fbdfcef17fddd9467e4fba8a490140158f675669c17710ca6ce880"
+  "style.css": "67ce054e16dd89a1d1330a06bc05b6f8a3d48674eb830e11893434afa6a311d5",
+  "sw.js": "04bbf0218591ebac6900aad525f240126b09c246deacc1112bcb02ca577ab851"
  },
  "keep": [
   ".DS_Store",
@@ -68,6 +68,6 @@
  ],
  "name": "Contact Sheet",
  "notebook": "contact-sheet",
- "suite": "86b56c3",
+ "suite": "24798a0",
  "suite_folder": "../../../../../../../../private/tmp/claude-501/-Users-starkyproductions-Library-CloudStorage-OneDrive-SharedLibraries-Onedrive-Documents-Claude/c95c4b1a-0018-47fd-8e7f-7614c230c7b3/scratchpad/df-export"
 }
