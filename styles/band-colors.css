@@ -1,0 +1,25 @@
+/* The notebook colours on the band (DESIGN.md 4.2), the same seven as The
+   Eye and Ref: the band itself, its partner (the title, ring buttons,
+   hairline and mark), the colour of small text on it, and the four steps
+   under it (75, 50, 25 and 10% on paper). Picked in Options (data-book on
+   <html>); berry when nothing is picked (round 2, Layouts). Buttons, chips
+   and ticks (--ink) take the band colour with its small-text colour. The
+   round 2 text colours are here too: berry blade black and its quiet grey,
+   on the round 2 paper (over notebook.css's white pages), fields white. */
+:root, :root[data-book] {
+  --paper: #FAFAF7;
+  --field: #FFFFFF;
+  --text: #313D45;
+  --dim: #5C666D;
+  --text-dim: var(--dim);
+  --line: #E1E1DC;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='.14'/%3E%3C/svg%3E");
+}
+:root[data-book="mango"] { --band: #FFD100; --partner: #313D45; --band-small: #313D45; --step1: #FEDB3E; --step2: #FCE67C; --step3: #FBF0B9; --step4: #FAF6DE; }
+:root[data-book="orange"] { --band: #FF8A3D; --partner: #313D45; --band-small: #313D45; --step1: #FEA66C; --step2: #FCC29A; --step3: #FBDEC8; --step4: #FAEFE4; }
+:root, :root[data-book="berry"] { --band: #CC2E8A; --partner: #E2E600; --band-small: #FFFFFF; --step1: #D861A5; --step2: #E394C0; --step3: #EEC7DC; --step4: #F5E6EC; }
+:root[data-book="fern"] { --band: #13803F; --partner: #FFD100; --band-small: #FFFFFF; --step1: #4D9E6D; --step2: #86BD9B; --step3: #C0DCC9; --step4: #E3EEE5; }
+:root[data-book="ocean"] { --band: #0A4FD6; --partner: #FFAFAB; --band-small: #FFFFFF; --step1: #467ADE; --step2: #82A4E6; --step3: #BECFEF; --step4: #E2E9F4; }
+:root[data-book="leaf"] { --band: #14BFA0; --partner: #A1062A; --band-small: #313D45; --step1: #4ECEB6; --step2: #87DCCC; --step3: #C0EBE1; --step4: #E3F4EE; }
+:root[data-book="ink"] { --band: #313D45; --partner: #FFD100; --band-small: #FAFAF7; --step1: #636C72; --step2: #969C9E; --step3: #C8CBCA; --step4: #E6E7E5; }
+:root, :root[data-book] { --ink: var(--band); --on-ink: var(--band-small); }

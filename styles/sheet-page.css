@@ -1,0 +1,13 @@
+/* A sheet that is a page of its own (round 2: the new layout guide and
+   Export): over the whole screen, on paper, with the short band at the top
+   instead of the sheet's header, a scrolling middle with the page's title
+   and words, and its buttons at the foot. */
+.sheet.sheet-page { --side: 16px; width: 100%; max-width: none; height: var(--vv-height, 100svh); max-height: none; border-radius: 0; background: var(--paper); animation: none; }
+.sheet-page .sheet-header { display: none; }
+.sheet-page .sheet-body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.sheet-page .band-short { margin: 0; }
+.page-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 38px max(16px, calc((100% - 560px) / 2)) 24px; }
+.page-title { margin: 16px 0 0; font: 300 30px/36px var(--ui); color: var(--text); text-transform: none; letter-spacing: 0; }
+.page-ask { margin: 6px 0 14px; font: 400 17px/24px var(--ui); color: var(--dim); }
+.page-foot { flex: none; display: flex; gap: 8px; padding: 12px max(16px, calc((100% - 560px) / 2)) calc(max(var(--sa-b), 8px) + 12px); border-top: 1px solid #E1E1DC; background: var(--paper); }
+.page-foot[hidden] { display: none; }

@@ -49,7 +49,7 @@ export async function restoreBackup(close) {
   const D = window.DFData;
   const files = await D.pickFiles('.zip,application/zip,.json,application/json'); // straight from the tap, or iOS won't open the picker
   if (!files.length) return;
-  if (!(await confirmSheet({ title: 'Restore backup', message: 'Everything in Contact Sheet now is swapped for what\'s in the file.', confirmLabel: 'Restore', danger: true }))) return;
+  if (!(await confirmSheet({ title: 'Restore backup', message: 'Everything in Layouts now is swapped for what\'s in the file.', confirmLabel: 'Restore', danger: true }))) return;
   toast('Restoring the backup', { ms: 600000 });
   try {
     const r = (await isZipBackup(files[0]))

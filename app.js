@@ -12,7 +12,7 @@ import { closeAllSheets } from './components/sheet.js';
 import { esc } from './components/util.js';
 import { openIntro } from './pages/intro.js';
 import { welcome } from './pages/welcome.js';
-import { newChapter } from './pages/new-chapter.js';
+import { newLayout } from './pages/new-layout.js';
 
 const view = document.getElementById('view');
 let destroyCurrent = null;
@@ -22,7 +22,7 @@ let routeToken = 0;
 // ---------- Routing ----------
 
 // Inside Documenting Fictions (../suite.js) the shelf is the shut notebook,
-// and Options are in the menu at the top of the Table of contents.
+// and Options are in the band at the top of the home page.
 const suite = window.DF_SUITE;
 
 async function route() {
@@ -47,7 +47,7 @@ async function route() {
     } else {
       view.dataset.route = 'book';
       if (book) book.setMode(modeOfHash(h));
-      else book = mountBook(view, modeOfHash(h), newChapter);
+      else book = mountBook(view, modeOfHash(h), newLayout);
     }
   } catch (e) {
     console.error(e);
@@ -57,13 +57,13 @@ async function route() {
 }
 
 window.addEventListener('hashchange', route);
-// Set in Options: open on the Table of contents instead of the shut notebook.
+// Set in Options: open on the home page instead of the shut notebook.
 if (suite || startsOnFirstPage()) { if ((location.hash || '#/') === '#/') history.replaceState(null, '', '#/contents'); }
 route();
-if (suite && suite.at === 'new') setTimeout(newChapter, 400);
+if (suite && suite.at === 'new') setTimeout(newLayout, 400);
 // Inside Documenting Fictions, the first time: how to get back to the shelf,
 // and the tour if it's wanted.
-else if (suite && suite.firstVisit) setTimeout(() => { if (!document.querySelector('.sheet-overlay')) welcome('Contact Sheet', openIntro); }, 900);
+else if (suite && suite.firstVisit) setTimeout(() => { if (!document.querySelector('.sheet-overlay')) welcome('Layouts', openIntro); }, 900);
 
 // Always upright, quietly. The manifest asks for it once the app is
 // installed; where a browser allows a lock, this holds it. iPhone home-screen

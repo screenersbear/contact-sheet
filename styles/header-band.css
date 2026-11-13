@@ -1,13 +1,9 @@
-/* ===== Archivo Black capitals over Inter, under a band of the notebook's colour with its title in white (user, 11-12; The Eye's band is berry blade black). Levels: 1 the contents' title in the band, Archivo 21px; 2 sheet titles, Archivo 18px; 3 labels, Inter semibold spaced capitals. Names you wrote and the slides' labels stay as written. ===== */
-/* one weight for the text, as with Klee One (the old bold rules never showed, and still don't); semibold only for the labels */
-@font-face { font-family: "Figtree"; src: url("../fonts/figtree-latin.woff2") format("woff2"); font-weight: 400; font-display: swap; size-adjust: 96.5%; }
+/* ===== Figtree for the words, Archivo Black for the older headings that are left (user, 11-12). The round 2 band and its colours are in band.css and band-colors.css. Names you wrote and the slides' labels stay as written. ===== */
+/* Figtree: one file holding every weight; "Figtree Semibold" is the same file, for the older labels */
+@font-face { font-family: "Figtree"; src: url("../fonts/figtree-latin.woff2") format("woff2"); font-weight: 300 900; font-display: swap; size-adjust: 96.5%; }
 @font-face { font-family: "Figtree Semibold"; src: url("../fonts/figtree-latin.woff2") format("woff2"); font-weight: 600; font-display: swap; size-adjust: 96.5%; }
 @font-face { font-family: "Archivo Black"; src: url("../fonts/archivo-black-latin.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 :root { --ui: "Figtree", "Helvetica Neue", Arial, sans-serif; --display: "Archivo Black", "Arial Black", "Helvetica Neue", Arial, sans-serif; --head: var(--display); }
-:root[data-book] { --font-hand: var(--ui); --font-title: var(--ui); --font-body: var(--ui); --band: var(--book-back); --band-ink: #fff; }
-:root[data-book="mango"] { --band-ink: #313d45; }
-/* the band reaches the top of the screen and its sides; the page's own scrolling clips it */
-.toc-page .nb-head { margin: -18px 0 18px; padding: 12px 0; background: var(--band); color: var(--band-ink); box-shadow: 0 0 0 100vmax var(--band); clip-path: inset(-100vmax -100vmax 0 -100vmax); font: 400 21px/32px var(--display); letter-spacing: .02em; } /* 21px: the longest of the four titles, clear of the menu on a small phone */
-.toc-page .nb-head .toc-menu { color: var(--band-ink); }
+:root[data-book] { --font-hand: var(--ui); --font-title: var(--ui); --font-body: var(--ui); }
 .sheet-header h2 { font: 400 18px/1.3 var(--display); letter-spacing: .02em; }
 .field-label, .sheet-options .field-label { font: 600 15px/1.3 "Figtree Semibold", var(--ui); text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); }

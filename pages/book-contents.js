@@ -1,7 +1,8 @@
-// The Table of contents: a row for every chapter, on one page that scrolls,
-// with the tip at the end.
+// The home page (round 2, 01-home): the band, then every layout newest
+// first, each a strip of its first slides, its name, "N slides · date" and
+// its ... menu; the tip at the end.
 import { listProjects } from '../data/db.js';
-import { ICONS } from '../components/icons.js';
+import { bandHtml, PLUS, MORE } from '../components/band.js';
 import { esc, shortDate, isIOS, isStandalone } from '../components/util.js';
 import { pageWord } from '../data/formats.js';
 import { TIP_KEY, TIP } from './book-sizes.js';
@@ -13,21 +14,24 @@ export function addContents(ed) {
     return `
       <div class="toc-row">
         <a class="toc-open" href="#/edit/${esc(p.id)}" draggable="false">
-          <span class="toc-thumb">${u ? `<img src="${u}" alt="" draggable="false" />` : ''}</span>
+          <span class="toc-strip" aria-hidden="true">${u ? `<img src="${u}" alt="" draggable="false" />` : '<span class="toc-blank"></span>'}</span>
           <span class="toc-text">
             <span class="toc-name">${esc(p.name)}</span>
             <span class="toc-meta">${p.slides} ${esc(pageWord(p, p.slides !== 1))} · ${esc(shortDate(p.updatedAt))}</span>
           </span>
         </a>
+        <button type="button" class="toc-more" data-layout-more="${esc(p.id)}" aria-label="More for ${esc(p.name)}">${MORE}</button>
       </div>`;
   }
 
-  // Every chapter on one page that scrolls; the tip at the end.
+  // Every layout on one page that scrolls; the tip at the end.
   function pageHtml() {
     const rows = ed.chapters.map(rowHtml).join('');
     return `
-      <h2 class="nb-head has-plus${window.DF_SUITE ? ' has-menu' : ''}">${window.DF_SUITE ? `<button type="button" class="toc-menu" data-app-menu aria-label="Menu">${ICONS.menu}</button>` : ''}Table of contents<button type="button" class="toc-plus" data-toc="new" aria-label="New chapter">${ICONS.plus}</button></h2>
-      <div class="toc-list">${rows || '<p class="toc-empty">No chapters yet.</p>'}</div>
+      ${bandHtml({ title: 'Layouts', place: 'All layouts', add: 'New layout' })}
+      <div class="list-head"><h2>Newest first <span>${ed.chapters.length}</span></h2><button type="button" class="list-act" data-toc="new">${PLUS}New layout</button></div>
+      <div class="list-rule"></div>
+      <div class="toc-list">${rows || '<p class="toc-empty">No layouts yet.</p>'}</div>
       ${ed.showTip ? TIP : ''}`;
   }
 

@@ -22,15 +22,15 @@ export function addSheets(ed) {
               <button type="button" class="slide-thumb r-${ed.p.ratio.replace(':', 'x')}" data-go="${i}" aria-label="Show ${word} ${i + 1}"></button>
               <span class="slide-name">${word} ${i + 1}</span>
               <span class="slide-acts">
-                <button type="button" class="mini-btn" data-layout="${i}" aria-label="Change the layout">${ICONS.grid}</button>
+                <button type="button" class="mini-btn" data-layout="${i}" aria-label="Change the grid">${ICONS.grid}</button>
                 <button type="button" class="mini-btn" data-up="${i}" aria-label="Move earlier"${i === 0 ? ' disabled' : ''}>${ICONS.up}</button>
                 <button type="button" class="mini-btn" data-down="${i}" aria-label="Move later"${i === n - 1 ? ' disabled' : ''}>${ICONS.down}</button>
-                <button type="button" class="mini-btn" data-copy="${i}" aria-label="Copy the layout"${n >= MAX_SLIDES ? ' disabled' : ''}>${ICONS.copy}</button>
+                <button type="button" class="mini-btn" data-copy="${i}" aria-label="Copy the grid"${n >= MAX_SLIDES ? ' disabled' : ''}>${ICONS.copy}</button>
                 <button type="button" class="mini-btn" data-del="${i}" aria-label="Remove"${n <= 1 ? ' disabled' : ''}>${ICONS.trash}</button>
               </span>
             </li>`).join('')}
         </ol>
-        <p class="field-hint">The grid button picks a new layout for that ${pageWord(ed.p)}. Copy makes a new ${pageWord(ed.p)} with the same empty frames. A photo that crosses a seam moves with the ${pageWord(ed.p)} it starts on.</p>
+        <p class="field-hint">The grid button picks a new grid for that ${pageWord(ed.p)}. Copy makes a new ${pageWord(ed.p)} with the same empty boxes. A photo that crosses a seam moves with the ${pageWord(ed.p)} it starts on.</p>
         <div class="sheet-footer">
           <button type="button" class="modal-cta primary" data-add${n >= MAX_SLIDES ? ' disabled' : ''}>${n >= MAX_SLIDES ? `${MAX_SLIDES} is the most` : `+ Add a ${pageWord(ed.p)}`}</button>
         </div>`;

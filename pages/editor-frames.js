@@ -124,12 +124,12 @@ export function addFrameActions(ed) {
     if (!f) return;
     const idx = ed.p.frames.indexOf(f);
     const key = await choiceSheet({
-      title: 'Frame',
+      title: 'Box',
       options: [
         { key: 'fill', label: `Fill the ${pageWord(ed.p)}`, detail: 'Cover the slide, inside its border.' },
-        { key: 'front', label: 'Bring to front', detail: 'Over the frames it overlaps.' },
-        { key: 'back', label: 'Send to back', detail: 'Under the frames it overlaps.' },
-        ...(f.photoId ? [{ key: 'empty', label: 'Empty this frame', detail: 'The photo stays in the tray.' }] : []),
+        { key: 'front', label: 'Bring to front', detail: 'Over the boxes it overlaps.' },
+        { key: 'back', label: 'Send to back', detail: 'Under the boxes it overlaps.' },
+        ...(f.photoId ? [{ key: 'empty', label: 'Empty this box', detail: 'The photo stays in the tray.' }] : []),
       ].filter((o) => !(o.key === 'front' && idx === ed.p.frames.length - 1) && !(o.key === 'back' && idx === 0)),
     });
     if (!key || !ed.frameById(f.id)) return;

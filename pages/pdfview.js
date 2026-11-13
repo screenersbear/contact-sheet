@@ -172,7 +172,7 @@ export function showPdf(s, { sheets, report, fileName, onSaved }) {
           label: l.label,
           detail: `${l.ppi} pixels per inch. ${l.blurry ? 'Will look blurry.' : 'May look a little soft.'}`,
         })),
-        footer: '<p class="field-hint">To fix one, use a larger copy of the picture, zoom out of it, or make its frame smaller.</p>',
+        footer: '<p class="field-hint">To fix one, use a larger copy of the picture, zoom out of it, or make its box smaller.</p>',
       });
       if (key !== null) goTo(report.low[Number(key)].sheet);
     });

@@ -45,10 +45,10 @@ export function addPhotosInOut(ed) {
       const word = pageWord(ed.p, room !== 1);
       const photosLine = queue.length === 1 ? 'One photo' : `${queue.length} photos`;
       const key = await choiceSheet({
-        title: 'More photos than frames',
-        message: open ? `${photosLine}, ${open === 1 ? 'one empty frame' : `${open} empty frames`}.` : `${photosLine} without a frame.`,
+        title: 'More photos than boxes',
+        message: open ? `${photosLine}, ${open === 1 ? 'one empty box' : `${open} empty boxes`}.` : `${photosLine} without a box.`,
         options: [
-          { key: 'slides', label: `Add ${room} ${word}`, detail: open ? `Fills the empty frames, then one photo on each new ${pageWord(ed.p)}.` : `One photo on each new ${pageWord(ed.p)}.` },
+          { key: 'slides', label: `Add ${room} ${word}`, detail: open ? `Fills the empty boxes, then one photo on each new ${pageWord(ed.p)}.` : `One photo on each new ${pageWord(ed.p)}.` },
           { key: 'tray', label: 'Keep them in the tray', detail: 'Nothing goes on the pages yet.' },
         ],
       });
@@ -115,7 +115,7 @@ export function addPhotosInOut(ed) {
       title: f.photoId ? 'Swap photo' : many ? 'Add photos' : 'Add a photo',
       className: many ? 'has-footer' : '',
       body: `
-        ${many ? `<p class="sheet-message">Pick up to ${max}, one for each empty frame on this ${esc(pageWord(ed.p))}.</p>` : ''}
+        ${many ? `<p class="sheet-message">Pick up to ${max}, one for each empty box on this ${esc(pageWord(ed.p))}.</p>` : ''}
         ${pickColumns(list, f.photoId)}
         ${many
           ? `<div class="sheet-footer"><div class="button-stack">
@@ -124,7 +124,7 @@ export function addPhotosInOut(ed) {
             </div></div>`
           : `<div class="button-stack">
               <button type="button" class="small-btn primary" data-new>+ From camera roll</button>
-              ${f.photoId ? '<button type="button" class="small-btn secondary" data-empty>Empty this frame</button>' : ''}
+              ${f.photoId ? '<button type="button" class="small-btn secondary" data-empty>Empty this box</button>' : ''}
             </div>`}`,
     });
     const picked = [];

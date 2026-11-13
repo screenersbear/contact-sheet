@@ -1,10 +1,10 @@
-// Touching the notebook: turning it by hand while it's shut, the bottom
-// row's icon, swiping the contents sideways, the keys, and its buttons.
+// Touching the notebook: turning it by hand while it's shut, swiping the
+// home page sideways (right shuts it), the keys, and its buttons.
 import { sheetIsOpen } from '../components/sheet.js';
 import { makeTurnable } from './cover-spin.js';
-import { mountNav } from '../components/navicon.js';
 import { TIP_KEY } from './book-sizes.js';
 import { openOptions } from './options.js';
+import { layoutMenu } from './layout-menu.js';
 
 export function addTouch(ed) {
   Object.assign(ed, { onKey });
@@ -20,11 +20,6 @@ export function addTouch(ed) {
       Math.abs(e.clientX - window.innerWidth / 2) <= ed.geo.W * 0.62 &&
       Math.abs(e.clientY - window.innerHeight / 2) <= ed.geo.H * 0.56,
   }); ed.turn = turn;
-  // The navigation icon on the bottom row: its left triangle shuts the book.
-  const nav = mountNav(ed.toc.querySelector('.ed-tools'), {
-    onShut: () => (location.hash = '#/'),
-    onSwiped: () => (ed.swiped = true),
-  }); ed.nav = nav;
   // A sideways swipe on the contents; up and down it scrolls.
   ed.tocBook.addEventListener('pointerdown', (e) => {
     ed.swipe = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false, samples: [] };
@@ -71,7 +66,7 @@ export function addTouch(ed) {
   ed.sun.addEventListener('click', () => {
     if (ed.root.dataset.mode === 'closed' && !ed.root.classList.contains('is-sticking')) openOptions(ed.stickers);
   });
-  // Inside Documenting Fictions: Options from the menu at the top of the contents.
+  // Options from the band's menu.
   ed.root.addEventListener('click', (e) => {
     if (e.target.closest('[data-app-menu]') && ed.root.dataset.mode === 'toc' && !sheetIsOpen()) { e.stopPropagation(); openOptions(ed.stickers); }
   }, true);
@@ -91,11 +86,19 @@ export function addTouch(ed) {
       else ed.startNew();
       return;
     }
-    const t = e.target.closest('[data-toc]');
-    if (t) {
-      if (t.dataset.toc === 'shut') nav.shut();
-      else if (t.dataset.toc === 'first') ed.leftEl.scrollTo({ top: 0, behavior: 'smooth' });
-      else ed.startNew();
+    // The band: the notebooks button shuts the notebook (inside the suite,
+    // back to the shelf); + and New layout start a new one.
+    if (e.target.closest('[data-books]')) {
+      location.hash = '#/';
+      return;
+    }
+    if (e.target.closest('[data-band-add], [data-toc="new"]')) {
+      ed.startNew();
+      return;
+    }
+    const more = e.target.closest('[data-layout-more]');
+    if (more) {
+      if (!sheetIsOpen()) layoutMenu(more.dataset.layoutMore, ed.drawToc);
       return;
     }
     if (e.target.closest('[data-tip-off]')) {

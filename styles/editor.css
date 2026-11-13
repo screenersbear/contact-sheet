@@ -140,7 +140,7 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
   box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 5px rgba(0, 0, 0, 0.55);
 }
 
-.band { position: absolute; }
+.border-band { position: absolute; }
 .seam {
   position: absolute;
   top: 0;

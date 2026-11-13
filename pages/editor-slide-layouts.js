@@ -38,10 +38,10 @@ export function addSlideLayouts(ed) {
     return new Promise((resolve) => {
       let chosen = null;
       const s = openSheet({
-        title: isNew ? `New ${word}` : `${word} ${k + 1} layout`,
+        title: isNew ? `New ${word}` : `${word} ${k + 1} grid`,
         className: 'sheet-wide',
         body: `
-          ${hasPhotos ? `<p class="sheet-message">Its photos move into the new frames, in order.</p>` : ''}
+          ${hasPhotos ? `<p class="sheet-message">Its photos move into the new boxes, in order.</p>` : ''}
           <div class="layout-grid">
             ${options.map((o, n) => `<button type="button" class="layout-opt" data-n="${n}">${layoutSvg(q, at, o)}<span>${esc(o.name)}</span></button>`).join('')}
           </div>
@@ -75,7 +75,7 @@ export function addSlideLayouts(ed) {
     ed.commit();
   }
 
-  // The Layout button: a new layout for the slide on screen.
+  // The Grid button: a new grid of boxes for the slide on screen.
   async function layoutThisSlide() {
     const k = ed.visibleSlide();
     const l = await pickLayout(k);
@@ -107,7 +107,7 @@ export function addSlideLayouts(ed) {
           <div class="field">
             <span class="field-label">Slide border <b class="range-val" data-val="pad"></b></span>
             <input type="range" min="0" max="200" step="2" value="${ed.p.padding}" data-range="pad" />
-            <span class="field-hint">An even border around each ${pageWord(ed.p)}, in the background color. Frames also snap this far apart.</span>
+            <span class="field-hint">An even border around each ${pageWord(ed.p)}, in the background color. Boxes also snap this far apart.</span>
             <label class="check"><input type="checkbox" data-seams${ed.p.seamsOpen ? ' checked' : ''} /> Leave seams open</label>
             <span class="field-hint">No border where ${pageWord(ed.p, true)} meet, so a panorama runs straight across.</span>
           </div>
@@ -158,7 +158,7 @@ export function addSlideLayouts(ed) {
   async function openGrid() {
     const get = await ed.previewSources();
     const s = openSheet({
-      title: 'Grid preview',
+      title: 'Profile preview',
       body: `
         <div class="grid-preview">
           <div class="grid-tile is-post" data-post></div>
@@ -174,16 +174,16 @@ export function addSlideLayouts(ed) {
     const unused = ed.p.photoIds.filter((pid) => !ed.usedIds().has(pid));
     const both = ed.z <= ed.fitZ('all') * 1.05;
     const key = await choiceSheet({
-      title: 'Chapter',
+      title: 'Layout',
       options: [
         { key: 'rename', label: 'Rename', detail: 'Also names the exported files.' },
-        { key: 'zoom', label: both ? 'See one page' : 'See both pages', detail: both ? 'Closer in, one page at a time.' : 'The whole open notebook.' },
+        { key: 'zoom', label: both ? `See one ${pageWord(ed.p)}` : `See two ${pageWord(ed.p, true)}`, detail: both ? 'Closer in, one at a time.' : 'Side by side, two at a time.' },
         ...(isStory(ed.p) ? [{ key: 'safe', label: ed.showSafe ? 'Hide safe zone' : 'Show safe zone', detail: 'The parts Instagram covers.' }] : []),
         { key: 'borders', label: 'Background and borders', detail: 'The background color, and space around the photos.' },
-        { key: 'template', label: 'Save as template', detail: 'Keeps the layout, not the photos.' },
-        ...(isStory(ed.p) || isPrint(ed.p) ? [] : [{ key: 'grid', label: 'Grid preview', detail: 'How the first slide looks in your profile grid.' }]),
-        ...(unused.length ? [{ key: 'clear', label: 'Remove unused photos', detail: `${unused.length} in the tray, not in a frame.` }] : []),
-        { key: 'delete', label: 'Delete chapter', detail: 'It and its photos go from this device.', danger: true },
+        { key: 'template', label: 'Save as template', detail: 'Keeps the boxes, not the photos.' },
+        ...(isStory(ed.p) || isPrint(ed.p) ? [] : [{ key: 'grid', label: 'Profile preview', detail: 'How the first slide looks in your profile grid.' }]),
+        ...(unused.length ? [{ key: 'clear', label: 'Remove unused photos', detail: `${unused.length} in the tray, not in a box.` }] : []),
+        { key: 'delete', label: 'Delete layout', detail: 'It and its photos go from this device.', danger: true },
       ],
     });
     if (key === 'rename') rename();
@@ -201,7 +201,7 @@ export function addSlideLayouts(ed) {
 
   async function deleteChapter() {
     const ok = await confirmSheet({
-      title: 'Delete chapter?',
+      title: 'Delete layout?',
       message: `<b>${esc(ed.p.name)}</b> and its photos will be deleted from this device. Photos in your camera roll stay where they are.`,
       confirmLabel: 'Delete',
       danger: true,

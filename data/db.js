@@ -42,7 +42,7 @@ function openDb() {
       resolve(db);
     };
     req.onerror = () => reject(req.error);
-    req.onblocked = () => reject(new Error('Close Contact Sheet in your other tabs, then try again.'));
+    req.onblocked = () => reject(new Error('Close Layouts in your other tabs, then try again.'));
   });
   // A failed open isn't kept: the next call tries again.
   dbPromise.catch(() => { dbPromise = null; });

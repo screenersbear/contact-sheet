@@ -1,19 +1,23 @@
-// Export: every slide drawn on its own at full size from the original
-// photos, then shared to Photos (phones) or downloaded as a ZIP.
+// Export (round 2, 06-export): a page of its own with the short EXPORT band.
+// Every slide is drawn on its own at full size from the original photos;
+// then they show numbered in posting order, to leave out or move, and one
+// button saves them to Photos (phones) or downloads them (a ZIP for several).
 import { SLIDE_W, slideH, pageWord, isPrint } from '../data/formats.js';
 import { makeZip } from '../data/zip.js';
 import { MAX_VIDEO_S, canRecordVideo, hasVideo, recordSlide, startSound } from '../data/videoexport.js';
 import { ICONS } from '../components/icons.js';
 import { openSheet } from '../components/sheet.js';
+import { shortBandHtml } from '../components/band.js';
 import { toast } from '../components/toast.js';
 import { esc, slug, downloadBlob, isPhone } from '../components/util.js';
 import { openSource, exportScale, renderSlides } from '../data/slide-images.js';
-import { pagesPerSheet } from '../data/print-check.js';
-import { openChapterPdf } from './notebook-export.js';
+import { openLayoutPdf } from './notebook-export.js';
+import { dragToReorder } from './export-drag.js';
+
+const PDF_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>';
+const GO_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
 
 // Export goes straight to making the images (JPEG, best for Instagram).
-// Then: tap an image to leave it out, hold and drag to change the order,
-// and one button saves them (Save to Photos on phones, a download elsewhere).
 export function openExport(p, photos) {
   const H = slideH(p);
   const empty = p.frames.filter((f) => !f.photoId).length;
@@ -24,21 +28,27 @@ export function openExport(p, photos) {
   const audio = record ? startSound() : null;
   const s = openSheet({
     title: 'Export',
-    className: 'sheet-export',
+    className: 'sheet-page sheet-export',
     onClose: () => {
       urls.forEach((u) => URL.revokeObjectURL(u));
       if (audio) audio.close().catch(() => {});
     },
   });
+  s.body.innerHTML = `
+    ${shortBandHtml({ name: 'Export', backAttr: 'data-close' })}
+    <div class="page-scroll" data-scroll></div>
+    <div class="page-foot exp-foot" data-foot hidden></div>`;
+  const scroll = s.body.querySelector('[data-scroll]');
+  const foot = s.body.querySelector('[data-foot]');
 
   async function run() {
-    s.setTitle('Export');
-    s.body.innerHTML = `
-      <p class="sheet-message" data-msg>Getting ready</p>
-      <div class="progress"><div class="progress-bar" data-bar></div></div>
-      <p class="field-hint">${p.slides} ${esc(pageWord(p, p.slides !== 1))}, each ${Math.round(SLIDE_W * exportScale(p))} × ${Math.round(H * exportScale(p))}. Keep this screen open while it works.</p>`;
-    const msg = s.body.querySelector('[data-msg]');
-    const bar = s.body.querySelector('[data-bar]');
+    foot.hidden = true;
+    scroll.innerHTML = `
+      <h1 class="page-title" data-msg>Getting ready</h1>
+      <p class="page-ask" data-hint>${p.slides} ${esc(pageWord(p, p.slides !== 1))}, each ${Math.round(SLIDE_W * exportScale(p))} × ${Math.round(H * exportScale(p))}. Keep this screen open while it works.</p>
+      <div class="progress"><div class="progress-bar" data-bar></div></div>`;
+    const msg = scroll.querySelector('[data-msg]');
+    const bar = scroll.querySelector('[data-bar]');
     let files;
     try {
       files = await renderSlides(p, photos, 'jpeg', (i, n) => {
@@ -46,10 +56,10 @@ export function openExport(p, photos) {
         bar.style.width = `${Math.round((i / n) * 100)}%`;
       });
       if (record) {
-        s.body.querySelector('.field-hint').textContent = `Videos are made as they play, up to ${MAX_VIDEO_S} seconds each. Keep this screen open while it works.`;
+        scroll.querySelector('[data-hint]').textContent = `Videos are made as they play, up to ${MAX_VIDEO_S} seconds each. Keep this screen open while it works.`;
         const live = document.createElement('div');
         live.className = 'video-live';
-        s.body.appendChild(live);
+        scroll.appendChild(live);
         for (const i of slidesWithVideo) {
           if (!s.overlay.isConnected) return;
           msg.textContent = `Making the video on ${pageWord(p)} ${i + 1}`;
@@ -67,10 +77,12 @@ export function openExport(p, photos) {
     } catch (e) {
       console.error(e);
       if (!s.overlay.isConnected) return;
-      s.body.innerHTML = `
-        <p class="sheet-message">Something went wrong making the ${record ? 'videos' : 'images'}. Keep this screen open and try again, or try fewer ${esc(pageWord(p, true))} at a time.</p>
-        <button type="button" class="modal-cta primary" data-again>Try again</button>`;
-      s.body.querySelector('[data-again]').addEventListener('click', run);
+      scroll.innerHTML = `
+        <h1 class="page-title">That didn't work</h1>
+        <p class="page-ask">Something went wrong making the ${record ? 'videos' : 'images'}. Keep this screen open and try again, or try fewer ${esc(pageWord(p, true))} at a time.</p>`;
+      foot.innerHTML = '<button type="button" class="btn primary" data-again>Try again</button>';
+      foot.hidden = false;
+      foot.querySelector('[data-again]').addEventListener('click', run);
       return;
     }
     if (!s.overlay.isConnected) return;
@@ -87,26 +99,31 @@ export function openExport(p, photos) {
     try {
       canShare = isPhone() && !!navigator.canShare && navigator.canShare({ files: files.map((f) => new File([f.blob], f.name, { type: f.mime })) });
     } catch {}
-    const perSheet = pagesPerSheet(files[0].width, files[0].height);
-    s.setTitle('Ready');
-    s.body.innerHTML = `
-      ${n > 1 ? `<p class="order-note"><b>${isPrint(p) ? 'Keep' : 'Post'} them in this order.</b> Tap one to leave it out. Hold and drag to move it.</p>` : ''}
+    const word = pageWord(p);
+    scroll.innerHTML = `
+      ${n > 1
+        ? `<h1 class="page-title">${isPrint(p) ? 'Keep' : 'Post'} them in this order</h1>
+           <p class="page-ask">Tap a ${esc(word)} to leave it out. Hold and drag to change the order.</p>`
+        : `<h1 class="page-title">Ready</h1><p class="page-ask">Your ${esc(word)}, made at full size.</p>`}
       <ol class="order-grid${n > 1 ? ' is-pick' : ''}" data-grid>
-        ${files.map((f, i) => `<li data-i="${i}"><img style="aspect-ratio:${f.width}/${f.height}" src="${urls[i]}" alt="${esc(pageWord(p))} ${i + 1}" draggable="false" /><span class="order-num"></span>${f.isVideo ? `<span class="order-vid">${ICONS.play}</span>` : ''}<span class="order-off">Left out</span></li>`).join('')}
+        ${files.map((f, i) => `<li data-i="${i}"><img style="aspect-ratio:${f.width}/${f.height}" src="${urls[i]}" alt="${esc(word)} ${i + 1}" draggable="false" /><span class="order-num"></span>${f.isVideo ? `<span class="order-vid">${ICONS.play}</span>` : ''}<span class="order-off">Left out</span></li>`).join('')}
       </ol>
-      ${empty ? `<p class="tip">${empty === 1 ? '1 frame is' : `${empty} frames are`} empty and show the background color.</p>` : ''}
-      ${slidesWithVideo.length && !record ? '<p class="tip">This browser can\'t save video, so those slides are saved as still images. Safari and Chrome can.</p>' : ''}
-      <div class="button-stack wide">
-        <button type="button" class="modal-cta primary" data-save></button>
-      </div>
-      ${canShare ? '<p class="field-hint" data-hint></p>' : ''}
-      <div class="button-stack wide">
-        <button type="button" class="modal-cta secondary" data-pdf>Printable PDF</button>
-      </div>
-      <p class="field-hint">Landscape, ${perSheet === 1 ? 'one page' : 'two pages'} to a sheet.</p>`;
-    const grid = s.body.querySelector('[data-grid]');
-    const save = s.body.querySelector('[data-save]');
-    const hint = s.body.querySelector('[data-hint]');
+      ${n > 1 ? '<p class="order-count" data-count></p>' : ''}
+      ${empty ? `<p class="tip">${empty === 1 ? '1 box is' : `${empty} boxes are`} empty and show the background color.</p>` : ''}
+      ${slidesWithVideo.length && !record ? `<p class="tip">This browser can't save video, so those ${esc(pageWord(p, true))} are saved as still images. Safari and Chrome can.</p>` : ''}
+      <button type="button" class="exp-row" data-pdf>
+        <span class="exp-row-icon">${PDF_ICON}</span>
+        <span class="exp-row-text"><span class="exp-row-name">Printable PDF</span><span class="exp-row-sub">Preview, sharpness check, then save or print</span></span>
+        <span class="exp-row-go">${GO_ICON}</span>
+      </button>`;
+    foot.innerHTML = `
+      <button type="button" class="btn primary" data-save></button>
+      ${canShare ? '<p class="exp-hint" data-share-hint></p>' : ''}`;
+    foot.hidden = false;
+    const grid = scroll.querySelector('[data-grid]');
+    const count = scroll.querySelector('[data-count]');
+    const save = foot.querySelector('[data-save]');
+    const hint = foot.querySelector('[data-share-hint]');
     const items = new Map([...grid.children].map((li) => [Number(li.dataset.i), li]));
 
     // The chosen images, in the chosen order, named 01, 02... in that order.
@@ -122,14 +139,14 @@ export function openExport(p, photos) {
         li.querySelector('.order-num').textContent = off.has(i) ? '' : String(++k);
       }
       const c = k;
-      const all = c === n;
       save.disabled = !c;
-      if (canShare) save.textContent = all || !c ? 'Save to Photos' : `Save ${c} to Photos`;
-      else save.textContent = c === 1 ? 'Download' : all ? 'Download ZIP' : `Download ${c} as ZIP`;
+      if (canShare) save.textContent = c ? `Save ${c} to Photos` : 'Save to Photos';
+      else save.textContent = c > 1 ? `Download ${c} as ZIP` : 'Download';
+      if (count) count.textContent = c === n ? `${n} ${pageWord(p, true)}` : `${c} of ${n} ${pageWord(p, true)} · ${n - c} left out`;
       if (hint) {
         const v = order.filter((i) => !off.has(i) && files[i].isVideo).length;
         const what = !v ? (c === 1 ? 'Image' : `${c} Images`) : c === 1 ? 'Video' : v === c ? `${c} Videos` : `${c} Items`;
-        hint.innerHTML = c ? `In the share sheet, tap <b>Save ${what}</b>.` : 'Tap an image to put it back.';
+        hint.innerHTML = c ? `In the share sheet, tap <b>Save ${what}</b>.` : `Tap a ${esc(word)} to put it back.`;
       }
     }
 
@@ -151,9 +168,9 @@ export function openExport(p, photos) {
       s.close();
     });
 
-    s.body.querySelector('[data-pdf]').addEventListener('click', () => {
+    scroll.querySelector('[data-pdf]').addEventListener('click', () => {
       const picked = order.filter((i) => !off.has(i));
-      if (picked.length) openChapterPdf(p, photos, picked, base, s);
+      if (picked.length) openLayoutPdf(p, photos, picked, base, s);
     });
 
     if (n > 1) {
@@ -177,76 +194,4 @@ export function openExport(p, photos) {
 
   run();
   return s;
-}
-
-// Hold an item (or drag it with the mouse) and move it: the list reflows
-// under the finger. onMove(from, to) changes the order; setSuppress keeps the
-// tap that ends a drag from also toggling the item.
-function dragToReorder(list, onMove, setSuppress) {
-  let d = null;
-  const HOLD = 300;
-  const index = (li) => [...list.children].indexOf(li);
-  function lift(x, y) {
-    d.on = true;
-    setSuppress(true);
-    const r = d.li.getBoundingClientRect();
-    d.ghost = d.li.cloneNode(true);
-    d.ghost.className = `order-ghost${d.li.classList.contains('is-off') ? ' is-off' : ''}`;
-    d.ghost.style.width = `${r.width}px`;
-    d.dx = x - r.left;
-    d.dy = y - r.top;
-    document.body.appendChild(d.ghost);
-    d.li.classList.add('is-placeholder');
-    place(x, y);
-    if (navigator.vibrate && navigator.userActivation && navigator.userActivation.hasBeenActive) navigator.vibrate(12);
-  }
-  function place(x, y) {
-    d.ghost.style.transform = `translate(${x - d.dx}px, ${y - d.dy}px)`;
-    const hit = document.elementFromPoint(x, y);
-    const over = hit && hit.closest('li[data-i]');
-    if (!over || over === d.li || over.parentNode !== list) return;
-    const from = index(d.li);
-    const to = index(over);
-    onMove(from, to);
-  }
-  function end() {
-    if (!d) return;
-    clearTimeout(d.timer);
-    if (d.on) {
-      d.ghost.remove();
-      d.li.classList.remove('is-placeholder');
-      setTimeout(() => setSuppress(false), 0);
-    }
-    d = null;
-  }
-  list.addEventListener('pointerdown', (e) => {
-    const li = e.target.closest('li[data-i]');
-    if (!li || (e.pointerType === 'mouse' && e.button !== 0)) return;
-    d = { li, id: e.pointerId, x0: e.clientX, y0: e.clientY, mouse: e.pointerType === 'mouse', on: false };
-    if (!d.mouse) d.timer = setTimeout(() => d && !d.on && lift(d.x0, d.y0), HOLD);
-  });
-  list.addEventListener('pointermove', (e) => {
-    if (!d || e.pointerId !== d.id) return;
-    if (!d.on) {
-      const far = Math.hypot(e.clientX - d.x0, e.clientY - d.y0);
-      // A finger that moves before the hold is scrolling; a mouse drags at once.
-      if (!d.mouse) {
-        if (far > 8) end();
-        return;
-      }
-      if (far < 4) return;
-      try {
-        list.setPointerCapture(e.pointerId);
-      } catch {}
-      lift(e.clientX, e.clientY);
-    }
-    d.x0 = e.clientX;
-    d.y0 = e.clientY;
-    place(e.clientX, e.clientY);
-  });
-  // Once an item is held, the page must not scroll under it.
-  list.addEventListener('touchmove', (e) => d && d.on && e.preventDefault(), { passive: false });
-  list.addEventListener('pointerup', end);
-  list.addEventListener('pointercancel', end);
-  list.addEventListener('contextmenu', (e) => e.preventDefault());
 }

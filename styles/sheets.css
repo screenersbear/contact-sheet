@@ -1,0 +1,35 @@
+/* Sheets in the round 2 look, as Ref's (DESIGN.md 9.5): white, rising from
+   the bottom, the title in small capitals and a ring to close it; rows 52px
+   with a hairline, the one in use bold, Delete in crimson; the buttons 48px,
+   radius 8, in button type: the main one in the notebook's colour, the
+   other outlined, Delete in crimson. Every sheet (components/sheet.js)
+   wears it; it comes after sheet.css and buttons.css, which it reframes. */
+.sheet-overlay { background: rgba(49, 61, 69, .5); }
+.sheet { border-top: 0; border-radius: 20px 20px 0 0; background: #FFFFFF; color: var(--text); font-family: var(--ui); }
+.sheet-header { padding: 25px 8px 0 16px; border-bottom: 0; background: none; }
+.sheet-header h2 { font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--text); }
+.sheet .close-btn { position: relative; width: 44px; height: 44px; border-radius: 0; background: none; color: var(--text); }
+.sheet .close-btn::before { content: ''; position: absolute; inset: 2px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; }
+.sheet .x-icon { width: 18px; height: 18px; stroke-width: 2; }
+.sheet-body { padding: 8px 16px calc(24px + var(--sa-b)); }
+.sheet-message { font: 400 17px/24px var(--ui); }
+.sheet-message b { font-weight: 700; }
+.sheet-actions { gap: 8px; margin-top: 20px; }
+.btn { height: 48px; min-height: 0; padding: 0 20px; border: 0; border-radius: 8px; font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; }
+.btn.primary { border: 0; background: var(--ink); color: var(--on-ink); }
+.btn.secondary { border: 0; box-shadow: inset 0 0 0 1.5px var(--text); background: none; color: var(--text); }
+.btn.danger { border: 0; background: #A1062A; color: #FFFFFF; }
+/* The wide buttons at the foot of a sheet, the same. */
+.modal-cta { height: 48px; padding: 0 20px; border: 0; border-radius: 8px; font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; }
+.sheet :is(.btn, .modal-cta).primary { border: 0; border-radius: 8px; background: var(--ink); color: var(--on-ink); font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; }
+.sheet .modal-cta.secondary { border: 0; border-radius: 8px; box-shadow: inset 0 0 0 1.5px var(--text); background: none; color: var(--text); font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; }
+.sheet-footer { border-top: 1px solid var(--line); background: #FFFFFF; }
+/* Choices (a ... menu): rows, the one in use bold, Delete in crimson. */
+.choice-list { gap: 0; }
+.choice { min-height: 52px; padding: 6px 0; border: 0; border-bottom: 1px solid #E1E1DC; border-radius: 0; background: none; color: var(--text); }
+.choice.current { background: none; color: var(--text); border-color: #E1E1DC; }
+.choice-label { font: 400 17px/22px var(--ui); letter-spacing: 0; text-transform: none; }
+.choice.current .choice-label { font-weight: 700; }
+.choice.is-danger, .choice.is-danger .choice-label { color: #A1062A; }
+.choice-detail { font: 400 13px/18px var(--ui); color: var(--dim); opacity: 1; }
+.field-label, .choice-heading { font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }

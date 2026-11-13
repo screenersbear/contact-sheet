@@ -125,7 +125,7 @@ export function addStrip(ed) {
     const html = [];
     for (let i = 0; i < ed.p.slides; i++) {
       for (const b of borderBands(ed.p, i)) {
-        html.push(`<div class="band" style="left:${b.x * ed.z}px;top:${b.y * ed.z}px;width:${b.w * ed.z}px;height:${b.h * ed.z}px;background:${esc(ed.p.background)}"></div>`);
+        html.push(`<div class="border-band" style="left:${b.x * ed.z}px;top:${b.y * ed.z}px;width:${b.w * ed.z}px;height:${b.h * ed.z}px;background:${esc(ed.p.background)}"></div>`);
       }
     }
     ed.bandsEl.innerHTML = html.join('');

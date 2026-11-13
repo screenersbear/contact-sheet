@@ -4,7 +4,7 @@
 export const TIP_KEY = 'contact-sheet-home-tip';
 export const RATIO = 1000 / 1360;
  // the notebook art's width over its height
-export const TIP = `<p class="toc-tip"><b>Keep your chapters safe:</b> add Contact Sheet to your Home Screen. Safari can clear the photos of sites that aren't on it. <button type="button" class="text-btn" data-tip-off>Got it</button></p>`;
+export const TIP = `<p class="toc-tip"><b>Keep your layouts safe:</b> add Layouts to your Home Screen. Safari can clear the photos of sites that aren't on it. <button type="button" class="text-btn" data-tip-off>Got it</button></p>`;
 export const STACK = 16;
  // sheets drawn for the thickness of the shut book
 export const TURNED = (20 * Math.PI) / 180;
@@ -23,13 +23,13 @@ export const OPEN_MS = 860;
  // the cover swinging open and the book zooming in
 export const ZOOM_MS = 760;
 
- // 'first' opens on the Table of contents
-export const TABS = [['toc', 'Table of contents'], ['new', 'New chapter']];
+ // 'first' opens on the home page
+export const TABS = [['toc', 'All layouts'], ['new', 'New layout']];
 
 // Resolves once the notebook's art can paint, so the shut book appears whole.
 // Never waits long: a slow file shouldn't keep the notebook away.
 export function artReady() {
-  const book = document.documentElement.dataset.book || 'orange';
+  const book = document.documentElement.dataset.book || 'berry';
   const ready = ['cover', 'block'].map((part) => {
     const img = new Image();
     img.src = `art/${book}-${part}.webp`;

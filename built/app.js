@@ -554,7 +554,7 @@ function openDb() {
 			resolve(db);
 		};
 		req.onerror = () => reject(req.error);
-		req.onblocked = () => reject(new Error("Close Contact Sheet in your other tabs, then try again."));
+		req.onblocked = () => reject(new Error("Close Layouts in your other tabs, then try again."));
 	});
 	dbPromise.catch(() => {
 		dbPromise = null;
@@ -1162,6 +1162,7 @@ function addLayout(ed) {
 		fitZ,
 		layout,
 		placeBook,
+		placeWhere,
 		setZoom,
 		visibleSlide,
 		pageX,
@@ -1184,7 +1185,7 @@ function addLayout(ed) {
 		const { h } = wsSize();
 		const g = sizes();
 		const room = (mode === "all" ? g.both : g.one) - 0 - 16;
-		return Math.max(.02, Math.min(room / SLIDE_W, (h - 2 * 34) / ed.H()));
+		return Math.max(.02, Math.min(room / SLIDE_W, (h - 34 - (ed.nameEl.offsetHeight || 110)) / ed.H()));
 	}
 	function pageW() {
 		const g = sizes();
@@ -1207,7 +1208,7 @@ function addLayout(ed) {
 		ed.bookX = bookLeft(w, pw);
 		ed.pageLeft = ed.bookX + pw - sw;
 		ed.margX = ed.pageLeft - ed.spread * both;
-		const room = Math.max(34, (h - sh) / 2);
+		const room = Math.max(34, (h - sh - (ed.nameEl.offsetHeight || 110)) / 2);
 		ed.margY = Math.max(lineH(), Math.round(room));
 		ed.inner.style.width = `${2 * pw + 2 * ed.bookX}px`;
 		ed.inner.style.height = `${Math.max(h, sh + ed.margY + room)}px`;
@@ -1219,11 +1220,18 @@ function addLayout(ed) {
 		const a = ed.spread * both;
 		const b = Math.min(total, a + both);
 		ed.strip.style.clipPath = `inset(0 ${total - b}px 0 ${a}px)`;
+		Object.assign(ed.shadowEl.style, {
+			left: `${ed.margX + a}px`,
+			top: `${ed.margY}px`,
+			width: `${b - a}px`,
+			height: `${sh}px`
+		});
 		ed.nbEl.style.width = `${2 * pw}px`;
 		ed.editorEl.style.setProperty("--ed-in", `${2 * pw + 2 * 0 <= w + 1 ? ed.bookX + 0 + 16 : 16}px`);
 		placeBook();
 		placeAdd();
 		placeName();
+		placeWhere();
 	}
 	function placeBook(extra = 0) {
 		const t = `translateX(${ed.bookX - ed.ws.scrollLeft - extra}px)`;
@@ -1231,21 +1239,22 @@ function addLayout(ed) {
 	}
 	function placeName() {
 		const { h } = wsSize();
-		const lh = lineH();
 		const under = Math.min(h, ed.margY + ed.H() * ed.z);
-		const mid = Math.min((under + h) / 2, h - lh / 2);
-		let top = Math.round(ed.ws.offsetTop + mid - lh / 2);
-		if (top + lh > ed.ws.offsetTop + h) top = ed.ws.offsetTop + h - lh;
+		const top = Math.round(ed.ws.offsetTop + Math.max(0, Math.min(under + 14, h - ed.nameEl.offsetHeight)));
 		ed.nameEl.style.top = `${top}px`;
 		ed.nameEl.classList.toggle("is-over", ed.ws.offsetTop + under > top);
 	}
 	function placeAdd() {
 		ed.addBtn.hidden = ed.p.slides >= 20;
-		if (ed.addBtn.hidden) return;
-		const { w, h } = wsSize();
-		const edge = parseFloat(ed.editorEl.style.getPropertyValue("--ed-in")) || 16;
-		ed.addBtn.style.left = `${ed.ws.offsetLeft + w - 44 - edge}px`;
-		ed.addBtn.style.top = `${ed.ws.offsetTop + h - 44 - 4}px`;
+	}
+	function placeWhere() {
+		const n = ed.p.slides;
+		const one = ed.zoomFit === "one" ? visibleSlide() : null;
+		const first = one ?? firstPage();
+		const last = one ?? lastPage();
+		ed.whereEl.textContent = first === last ? `${pageWord(ed.p)} ${first + 1} of ${n}` : `${pageWord(ed.p, true)} ${first + 1} and ${last + 1} of ${n}`;
+		const count = spreadCount(ed.p);
+		ed.dotsEl.innerHTML = count > 1 ? Array.from({ length: count }, (_, i) => `<i${i === ed.spread ? " class=\"on\"" : ""}></i>`).join("") : "";
 	}
 	function setZoom(nz, cx, cy) {
 		const r = ed.ws.getBoundingClientRect();
@@ -1590,7 +1599,7 @@ function addStrip(ed) {
 		const html = [];
 		for (let i = 0; i < ed.p.slides; i++) {
 			for (const b of borderBands(ed.p, i)) {
-				html.push(`<div class="band" style="left:${b.x * ed.z}px;top:${b.y * ed.z}px;width:${b.w * ed.z}px;height:${b.h * ed.z}px;background:${esc(ed.p.background)}"></div>`);
+				html.push(`<div class="border-band" style="left:${b.x * ed.z}px;top:${b.y * ed.z}px;width:${b.w * ed.z}px;height:${b.h * ed.z}px;background:${esc(ed.p.background)}"></div>`);
 			}
 		}
 		ed.bandsEl.innerHTML = html.join("");
@@ -1689,11 +1698,10 @@ function addTools(ed) {
 		usedIds,
 		renderTray
 	});
-	const tool = (act, icon, label, { disabled = false, on = false } = {}) => `<button type="button" class="tool${on ? " is-on" : ""}" data-act="${act}"${disabled ? " disabled" : ""}><span class="tool-icon">${icon}</span><span class="tool-label">${esc(label)}</span></button>`;
-	const smallTool = (act, icon, label, disabled) => `<button type="button" class="tool tool-sm" data-act="${act}" aria-label="${esc(label)}"${disabled ? " disabled" : ""}><span class="tool-icon">${icon}</span></button>`;
+	const tool = (act, icon, label, { disabled = false, on = false, tone = "", name = "" } = {}) => `<button type="button" class="tool${on ? " is-on" : ""}${tone ? ` is-${tone}` : ""}" data-act="${act}"${name ? ` aria-label="${esc(name)}"` : ""}${disabled ? " disabled" : ""}><span class="tool-icon">${icon}</span><span class="tool-label">${esc(label)}</span></button>`;
 	function renderTools() {
 		const f = ed.selFrame();
-		const history = [smallTool("undo", ICONS.undo, "Undo", ed.hi === 0), smallTool("redo", ICONS.redo, "Redo", ed.hi >= ed.hist.length - 1)];
+		const history = [tool("undo", ICONS.undo, "Undo", { disabled: ed.hi === 0 }), tool("redo", ICONS.redo, "Redo", { disabled: ed.hi >= ed.hist.length - 1 })];
 		if (f) {
 			const has = !!f.photoId;
 			ed.toolsEl.innerHTML = [
@@ -1706,18 +1714,18 @@ function addTools(ed) {
 				tool("swap", has ? ICONS.swap : ICONS.photo, has ? "Swap" : "Photo"),
 				tool("fit", ICONS.fit, "Fit", { disabled: !has }),
 				tool("frame-more", ICONS.more, "More"),
-				tool("delete", ICONS.trash, "Delete")
+				tool("delete", ICONS.trash, "Delete", { tone: "danger" })
 			].join("");
 			return;
 		}
 		ed.toolsEl.innerHTML = [
-			smallTool("back", ICONS.back, "Back to the notebook"),
+			tool("back", ICONS.back, "Back", { name: "Back to all layouts" }),
 			...history,
-			tool("add-frame", ICONS.addFrame, "Frame"),
+			tool("add-frame", ICONS.addFrame, "Box"),
 			tool("slides", ICONS.slides, pageTitle(ed.p, true)),
-			tool("layout", ICONS.layout, "Layout"),
+			tool("layout", ICONS.layout, "Grid"),
 			tool("more", ICONS.more, "More"),
-			tool("export", ICONS.export, "Export")
+			tool("export", ICONS.export, "Export", { tone: "accent" })
 		].join("");
 	}
 	function renderAdjust() {
@@ -1732,12 +1740,12 @@ function addTools(ed) {
 	function renderTray() {
 		const used = usedIds();
 		const items = ed.p.photoIds.filter((pid) => ed.photos[pid]).map((pid) => `<button type="button" class="tray-item${used.has(pid) ? " is-used" : ""}" data-pid="${pid}" aria-label="${used.has(pid) ? "Photo in use" : "Photo"}">
-          <img src="${ed.thumbOf(pid)}" alt="" draggable="false" />${ed.photos[pid].kind === "video" ? `<span class="tray-vid">${ICONS.play}</span>` : ""}${used.has(pid) ? `<span class="tray-used">${ICONS.check}</span>` : ""}</button>`).join("");
+          <img src="${ed.thumbOf(pid)}" alt="" draggable="false" />${ed.photos[pid].kind === "video" ? "<span class=\"tray-vid\"></span>" : ""}${used.has(pid) ? `<span class="tray-used">${ICONS.check}</span>` : ""}</button>`).join("");
 		const was = ed.trayEl.querySelector("[data-tray-list]");
 		const keep = was ? was.scrollLeft : 0;
 		ed.trayEl.innerHTML = `
       <button type="button" class="tray-add" data-act="add-photos">${ICONS.plus}<span>Photos</span></button>
-      <div class="tray-list" data-tray-list>${items || "<p class=\"tray-hint\">Add photos and videos from your camera roll. They fill empty frames in order.</p>"}</div>`;
+      <div class="tray-list" data-tray-list>${items || "<p class=\"tray-hint\">Add photos and videos from your camera roll. They fill empty boxes in order.</p>"}</div>`;
 		ed.trayEl.querySelector("[data-tray-list]").scrollLeft = keep;
 	}
 }
@@ -2000,7 +2008,7 @@ function addFrameActions(ed) {
 		if (!f) return;
 		const idx = ed.p.frames.indexOf(f);
 		const key = await choiceSheet({
-			title: "Frame",
+			title: "Box",
 			options: [
 				{
 					key: "fill",
@@ -2010,16 +2018,16 @@ function addFrameActions(ed) {
 				{
 					key: "front",
 					label: "Bring to front",
-					detail: "Over the frames it overlaps."
+					detail: "Over the boxes it overlaps."
 				},
 				{
 					key: "back",
 					label: "Send to back",
-					detail: "Under the frames it overlaps."
+					detail: "Under the boxes it overlaps."
 				},
 				...f.photoId ? [{
 					key: "empty",
-					label: "Empty this frame",
+					label: "Empty this box",
 					detail: "The photo stays in the tray."
 				}] : []
 			].filter((o) => !(o.key === "front" && idx === ed.p.frames.length - 1) && !(o.key === "back" && idx === 0))
@@ -2269,12 +2277,12 @@ function addPhotosInOut(ed) {
 			const word = pageWord(ed.p, room !== 1);
 			const photosLine = queue.length === 1 ? "One photo" : `${queue.length} photos`;
 			const key = await choiceSheet({
-				title: "More photos than frames",
-				message: open ? `${photosLine}, ${open === 1 ? "one empty frame" : `${open} empty frames`}.` : `${photosLine} without a frame.`,
+				title: "More photos than boxes",
+				message: open ? `${photosLine}, ${open === 1 ? "one empty box" : `${open} empty boxes`}.` : `${photosLine} without a box.`,
 				options: [{
 					key: "slides",
 					label: `Add ${room} ${word}`,
-					detail: open ? `Fills the empty frames, then one photo on each new ${pageWord(ed.p)}.` : `One photo on each new ${pageWord(ed.p)}.`
+					detail: open ? `Fills the empty boxes, then one photo on each new ${pageWord(ed.p)}.` : `One photo on each new ${pageWord(ed.p)}.`
 				}, {
 					key: "tray",
 					label: "Keep them in the tray",
@@ -2341,14 +2349,14 @@ function addPhotosInOut(ed) {
 			title: f.photoId ? "Swap photo" : many ? "Add photos" : "Add a photo",
 			className: many ? "has-footer" : "",
 			body: `
-        ${many ? `<p class="sheet-message">Pick up to ${max}, one for each empty frame on this ${esc(pageWord(ed.p))}.</p>` : ""}
+        ${many ? `<p class="sheet-message">Pick up to ${max}, one for each empty box on this ${esc(pageWord(ed.p))}.</p>` : ""}
         ${pickColumns(list, f.photoId)}
         ${many ? `<div class="sheet-footer"><div class="button-stack">
               <button type="button" class="small-btn primary" data-place disabled>Place photos</button>
               <button type="button" class="small-btn secondary" data-new>+ From camera roll</button>
             </div></div>` : `<div class="button-stack">
               <button type="button" class="small-btn primary" data-new>+ From camera roll</button>
-              ${f.photoId ? "<button type=\"button\" class=\"small-btn secondary\" data-empty>Empty this frame</button>" : ""}
+              ${f.photoId ? "<button type=\"button\" class=\"small-btn secondary\" data-empty>Empty this box</button>" : ""}
             </div>`}`
 		});
 		const picked = [];
@@ -2447,15 +2455,15 @@ function addSheets(ed) {
               <button type="button" class="slide-thumb r-${ed.p.ratio.replace(":", "x")}" data-go="${i}" aria-label="Show ${word} ${i + 1}"></button>
               <span class="slide-name">${word} ${i + 1}</span>
               <span class="slide-acts">
-                <button type="button" class="mini-btn" data-layout="${i}" aria-label="Change the layout">${ICONS.grid}</button>
+                <button type="button" class="mini-btn" data-layout="${i}" aria-label="Change the grid">${ICONS.grid}</button>
                 <button type="button" class="mini-btn" data-up="${i}" aria-label="Move earlier"${i === 0 ? " disabled" : ""}>${ICONS.up}</button>
                 <button type="button" class="mini-btn" data-down="${i}" aria-label="Move later"${i === n - 1 ? " disabled" : ""}>${ICONS.down}</button>
-                <button type="button" class="mini-btn" data-copy="${i}" aria-label="Copy the layout"${n >= 20 ? " disabled" : ""}>${ICONS.copy}</button>
+                <button type="button" class="mini-btn" data-copy="${i}" aria-label="Copy the grid"${n >= 20 ? " disabled" : ""}>${ICONS.copy}</button>
                 <button type="button" class="mini-btn" data-del="${i}" aria-label="Remove"${n <= 1 ? " disabled" : ""}>${ICONS.trash}</button>
               </span>
             </li>`).join("")}
         </ol>
-        <p class="field-hint">The grid button picks a new layout for that ${pageWord(ed.p)}. Copy makes a new ${pageWord(ed.p)} with the same empty frames. A photo that crosses a seam moves with the ${pageWord(ed.p)} it starts on.</p>
+        <p class="field-hint">The grid button picks a new grid for that ${pageWord(ed.p)}. Copy makes a new ${pageWord(ed.p)} with the same empty boxes. A photo that crosses a seam moves with the ${pageWord(ed.p)} it starts on.</p>
         <div class="sheet-footer">
           <button type="button" class="modal-cta primary" data-add${n >= 20 ? " disabled" : ""}>${n >= 20 ? `${20} is the most` : `+ Add a ${pageWord(ed.p)}`}</button>
         </div>`;
@@ -2534,10 +2542,10 @@ function addSlideLayouts(ed) {
 		return new Promise((resolve) => {
 			let chosen = null;
 			const s = openSheet({
-				title: isNew ? `New ${word}` : `${word} ${k + 1} layout`,
+				title: isNew ? `New ${word}` : `${word} ${k + 1} grid`,
 				className: "sheet-wide",
 				body: `
-          ${hasPhotos ? `<p class="sheet-message">Its photos move into the new frames, in order.</p>` : ""}
+          ${hasPhotos ? `<p class="sheet-message">Its photos move into the new boxes, in order.</p>` : ""}
           <div class="layout-grid">
             ${options.map((o, n) => `<button type="button" class="layout-opt" data-n="${n}">${layoutSvg(q, at, o)}<span>${esc(o.name)}</span></button>`).join("")}
           </div>
@@ -2598,7 +2606,7 @@ function addSlideLayouts(ed) {
           <div class="field">
             <span class="field-label">Slide border <b class="range-val" data-val="pad"></b></span>
             <input type="range" min="0" max="200" step="2" value="${ed.p.padding}" data-range="pad" />
-            <span class="field-hint">An even border around each ${pageWord(ed.p)}, in the background color. Frames also snap this far apart.</span>
+            <span class="field-hint">An even border around each ${pageWord(ed.p)}, in the background color. Boxes also snap this far apart.</span>
             <label class="check"><input type="checkbox" data-seams${ed.p.seamsOpen ? " checked" : ""} /> Leave seams open</label>
             <span class="field-hint">No border where ${pageWord(ed.p, true)} meet, so a panorama runs straight across.</span>
           </div>
@@ -2648,7 +2656,7 @@ function addSlideLayouts(ed) {
 	async function openGrid() {
 		const get = await ed.previewSources();
 		const s = openSheet({
-			title: "Grid preview",
+			title: "Profile preview",
 			body: `
         <div class="grid-preview">
           <div class="grid-tile is-post" data-post></div>
@@ -2666,7 +2674,7 @@ function addSlideLayouts(ed) {
 		const unused = ed.p.photoIds.filter((pid) => !ed.usedIds().has(pid));
 		const both = ed.z <= ed.fitZ("all") * 1.05;
 		const key = await choiceSheet({
-			title: "Chapter",
+			title: "Layout",
 			options: [
 				{
 					key: "rename",
@@ -2675,8 +2683,8 @@ function addSlideLayouts(ed) {
 				},
 				{
 					key: "zoom",
-					label: both ? "See one page" : "See both pages",
-					detail: both ? "Closer in, one page at a time." : "The whole open notebook."
+					label: both ? `See one ${pageWord(ed.p)}` : `See two ${pageWord(ed.p, true)}`,
+					detail: both ? "Closer in, one at a time." : "Side by side, two at a time."
 				},
 				...isStory(ed.p) ? [{
 					key: "safe",
@@ -2691,21 +2699,21 @@ function addSlideLayouts(ed) {
 				{
 					key: "template",
 					label: "Save as template",
-					detail: "Keeps the layout, not the photos."
+					detail: "Keeps the boxes, not the photos."
 				},
 				...isStory(ed.p) || isPrint(ed.p) ? [] : [{
 					key: "grid",
-					label: "Grid preview",
+					label: "Profile preview",
 					detail: "How the first slide looks in your profile grid."
 				}],
 				...unused.length ? [{
 					key: "clear",
 					label: "Remove unused photos",
-					detail: `${unused.length} in the tray, not in a frame.`
+					detail: `${unused.length} in the tray, not in a box.`
 				}] : [],
 				{
 					key: "delete",
-					label: "Delete chapter",
+					label: "Delete layout",
 					detail: "It and its photos go from this device.",
 					danger: true
 				}
@@ -2725,7 +2733,7 @@ function addSlideLayouts(ed) {
 	}
 	async function deleteChapter() {
 		const ok = await confirmSheet({
-			title: "Delete chapter?",
+			title: "Delete layout?",
 			message: `<b>${esc(ed.p.name)}</b> and its photos will be deleted from this device. Photos in your camera roll stay where they are.`,
 			confirmLabel: "Delete",
 			danger: true
@@ -3016,6 +3024,40 @@ async function recordSlide(p, photos, i, { audio, host, openSource, onTime, stil
 	}
 }
 
+// components/band.js
+const ring = (label, attr, svg) => `<button type="button" class="ring-btn" ${attr} aria-label="${esc(label)}"><span>${svg}</span></button>`;
+const line = (d) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const BOOKS = "<svg viewBox=\"0 0 24 24\" width=\"19\" height=\"19\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"4.5\" height=\"14\" rx=\"1\"/><rect x=\"9.5\" y=\"3\" width=\"4.5\" height=\"16\" rx=\"1\"/><path d=\"M16 6.2l3.6-1 3 12.6-3.6 1z\"/></svg>";
+const PLUS = line("<line x1=\"12\" y1=\"5\" x2=\"12\" y2=\"19\"/><line x1=\"5\" y1=\"12\" x2=\"19\" y2=\"12\"/>");
+const MENU = line("<line x1=\"4\" y1=\"7\" x2=\"20\" y2=\"7\"/><line x1=\"4\" y1=\"12\" x2=\"20\" y2=\"12\"/><line x1=\"4\" y1=\"17\" x2=\"20\" y2=\"17\"/>");
+const MARK = "<svg class=\"band-mark\" viewBox=\"0 0 80 40\" aria-hidden=\"true\"><rect x=\"6\" width=\"20\" height=\"40\" class=\"mk-p\"/><rect x=\"32\" y=\"8\" width=\"20\" height=\"32\" class=\"mk-w\"/><rect x=\"58\" y=\"14.4\" width=\"20\" height=\"25.6\" class=\"mk-p\"/></svg>";
+const BACK = line("<polyline points=\"15 5 8 12 15 19\"/>");
+const CLOSE = line("<line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"/><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"/>");
+const MORE$1 = "<svg viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" aria-hidden=\"true\"><circle cx=\"5\" cy=\"12\" r=\"1.8\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"12\" r=\"1.8\" fill=\"currentColor\"/><circle cx=\"19\" cy=\"12\" r=\"1.8\" fill=\"currentColor\"/></svg>";
+const bandDate = (d = new Date()) => d.toLocaleDateString("en-GB", {
+	weekday: "short",
+	day: "numeric",
+	month: "short"
+}).replace(",", "");
+function bandHtml({ title, place, add }) {
+	return `
+    <header class="band">
+      <h1 class="band-title">${esc(title)}</h1>
+      <div class="band-btns">${ring("Back to your notebooks", "data-books", BOOKS)}${ring(add, "data-band-add", PLUS)}${ring("Options", "data-app-menu", MENU)}</div>
+      ${MARK}
+      <p class="band-line"><b>${esc(place)}</b><span class="band-rule"></span><span class="band-date">${bandDate()}</span></p>
+    </header>`;
+}
+function shortBandHtml({ name, backAttr, backLabel = "Back", end = null }) {
+	const right = end ? ring(end.label, end.attr, end.svg) : "<span class=\"ring-btn\" aria-hidden=\"true\"></span>";
+	return `
+    <header class="band band-short">
+      ${ring(backLabel, backAttr, BACK)}
+      <p class="band-line"><b>${esc(name)}</b><span class="band-rule"></span></p>
+      ${right}
+    </header>`;
+}
+
 // data/slide-images.js
 async function openSource(photo, scale) {
 	const url = URL.createObjectURL(photo.kind === "video" ? photo.preview : photo.original || photo.preview);
@@ -3191,76 +3233,6 @@ function makePdf(sheets) {
 	return new Blob(parts, { type: "application/pdf" });
 }
 
-// data/print-check.js
-const FULL_AREA = {
-	x: 36,
-	y: 36,
-	w: 792 - 72,
-	h: 612 - 72
-};
-const BOOK_AREA = {
-	x: 36,
-	y: 44,
-	w: 792 - 72,
-	h: 612 - 74
-};
-const TOC_ROWS = 9;
-const INK$1 = "#313d45";
-const PRINT_PPI = 300;
-const BLURRY_PPI = 150;
-const pagesPerSheet = (pxW, pxH) => pxW / pxH > 1.1 ? 1 : 2;
-const printedW = (aspect, area) => Math.min(area.w / (aspect > 1.1 ? 1 : 2), area.h * aspect);
-const printScale = (p, area) => Math.round(PRINT_PPI * printedW(SLIDE_W / slideH(p), area) / 72) / SLIDE_W;
-function checkPictures(p, photos, order, sheets, first = 0, chapter = "") {
-	const per = pagesPerSheet(SLIDE_W, slideH(p));
-	const H = slideH(p);
-	const report = {
-		checked: 0,
-		low: []
-	};
-	for (const f of p.frames) {
-		const photo = f.photoId && photos[f.photoId];
-		if (!photo) continue;
-		const seen = order.map((i, pos) => ({
-			i,
-			pos
-		})).filter(({ i }) => framesOnSlide(p, i).includes(f));
-		if (!seen.length) continue;
-		report.checked++;
-		const sheetAt = (pos) => sheets[Math.floor(pos / per)];
-		const pageAt = (pos) => sheetAt(pos).images[pos % per];
-		const real = photo.original && photo.kind !== "video" ? 1 : (photo.previewW || photo.width) / photo.width;
-		const ppi = Math.round(real * 72 * SLIDE_W / (placement(f, photo).s * pageAt(seen[0].pos).w));
-		if (ppi >= PRINT_PPI) continue;
-		const blurry = ppi < BLURRY_PPI;
-		for (const { i, pos } of seen) {
-			const im = pageAt(pos);
-			const x0 = Math.max(0, f.x - i * SLIDE_W);
-			const x1 = Math.min(SLIDE_W, f.x + f.w - i * SLIDE_W);
-			const y0 = Math.max(0, f.y);
-			const y1 = Math.min(H, f.y + f.h);
-			const sheet = sheetAt(pos);
-			sheet.marks = sheet.marks || [];
-			sheet.marks.push({
-				x: im.x + x0 / SLIDE_W * im.w,
-				y: im.y + im.h - y1 / H * im.h,
-				w: (x1 - x0) / SLIDE_W * im.w,
-				h: (y1 - y0) / H * im.h,
-				blurry
-			});
-		}
-		const where = `${pageWord(p)} ${seen[0].i + 1}`;
-		report.low.push({
-			ppi,
-			blurry,
-			thumb: photo.thumb,
-			sheet: first + Math.floor(seen[0].pos / per),
-			label: chapter ? `${chapter}, ${where}` : where[0].toUpperCase() + where.slice(1)
-		});
-	}
-	return report;
-}
-
 // pages/pdfview.js
 const MAX_ZOOM = 4;
 const pct = (v, of) => `${(v / of * 100).toFixed(3)}%`;
@@ -3413,7 +3385,7 @@ function showPdf(s, { sheets, report, fileName, onSaved }) {
 					label: l.label,
 					detail: `${l.ppi} pixels per inch. ${l.blurry ? "Will look blurry." : "May look a little soft."}`
 				})),
-				footer: "<p class=\"field-hint\">To fix one, use a larger copy of the picture, zoom out of it, or make its frame smaller.</p>"
+				footer: "<p class=\"field-hint\">To fix one, use a larger copy of the picture, zoom out of it, or make its box smaller.</p>"
 			});
 			if (key !== null) goTo(report.low[Number(key)].sheet);
 		});
@@ -3426,6 +3398,75 @@ function showPdf(s, { sheets, report, fileName, onSaved }) {
 		near.disconnect();
 		urls.forEach((u) => URL.revokeObjectURL(u));
 	};
+}
+
+// data/print-check.js
+const FULL_AREA = {
+	x: 36,
+	y: 36,
+	w: 792 - 72,
+	h: 612 - 72
+};
+const BOOK_AREA = {
+	x: 36,
+	y: 44,
+	w: 792 - 72,
+	h: 612 - 74
+};
+const INK$1 = "#313d45";
+const PRINT_PPI = 300;
+const BLURRY_PPI = 150;
+const pagesPerSheet = (pxW, pxH) => pxW / pxH > 1.1 ? 1 : 2;
+const printedW = (aspect, area) => Math.min(area.w / (aspect > 1.1 ? 1 : 2), area.h * aspect);
+const printScale = (p, area) => Math.round(PRINT_PPI * printedW(SLIDE_W / slideH(p), area) / 72) / SLIDE_W;
+function checkPictures(p, photos, order, sheets, first = 0, layout = "") {
+	const per = pagesPerSheet(SLIDE_W, slideH(p));
+	const H = slideH(p);
+	const report = {
+		checked: 0,
+		low: []
+	};
+	for (const f of p.frames) {
+		const photo = f.photoId && photos[f.photoId];
+		if (!photo) continue;
+		const seen = order.map((i, pos) => ({
+			i,
+			pos
+		})).filter(({ i }) => framesOnSlide(p, i).includes(f));
+		if (!seen.length) continue;
+		report.checked++;
+		const sheetAt = (pos) => sheets[Math.floor(pos / per)];
+		const pageAt = (pos) => sheetAt(pos).images[pos % per];
+		const real = photo.original && photo.kind !== "video" ? 1 : (photo.previewW || photo.width) / photo.width;
+		const ppi = Math.round(real * 72 * SLIDE_W / (placement(f, photo).s * pageAt(seen[0].pos).w));
+		if (ppi >= PRINT_PPI) continue;
+		const blurry = ppi < BLURRY_PPI;
+		for (const { i, pos } of seen) {
+			const im = pageAt(pos);
+			const x0 = Math.max(0, f.x - i * SLIDE_W);
+			const x1 = Math.min(SLIDE_W, f.x + f.w - i * SLIDE_W);
+			const y0 = Math.max(0, f.y);
+			const y1 = Math.min(H, f.y + f.h);
+			const sheet = sheetAt(pos);
+			sheet.marks = sheet.marks || [];
+			sheet.marks.push({
+				x: im.x + x0 / SLIDE_W * im.w,
+				y: im.y + im.h - y1 / H * im.h,
+				w: (x1 - x0) / SLIDE_W * im.w,
+				h: (y1 - y0) / H * im.h,
+				blurry
+			});
+		}
+		const where = `${pageWord(p)} ${seen[0].i + 1}`;
+		report.low.push({
+			ppi,
+			blurry,
+			thumb: photo.thumb,
+			sheet: first + Math.floor(seen[0].pos / per),
+			label: layout ? `${layout}, ${where}` : where[0].toUpperCase() + where.slice(1)
+		});
+	}
+	return report;
 }
 
 // data/notebook-pdf.js
@@ -3487,7 +3528,7 @@ function fitText(ctx, str, max) {
 }
 async function coverSheet() {
 	try {
-		const img = await loadImage(`art/${document.documentElement.dataset.book || "orange"}-cover.webp`);
+		const img = await loadImage(`art/${document.documentElement.dataset.book || "berry"}-cover.webp`);
 		const { c, ctx } = whiteCanvas(1e3, 1360);
 		ctx.drawImage(img, 0, 0, 1e3, 1360);
 		const h = FULL_AREA.h;
@@ -3506,46 +3547,12 @@ async function coverSheet() {
 		return null;
 	}
 }
-async function contentsSheets(rows) {
-	const sheets = [];
-	for (let i = 0; i < rows.length; i += 9) {
-		const { c, ctx } = whiteCanvas(2200, 1700);
-		ctx.fillStyle = INK$1;
-		ctx.textAlign = "center";
-		ctx.font = "112px \"Klee One\", \"Bradley Hand\", cursive";
-		ctx.fillText("Table of contents", 1100, 250);
-		ctx.fillStyle = "#d6dadd";
-		ctx.fillRect(300, 320, 1600, 3);
-		rows.slice(i, i + 9).forEach((row, n) => {
-			const y = 320 + n * 128;
-			ctx.fillStyle = INK$1;
-			ctx.textAlign = "left";
-			ctx.font = "68px \"Klee One\", \"Bradley Hand\", cursive";
-			ctx.fillText(fitText(ctx, row.name, 1360), 320, y + 90);
-			ctx.textAlign = "right";
-			ctx.font = "60px \"Klee One\", \"Bradley Hand\", cursive";
-			ctx.fillText(String(row.page), 1880, y + 88);
-			ctx.fillStyle = "#d6dadd";
-			ctx.fillRect(300, y + 128, 1600, 3);
-		});
-		sheets.push({
-			images: [{
-				...await finishCanvas(c),
-				x: 0,
-				y: 0,
-				w: 792,
-				h: 612
-			}],
-			text: []
-		});
-	}
-	return sheets;
-}
+const FONT = "\"Figtree\", system-ui, sans-serif";
 async function nameStrip(name) {
 	const { c, ctx } = whiteCanvas(1400, 72);
 	ctx.fillStyle = INK$1;
 	ctx.textBaseline = "middle";
-	ctx.font = "46px \"Klee One\", \"Bradley Hand\", cursive";
+	ctx.font = `500 44px ${FONT}`;
 	ctx.fillText(fitText(ctx, name, 1380), 0, 38);
 	return {
 		...await finishCanvas(c),
@@ -3560,7 +3567,7 @@ async function numberMark(str) {
 	ctx.fillStyle = INK$1;
 	ctx.textAlign = "right";
 	ctx.textBaseline = "middle";
-	ctx.font = "46px \"Klee One\", \"Bradley Hand\", cursive";
+	ctx.font = `500 44px ${FONT}`;
 	ctx.fillText(str, 156, 38);
 	return {
 		...await finishCanvas(c),
@@ -3571,28 +3578,19 @@ async function numberMark(str) {
 	};
 }
 async function makeNotebook(onProgress, stillOpen = () => true) {
-	const chapters = await listProjects();
-	if (!chapters.length) return null;
-	if (document.fonts && document.fonts.load) await document.fonts.load("60px \"Klee One\"").catch(() => {});
-	const total = chapters.reduce((sum, p) => sum + p.slides, 0);
-	let page = 1;
-	const rows = chapters.map((p) => {
-		const row = {
-			name: p.name,
-			page
-		};
-		page += Math.ceil(p.slides / pagesPerSheet(SLIDE_W, slideH(p)));
-		return row;
-	});
+	const layouts = await listProjects();
+	if (!layouts.length) return null;
+	if (document.fonts && document.fonts.load) await document.fonts.load(`500 44px ${FONT}`).catch(() => {});
+	const total = layouts.reduce((sum, p) => sum + p.slides, 0);
 	const cover = await coverSheet();
-	const sheets = [...cover ? [cover] : [], ...await contentsSheets(rows)];
+	const sheets = cover ? [cover] : [];
 	const report = {
 		checked: 0,
 		low: []
 	};
 	let made = 0;
 	let number = 1;
-	for (const p of chapters) {
+	for (const p of layouts) {
 		if (!stillOpen()) return null;
 		const photos = Object.fromEntries((await photosForProject(p.id)).map((ph) => [ph.id, ph]));
 		const files = await renderSlides(p, photos, "jpeg", (i) => onProgress && onProgress(p.name, (made + i) / total), {
@@ -3606,9 +3604,8 @@ async function makeNotebook(onProgress, stillOpen = () => true) {
 		report.checked += found.checked;
 		report.low.push(...found.low);
 		for (const sheet of own) {
-			const str = String(number++);
 			sheet.images.push(strip);
-			sheet.images.push(await numberMark(str));
+			sheet.images.push(await numberMark(String(number++)));
 			sheets.push(sheet);
 		}
 	}
@@ -3622,12 +3619,11 @@ async function makeNotebook(onProgress, stillOpen = () => true) {
 function openNotebookExport() {
 	let free = null;
 	const s = openSheet({
-		title: "Export notebook",
+		title: "Everything as one PDF",
 		className: "sheet-export",
 		onClose: () => free && free()
 	});
 	async function run() {
-		s.setTitle("Export notebook");
 		s.body.innerHTML = `
       <p class="sheet-message" data-msg>Getting ready</p>
       <div class="progress"><div class="progress-bar" data-bar></div></div>
@@ -3651,19 +3647,19 @@ function openNotebookExport() {
 		}
 		if (!s.overlay.isConnected) return;
 		if (!book) {
-			s.body.innerHTML = "<p class=\"sheet-message\">There are no chapters to export yet.</p>";
+			s.body.innerHTML = "<p class=\"sheet-message\">There are no layouts to export yet.</p>";
 			return;
 		}
 		free = showPdf(s, {
 			...book,
-			fileName: "contact-sheet-notebook.pdf",
+			fileName: "layouts.pdf",
 			onSaved: () => s.close()
 		});
 	}
 	run();
 	return s;
 }
-function openChapterPdf(p, photos, order, base, exportSheet) {
+function openLayoutPdf(p, photos, order, base, exportSheet) {
 	let free = null;
 	const s = openSheet({
 		title: "Printable PDF",
@@ -3711,166 +3707,7 @@ function openChapterPdf(p, photos, order, base, exportSheet) {
 	run();
 }
 
-// pages/export.js
-function openExport(p, photos) {
-	const H = slideH(p);
-	const empty = p.frames.filter((f) => !f.photoId).length;
-	let urls = [];
-	const slidesWithVideo = Array.from({ length: p.slides }, (_, i) => i).filter((i) => hasVideo(p, photos, i));
-	const record = slidesWithVideo.length > 0 && canRecordVideo();
-	const audio = record ? startSound() : null;
-	const s = openSheet({
-		title: "Export",
-		className: "sheet-export",
-		onClose: () => {
-			urls.forEach((u) => URL.revokeObjectURL(u));
-			if (audio) audio.close().catch(() => {});
-		}
-	});
-	async function run() {
-		s.setTitle("Export");
-		s.body.innerHTML = `
-      <p class="sheet-message" data-msg>Getting ready</p>
-      <div class="progress"><div class="progress-bar" data-bar></div></div>
-      <p class="field-hint">${p.slides} ${esc(pageWord(p, p.slides !== 1))}, each ${Math.round(SLIDE_W * exportScale(p))} × ${Math.round(H * exportScale(p))}. Keep this screen open while it works.</p>`;
-		const msg = s.body.querySelector("[data-msg]");
-		const bar = s.body.querySelector("[data-bar]");
-		let files;
-		try {
-			files = await renderSlides(p, photos, "jpeg", (i, n) => {
-				msg.textContent = `Making ${pageWord(p)} ${i + 1} of ${n}`;
-				bar.style.width = `${Math.round(i / n * 100)}%`;
-			});
-			if (record) {
-				s.body.querySelector(".field-hint").textContent = `Videos are made as they play, up to ${60} seconds each. Keep this screen open while it works.`;
-				const live = document.createElement("div");
-				live.className = "video-live";
-				s.body.appendChild(live);
-				for (const i of slidesWithVideo) {
-					if (!s.overlay.isConnected) return;
-					msg.textContent = `Making the video on ${pageWord(p)} ${i + 1}`;
-					bar.style.width = "0%";
-					const made = await recordSlide(p, photos, i, {
-						audio,
-						host: live,
-						openSource,
-						stillOpen: () => s.overlay.isConnected,
-						onTime: (t, length) => bar.style.width = `${Math.round(t / length * 100)}%`
-					});
-					files[i] = {
-						...files[i],
-						...made,
-						name: files[i].name.replace(/\.jpg$/, `.${made.ext}`)
-					};
-				}
-			}
-		} catch (e) {
-			console.error(e);
-			if (!s.overlay.isConnected) return;
-			s.body.innerHTML = `
-        <p class="sheet-message">Something went wrong making the ${record ? "videos" : "images"}. Keep this screen open and try again, or try fewer ${esc(pageWord(p, true))} at a time.</p>
-        <button type="button" class="modal-cta primary" data-again>Try again</button>`;
-			s.body.querySelector("[data-again]").addEventListener("click", run);
-			return;
-		}
-		if (!s.overlay.isConnected) return;
-		finished(files);
-	}
-	function finished(files) {
-		urls = files.map((f) => URL.createObjectURL(f.thumb));
-		const base = slug(p.name);
-		const n = files.length;
-		let order = files.map((_, i) => i);
-		const off = new Set();
-		let canShare = false;
-		try {
-			canShare = isPhone() && !!navigator.canShare && navigator.canShare({ files: files.map((f) => new File([f.blob], f.name, { type: f.mime })) });
-		} catch {}
-		const perSheet = pagesPerSheet(files[0].width, files[0].height);
-		s.setTitle("Ready");
-		s.body.innerHTML = `
-      ${n > 1 ? `<p class="order-note"><b>${isPrint(p) ? "Keep" : "Post"} them in this order.</b> Tap one to leave it out. Hold and drag to move it.</p>` : ""}
-      <ol class="order-grid${n > 1 ? " is-pick" : ""}" data-grid>
-        ${files.map((f, i) => `<li data-i="${i}"><img style="aspect-ratio:${f.width}/${f.height}" src="${urls[i]}" alt="${esc(pageWord(p))} ${i + 1}" draggable="false" /><span class="order-num"></span>${f.isVideo ? `<span class="order-vid">${ICONS.play}</span>` : ""}<span class="order-off">Left out</span></li>`).join("")}
-      </ol>
-      ${empty ? `<p class="tip">${empty === 1 ? "1 frame is" : `${empty} frames are`} empty and show the background color.</p>` : ""}
-      ${slidesWithVideo.length && !record ? "<p class=\"tip\">This browser can't save video, so those slides are saved as still images. Safari and Chrome can.</p>" : ""}
-      <div class="button-stack wide">
-        <button type="button" class="modal-cta primary" data-save></button>
-      </div>
-      ${canShare ? "<p class=\"field-hint\" data-hint></p>" : ""}
-      <div class="button-stack wide">
-        <button type="button" class="modal-cta secondary" data-pdf>Printable PDF</button>
-      </div>
-      <p class="field-hint">Landscape, ${perSheet === 1 ? "one page" : "two pages"} to a sheet.</p>`;
-		const grid = s.body.querySelector("[data-grid]");
-		const save = s.body.querySelector("[data-save]");
-		const hint = s.body.querySelector("[data-hint]");
-		const items = new Map([...grid.children].map((li) => [Number(li.dataset.i), li]));
-		const chosen = () => order.filter((i) => !off.has(i)).map((i, k) => ({
-			...files[i],
-			name: `${base}-${String(k + 1).padStart(2, "0")}.${files[i].ext || "jpg"}`
-		}));
-		function draw() {
-			let k = 0;
-			for (const i of order) {
-				const li = items.get(i);
-				grid.appendChild(li);
-				li.classList.toggle("is-off", off.has(i));
-				li.querySelector(".order-num").textContent = off.has(i) ? "" : String(++k);
-			}
-			const c = k;
-			const all = c === n;
-			save.disabled = !c;
-			if (canShare) save.textContent = all || !c ? "Save to Photos" : `Save ${c} to Photos`;
-			else save.textContent = c === 1 ? "Download" : all ? "Download ZIP" : `Download ${c} as ZIP`;
-			if (hint) {
-				const v = order.filter((i) => !off.has(i) && files[i].isVideo).length;
-				const what = !v ? c === 1 ? "Image" : `${c} Images` : c === 1 ? "Video" : v === c ? `${c} Videos` : `${c} Items`;
-				hint.innerHTML = c ? `In the share sheet, tap <b>Save ${what}</b>.` : "Tap an image to put it back.";
-			}
-		}
-		save.addEventListener("click", async () => {
-			const list = chosen();
-			if (!list.length) return;
-			if (canShare) {
-				try {
-					await navigator.share({ files: list.map((f) => new File([f.blob], f.name, { type: f.mime })) });
-					s.close();
-				} catch (e) {
-					if (e && e.name !== "AbortError") toast("Sharing did not work here. Try again in Safari.");
-				}
-				return;
-			}
-			if (list.length === 1) downloadBlob(list[0].blob, list[0].name);
-			else downloadBlob(await makeZip(list), `${base}.zip`);
-			s.close();
-		});
-		s.body.querySelector("[data-pdf]").addEventListener("click", () => {
-			const picked = order.filter((i) => !off.has(i));
-			if (picked.length) openChapterPdf(p, photos, picked, base, s);
-		});
-		if (n > 1) {
-			let suppress = false;
-			grid.addEventListener("click", (e) => {
-				const li = e.target.closest("li[data-i]");
-				if (!li || suppress) return;
-				const i = Number(li.dataset.i);
-				if (off.has(i)) off.delete(i);
-				else off.add(i);
-				draw();
-			});
-			dragToReorder(grid, (from, to) => {
-				const [i] = order.splice(from, 1);
-				order.splice(to, 0, i);
-				draw();
-			}, (v) => suppress = v);
-		}
-		draw();
-	}
-	run();
-	return s;
-}
+// pages/export-drag.js
 function dragToReorder(list, onMove, setSuppress) {
 	let d = null;
 	const HOLD = 300;
@@ -3943,6 +3780,183 @@ function dragToReorder(list, onMove, setSuppress) {
 	list.addEventListener("pointerup", end);
 	list.addEventListener("pointercancel", end);
 	list.addEventListener("contextmenu", (e) => e.preventDefault());
+}
+
+// pages/export.js
+const PDF_ICON = "<svg viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3v12\"/><path d=\"M7 10l5 5 5-5\"/><path d=\"M5 20h14\"/></svg>";
+const GO_ICON = "<svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 5l7 7-7 7\"/></svg>";
+function openExport(p, photos) {
+	const H = slideH(p);
+	const empty = p.frames.filter((f) => !f.photoId).length;
+	let urls = [];
+	const slidesWithVideo = Array.from({ length: p.slides }, (_, i) => i).filter((i) => hasVideo(p, photos, i));
+	const record = slidesWithVideo.length > 0 && canRecordVideo();
+	const audio = record ? startSound() : null;
+	const s = openSheet({
+		title: "Export",
+		className: "sheet-page sheet-export",
+		onClose: () => {
+			urls.forEach((u) => URL.revokeObjectURL(u));
+			if (audio) audio.close().catch(() => {});
+		}
+	});
+	s.body.innerHTML = `
+    ${shortBandHtml({
+		name: "Export",
+		backAttr: "data-close"
+	})}
+    <div class="page-scroll" data-scroll></div>
+    <div class="page-foot exp-foot" data-foot hidden></div>`;
+	const scroll = s.body.querySelector("[data-scroll]");
+	const foot = s.body.querySelector("[data-foot]");
+	async function run() {
+		foot.hidden = true;
+		scroll.innerHTML = `
+      <h1 class="page-title" data-msg>Getting ready</h1>
+      <p class="page-ask" data-hint>${p.slides} ${esc(pageWord(p, p.slides !== 1))}, each ${Math.round(SLIDE_W * exportScale(p))} × ${Math.round(H * exportScale(p))}. Keep this screen open while it works.</p>
+      <div class="progress"><div class="progress-bar" data-bar></div></div>`;
+		const msg = scroll.querySelector("[data-msg]");
+		const bar = scroll.querySelector("[data-bar]");
+		let files;
+		try {
+			files = await renderSlides(p, photos, "jpeg", (i, n) => {
+				msg.textContent = `Making ${pageWord(p)} ${i + 1} of ${n}`;
+				bar.style.width = `${Math.round(i / n * 100)}%`;
+			});
+			if (record) {
+				scroll.querySelector("[data-hint]").textContent = `Videos are made as they play, up to ${60} seconds each. Keep this screen open while it works.`;
+				const live = document.createElement("div");
+				live.className = "video-live";
+				scroll.appendChild(live);
+				for (const i of slidesWithVideo) {
+					if (!s.overlay.isConnected) return;
+					msg.textContent = `Making the video on ${pageWord(p)} ${i + 1}`;
+					bar.style.width = "0%";
+					const made = await recordSlide(p, photos, i, {
+						audio,
+						host: live,
+						openSource,
+						stillOpen: () => s.overlay.isConnected,
+						onTime: (t, length) => bar.style.width = `${Math.round(t / length * 100)}%`
+					});
+					files[i] = {
+						...files[i],
+						...made,
+						name: files[i].name.replace(/\.jpg$/, `.${made.ext}`)
+					};
+				}
+			}
+		} catch (e) {
+			console.error(e);
+			if (!s.overlay.isConnected) return;
+			scroll.innerHTML = `
+        <h1 class="page-title">That didn't work</h1>
+        <p class="page-ask">Something went wrong making the ${record ? "videos" : "images"}. Keep this screen open and try again, or try fewer ${esc(pageWord(p, true))} at a time.</p>`;
+			foot.innerHTML = "<button type=\"button\" class=\"btn primary\" data-again>Try again</button>";
+			foot.hidden = false;
+			foot.querySelector("[data-again]").addEventListener("click", run);
+			return;
+		}
+		if (!s.overlay.isConnected) return;
+		finished(files);
+	}
+	function finished(files) {
+		urls = files.map((f) => URL.createObjectURL(f.thumb));
+		const base = slug(p.name);
+		const n = files.length;
+		let order = files.map((_, i) => i);
+		const off = new Set();
+		let canShare = false;
+		try {
+			canShare = isPhone() && !!navigator.canShare && navigator.canShare({ files: files.map((f) => new File([f.blob], f.name, { type: f.mime })) });
+		} catch {}
+		const word = pageWord(p);
+		scroll.innerHTML = `
+      ${n > 1 ? `<h1 class="page-title">${isPrint(p) ? "Keep" : "Post"} them in this order</h1>
+           <p class="page-ask">Tap a ${esc(word)} to leave it out. Hold and drag to change the order.</p>` : `<h1 class="page-title">Ready</h1><p class="page-ask">Your ${esc(word)}, made at full size.</p>`}
+      <ol class="order-grid${n > 1 ? " is-pick" : ""}" data-grid>
+        ${files.map((f, i) => `<li data-i="${i}"><img style="aspect-ratio:${f.width}/${f.height}" src="${urls[i]}" alt="${esc(word)} ${i + 1}" draggable="false" /><span class="order-num"></span>${f.isVideo ? `<span class="order-vid">${ICONS.play}</span>` : ""}<span class="order-off">Left out</span></li>`).join("")}
+      </ol>
+      ${n > 1 ? "<p class=\"order-count\" data-count></p>" : ""}
+      ${empty ? `<p class="tip">${empty === 1 ? "1 box is" : `${empty} boxes are`} empty and show the background color.</p>` : ""}
+      ${slidesWithVideo.length && !record ? `<p class="tip">This browser can't save video, so those ${esc(pageWord(p, true))} are saved as still images. Safari and Chrome can.</p>` : ""}
+      <button type="button" class="exp-row" data-pdf>
+        <span class="exp-row-icon">${PDF_ICON}</span>
+        <span class="exp-row-text"><span class="exp-row-name">Printable PDF</span><span class="exp-row-sub">Preview, sharpness check, then save or print</span></span>
+        <span class="exp-row-go">${GO_ICON}</span>
+      </button>`;
+		foot.innerHTML = `
+      <button type="button" class="btn primary" data-save></button>
+      ${canShare ? "<p class=\"exp-hint\" data-share-hint></p>" : ""}`;
+		foot.hidden = false;
+		const grid = scroll.querySelector("[data-grid]");
+		const count = scroll.querySelector("[data-count]");
+		const save = foot.querySelector("[data-save]");
+		const hint = foot.querySelector("[data-share-hint]");
+		const items = new Map([...grid.children].map((li) => [Number(li.dataset.i), li]));
+		const chosen = () => order.filter((i) => !off.has(i)).map((i, k) => ({
+			...files[i],
+			name: `${base}-${String(k + 1).padStart(2, "0")}.${files[i].ext || "jpg"}`
+		}));
+		function draw() {
+			let k = 0;
+			for (const i of order) {
+				const li = items.get(i);
+				grid.appendChild(li);
+				li.classList.toggle("is-off", off.has(i));
+				li.querySelector(".order-num").textContent = off.has(i) ? "" : String(++k);
+			}
+			const c = k;
+			save.disabled = !c;
+			if (canShare) save.textContent = c ? `Save ${c} to Photos` : "Save to Photos";
+			else save.textContent = c > 1 ? `Download ${c} as ZIP` : "Download";
+			if (count) count.textContent = c === n ? `${n} ${pageWord(p, true)}` : `${c} of ${n} ${pageWord(p, true)} · ${n - c} left out`;
+			if (hint) {
+				const v = order.filter((i) => !off.has(i) && files[i].isVideo).length;
+				const what = !v ? c === 1 ? "Image" : `${c} Images` : c === 1 ? "Video" : v === c ? `${c} Videos` : `${c} Items`;
+				hint.innerHTML = c ? `In the share sheet, tap <b>Save ${what}</b>.` : `Tap a ${esc(word)} to put it back.`;
+			}
+		}
+		save.addEventListener("click", async () => {
+			const list = chosen();
+			if (!list.length) return;
+			if (canShare) {
+				try {
+					await navigator.share({ files: list.map((f) => new File([f.blob], f.name, { type: f.mime })) });
+					s.close();
+				} catch (e) {
+					if (e && e.name !== "AbortError") toast("Sharing did not work here. Try again in Safari.");
+				}
+				return;
+			}
+			if (list.length === 1) downloadBlob(list[0].blob, list[0].name);
+			else downloadBlob(await makeZip(list), `${base}.zip`);
+			s.close();
+		});
+		scroll.querySelector("[data-pdf]").addEventListener("click", () => {
+			const picked = order.filter((i) => !off.has(i));
+			if (picked.length) openLayoutPdf(p, photos, picked, base, s);
+		});
+		if (n > 1) {
+			let suppress = false;
+			grid.addEventListener("click", (e) => {
+				const li = e.target.closest("li[data-i]");
+				if (!li || suppress) return;
+				const i = Number(li.dataset.i);
+				if (off.has(i)) off.delete(i);
+				else off.add(i);
+				draw();
+			});
+			dragToReorder(grid, (from, to) => {
+				const [i] = order.splice(from, 1);
+				order.splice(to, 0, i);
+				draw();
+			}, (v) => suppress = v);
+		}
+		draw();
+	}
+	run();
+	return s;
 }
 
 // pages/editor-buttons.js
@@ -4934,8 +4948,13 @@ async function mountEditor(view, id) {
 			const get = await previewSources();
 			const c = previewCanvas(p, get, {
 				height: 200,
-				count: Math.min(3, p.slides)
+				count: Math.min(3, p.slides),
+				gap: 11
 			});
+			const ctx = c.getContext("2d");
+			ctx.globalCompositeOperation = "destination-over";
+			ctx.fillStyle = "#ffffff";
+			ctx.fillRect(0, 0, c.width, c.height);
 			const blob = await canvasToBlob(c, "image/jpeg", .8);
 			c.width = c.height = 0;
 			p.thumb = blob;
@@ -4944,10 +4963,12 @@ async function mountEditor(view, id) {
 	}
 	view.innerHTML = `
     <div class="editor" data-editor>
+      <p class="ed-line"><b>Layouts</b><span data-where></span></p>
       <div class="nb-open" data-nb></div>
       <div class="ws" data-ws>
         <div class="ws-inner" data-inner>
           <div class="ws-labels" data-labels></div>
+          <div class="strip-shadow" data-shadow></div>
           <div class="strip" data-strip>
             <div class="strip-frames" data-frames></div>
             <div class="strip-bands" data-bands></div>
@@ -4970,8 +4991,11 @@ async function mountEditor(view, id) {
           </div>
         </div>
       </div>
-      <button type="button" class="ws-add" data-act="add-slide" aria-label="Add a slide">${ICONS.plus}</button>
-      <div class="ed-name" data-name><button type="button" data-act="rename" aria-label="Rename this chapter"><span>${esc(p.name)}</span></button></div>
+      <div class="ed-under" data-name>
+        <button type="button" class="ed-name-btn" data-act="rename" aria-label="Rename this layout"><span>${esc(p.name)}</span></button>
+        <span class="ed-dots" data-dots aria-hidden="true"></span>
+        <button type="button" class="ed-add" data-act="add-slide">${ICONS.plus}Add a ${esc(pageWord(p))}</button>
+      </div>
       <div class="ed-adjust" data-adjust hidden>
         <span class="ed-adjust-label">Zoom</span>
         <input type="range" min="1" max="5" step="0.01" value="1" data-zoom aria-label="Photo zoom" />
@@ -5010,8 +5034,11 @@ async function mountEditor(view, id) {
 	ed.adjustEl = adjustEl;
 	const zoomInput = $("[data-zoom]");
 	ed.zoomInput = zoomInput;
-	const addBtn = $(".ws-add");
+	const addBtn = $(".ed-add");
 	ed.addBtn = addBtn;
+	ed.whereEl = $("[data-where]");
+	ed.dotsEl = $("[data-dots]");
+	ed.shadowEl = $("[data-shadow]");
 	const nameEl = $("[data-name]");
 	ed.nameEl = nameEl;
 	const trayEl = $("[data-tray]");
@@ -5020,6 +5047,7 @@ async function mountEditor(view, id) {
 	ed.toolsEl = toolsEl;
 	ws.addEventListener("scroll", () => {
 		ed.placeBook();
+		ed.placeWhere();
 		if (ed.sel) ed.placeX();
 	}, { passive: true });
 	addLayout(ed);
@@ -5042,9 +5070,7 @@ async function mountEditor(view, id) {
 	});
 	ro.observe(ws);
 	ed.render();
-	const zOne = ed.fitZ("one");
-	const zAll = ed.fitZ("all");
-	ed.fitTo(zAll >= zOne * .6 ? "all" : "one", 0);
+	ed.fitTo("all", 0);
 	ed.render();
 	if (!p.thumb) thumbSoon();
 	window.__editor = {
@@ -5664,106 +5690,10 @@ function mountStickers(root, front) {
 	};
 }
 
-// components/navicon.js
-const STEP = 30;
-const SLIDE_MS = 200;
-const far = () => Math.min(window.innerWidth * .25, 120);
-const TRI = "<svg viewBox=\"0 0 10 12\" aria-hidden=\"true\"><path d=\"M2.3 1.5Q5.6 3.8 8.7 6.1 5.5 8.3 2.2 10.5 2.5 6 2.3 1.5Z\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"1.3\" stroke-linejoin=\"round\"/></svg>";
-const navHtml = () => `
-  <div class="tool nb-nav">
-    <div class="slider">
-      <button type="button" class="slide-arrow is-prev" data-toc="shut" aria-label="Close the notebook">${TRI}</button>
-      <button type="button" class="slide-now" data-toc="first" aria-label="Table of contents, first page"><span class="slide-strip" aria-hidden="true" style="transform: translateX(-${STEP}px)"><span class="slide-icon">${ICONS.shut}</span><span class="slide-icon">${ICONS.contents}</span></span></button>
-      <button type="button" class="slide-arrow is-next is-off" tabindex="-1" aria-hidden="true" disabled>${TRI}</button>
-    </div>
-  </div>`;
-function mountNav(bar, { onShut, onSwiped }) {
-	const strip = bar.querySelector(".nb-nav .slide-strip");
-	let drag = null;
-	let busy = false;
-	let timer = 0;
-	const to = (x, moving = false) => {
-		strip.classList.toggle("is-moving", moving);
-		strip.style.transform = `translateX(${(x - STEP).toFixed(1)}px)`;
-	};
-	const along = (dx) => {
-		const f = far();
-		if (dx <= 0) return -6 * (1 - Math.exp(dx / 40));
-		if (dx <= f) return STEP * dx / f;
-		return STEP + 6 * (1 - Math.exp(-(dx - f) / 40));
-	};
-	function shut() {
-		if (busy) return;
-		busy = true;
-		to(STEP, true);
-		clearTimeout(timer);
-		timer = setTimeout(onShut, SLIDE_MS);
-	}
-	function reset() {
-		clearTimeout(timer);
-		busy = false;
-		drag = null;
-		to(0);
-	}
-	bar.addEventListener("pointerdown", (e) => {
-		if (busy || e.button) return;
-		drag = {
-			id: e.pointerId,
-			x0: e.clientX,
-			y0: e.clientY,
-			moved: false,
-			dx: 0,
-			v: 0,
-			t: e.timeStamp,
-			lx: e.clientX
-		};
-	});
-	bar.addEventListener("pointermove", (e) => {
-		const d = drag;
-		if (!d || e.pointerId !== d.id) return;
-		const dx = e.clientX - d.x0;
-		const dy = e.clientY - d.y0;
-		if (!d.moved) {
-			if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-			if (Math.abs(dy) > Math.abs(dx)) {
-				drag = null;
-				return;
-			}
-			d.moved = true;
-			onSwiped();
-			try {
-				bar.setPointerCapture(e.pointerId);
-			} catch {}
-		}
-		d.v = (e.clientX - d.lx) / Math.max(1, e.timeStamp - d.t);
-		d.lx = e.clientX;
-		d.t = e.timeStamp;
-		d.dx = dx;
-		to(along(dx));
-	});
-	const end = (e) => {
-		const d = drag;
-		if (!d || e.pointerId !== d.id) return;
-		drag = null;
-		if (!d.moved) return;
-		onSwiped();
-		const flick = d.v > .45 && d.dx > 24;
-		if (e.type === "pointerup" && (along(d.dx) > STEP / 2 || flick)) shut();
-		else to(0, true);
-	};
-	bar.addEventListener("pointerup", end);
-	bar.addEventListener("pointercancel", end);
-	return {
-		shut,
-		reset,
-		destroy: () => clearTimeout(timer)
-	};
-}
-
 // pages/book-sizes.js
 const TIP_KEY = "contact-sheet-home-tip";
 const RATIO = 1e3 / 1360;
-const TIP = `<p class="toc-tip"><b>Keep your chapters safe:</b> add Contact Sheet to your Home Screen. Safari can clear the photos of sites that aren't on it. <button type="button" class="text-btn" data-tip-off>Got it</button></p>`;
+const TIP = `<p class="toc-tip"><b>Keep your layouts safe:</b> add Layouts to your Home Screen. Safari can clear the photos of sites that aren't on it. <button type="button" class="text-btn" data-tip-off>Got it</button></p>`;
 const STACK = 16;
 const TURNED = 20 * Math.PI / 180;
 const PERSPECTIVE = 1100;
@@ -5773,9 +5703,9 @@ const PAPER_IN = 7;
 const OVER = 7 + 12;
 const OPEN_MS = 860;
 const ZOOM_MS = 760;
-const TABS = [["toc", "Table of contents"], ["new", "New chapter"]];
+const TABS = [["toc", "All layouts"], ["new", "New layout"]];
 function artReady() {
-	const book = document.documentElement.dataset.book || "orange";
+	const book = document.documentElement.dataset.book || "berry";
 	const ready = ["cover", "block"].map((part) => {
 		const img = new Image();
 		img.src = `art/${book}-${part}.webp`;
@@ -5801,19 +5731,26 @@ function addContents(ed) {
 		return `
       <div class="toc-row">
         <a class="toc-open" href="#/edit/${esc(p.id)}" draggable="false">
-          <span class="toc-thumb">${u ? `<img src="${u}" alt="" draggable="false" />` : ""}</span>
+          <span class="toc-strip" aria-hidden="true">${u ? `<img src="${u}" alt="" draggable="false" />` : "<span class=\"toc-blank\"></span>"}</span>
           <span class="toc-text">
             <span class="toc-name">${esc(p.name)}</span>
             <span class="toc-meta">${p.slides} ${esc(pageWord(p, p.slides !== 1))} · ${esc(shortDate(p.updatedAt))}</span>
           </span>
         </a>
+        <button type="button" class="toc-more" data-layout-more="${esc(p.id)}" aria-label="More for ${esc(p.name)}">${MORE$1}</button>
       </div>`;
 	}
 	function pageHtml() {
 		const rows = ed.chapters.map(rowHtml).join("");
 		return `
-      <h2 class="nb-head has-plus${window.DF_SUITE ? " has-menu" : ""}">${window.DF_SUITE ? `<button type="button" class="toc-menu" data-app-menu aria-label="Menu">${ICONS.menu}</button>` : ""}Table of contents<button type="button" class="toc-plus" data-toc="new" aria-label="New chapter">${ICONS.plus}</button></h2>
-      <div class="toc-list">${rows || "<p class=\"toc-empty\">No chapters yet.</p>"}</div>
+      ${bandHtml({
+			title: "Layouts",
+			place: "All layouts",
+			add: "New layout"
+		})}
+      <div class="list-head"><h2>Newest first <span>${ed.chapters.length}</span></h2><button type="button" class="list-act" data-toc="new">${PLUS}New layout</button></div>
+      <div class="list-rule"></div>
+      <div class="toc-list">${rows || "<p class=\"toc-empty\">No layouts yet.</p>"}</div>
       ${ed.showTip ? TIP : ""}`;
 	}
 	function drawPages() {
@@ -5991,10 +5928,10 @@ function openStickers(stickers, leave) {
 
 // pages/intro.js
 const CARDS = [
-	["A chapter is a post", "Tap New chapter, pick a size and start from a template or a blank page. Each chapter is one post: slides for a carousel, or stories."],
-	["Fill the frames", "Double-tap a frame to add a photo or video. A frame can run across the edge of a slide, so one photo carries on into the next."],
-	["Save it out", "In a chapter, Export saves its slides to Photos, ready to post. Options can save the whole notebook as a PDF."],
-	["Keep a copy", "Your chapters are saved inside the app, on this phone. Now and then, save a backup in Options."]
+	["A layout is a post", "Tap New layout, pick a size and start from a template or a blank one. Each layout is one post: slides for a carousel, or stories."],
+	["Fill the boxes", "Double-tap a box to add a photo or video. A box can run across the edge of a slide, so one photo carries on into the next."],
+	["Save it out", "In a layout, Export saves its slides to Photos, ready to post. Options can save everything as one PDF."],
+	["Keep a copy", "Your layouts are saved inside the app, on this phone. Now and then, save a backup in Options."]
 ];
 function openIntro() {
 	let at = 0;
@@ -6102,7 +6039,7 @@ async function restoreBackup(close) {
 	if (!files.length) return;
 	if (!await confirmSheet({
 		title: "Restore backup",
-		message: "Everything in Contact Sheet now is swapped for what's in the file.",
+		message: "Everything in Layouts now is swapped for what's in the file.",
 		confirmLabel: "Restore",
 		danger: true
 	})) return;
@@ -6131,11 +6068,12 @@ async function restoreBackup(close) {
 const BOOK_KEY = "contact-sheet-book";
 const START_KEY = "contact-sheet-start";
 const COLORS = [
-	["orange", "Orange"],
 	["mango", "Mango"],
+	["orange", "Orange"],
 	["berry", "Berry"],
 	["fern", "Fern"],
 	["ocean", "Ocean"],
+	["leaf", "Leaf"],
 	["ink", "Black"]
 ];
 function useBook(name) {
@@ -6151,40 +6089,44 @@ function startsOnFirstPage() {
 		return false;
 	}
 }
+const TICK = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><polyline points=\"5 12.5 10 17 19 7\"/></svg>";
+const CHEVRON = "<svg class=\"opt-chevron\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><polyline points=\"9 5 16 12 9 19\"/></svg>";
+function colorsHtml() {
+	const now = document.documentElement.dataset.book || "berry";
+	return `<div class="opt-colors" role="radiogroup" aria-label="Notebook color">${COLORS.map(([key, name]) => `
+    <button type="button" class="opt-color" role="radio" data-color="${key}" aria-checked="${key === now}">
+      <span class="opt-swatch" data-swatch="${key}"><span class="opt-swatch-line"></span><span class="opt-swatch-sun"></span>${key === now ? `<span class="opt-swatch-tick">${TICK}</span>` : ""}</span>
+      <span class="opt-color-name">${name}</span>
+    </button>`).join("")}</div>`;
+}
+const row = (attr, name, sub = "") => `<button type="button" class="opt-row" ${attr}><span class="opt-row-words"><span class="opt-row-name">${name}</span>${sub ? `<span class="opt-row-sub">${sub}</span>` : ""}</span>${CHEVRON}</button>`;
 function openOptions(stickers) {
-	const now = document.documentElement.dataset.book;
+	const alone = !window.DF_SUITE;
 	const first = startsOnFirstPage();
 	const s = openSheet({
 		title: "Options",
-		className: "sheet-small sheet-options",
+		className: "opt-sheet",
 		body: `
-      <span class="field-label">App color</span>
-      <div class="opt-colors">
-        ${COLORS.map(([key, name]) => `
-          <button type="button" class="opt-color" data-color="${key}" aria-pressed="${key === now}">
-            <span class="opt-book" style="background-image:url(art/${key}-cover.webp)"></span>
-            <span>${name}</span>
-          </button>`).join("")}
-      </div>
-      ${window.DF_SUITE ? "" : `<span class="field-label opt-gap">Stickers</span>
-      <button type="button" class="btn secondary opt-wide" data-stickers>Stickers</button>`}
-      ${window.DF_SUITE ? "" : `<span class="field-label opt-gap">Always start</span>
+      <span class="opt-label">Notebook color</span>
+      <div data-colors>${colorsHtml()}</div>
+      ${alone ? `<span class="opt-label opt-gap">Always start</span>
       <div class="opt-seg" role="group" aria-label="Always start">
-        <button type="button" data-start="notebook" aria-pressed="${!first}">In the notebook</button>
-        <button type="button" data-start="first" aria-pressed="${first}">On the first page</button>
-      </div>`}
-      <span class="field-label opt-gap">Export</span>
-      <button type="button" class="btn secondary opt-wide" data-pdf>Whole notebook as PDF</button>
-      <span class="field-label opt-gap">Backup</span>
-      <button type="button" class="btn secondary opt-wide" data-save-backup>Save a backup</button>
-      <button type="button" class="btn secondary opt-wide" data-restore-backup>Restore a backup</button>
-      <button type="button" class="btn secondary opt-wide opt-gap" data-intro>How it works</button>`
+        <button type="button" data-start="notebook" class="${first ? "" : "on"}" aria-pressed="${!first}">In the notebook</button>
+        <button type="button" data-start="first" class="${first ? "on" : ""}" aria-pressed="${first}">On the first page</button>
+      </div>` : ""}
+      <span class="opt-label opt-gap">Export</span>
+      <div class="opt-rows">${row("data-pdf", "Everything as one PDF", "A cover in the app colour, then each layout")}</div>
+      ${alone ? `<span class="opt-label opt-gap">Cover</span><div class="opt-rows">${row("data-stickers", "Stickers")}</div>` : ""}
+      <span class="opt-label opt-gap">Backups</span>
+      <div class="opt-rows">${row("data-save-backup", "Save a backup")}${row("data-restore-backup", "Restore a backup")}</div>
+      <span class="opt-label opt-gap">Help</span>
+      <div class="opt-rows">${row("data-intro", "How it works")}</div>`
 	});
 	s.body.addEventListener("click", (e) => {
 		const color = e.target.closest("[data-color]");
 		if (color) {
 			useBook(color.dataset.color);
-			s.body.querySelectorAll("[data-color]").forEach((b) => b.setAttribute("aria-pressed", String(b === color)));
+			s.body.querySelector("[data-colors]").innerHTML = colorsHtml();
 			return;
 		}
 		const start = e.target.closest("[data-start]");
@@ -6192,7 +6134,10 @@ function openOptions(stickers) {
 			try {
 				localStorage.setItem(START_KEY, start.dataset.start);
 			} catch {}
-			s.body.querySelectorAll("[data-start]").forEach((b) => b.setAttribute("aria-pressed", String(b === start)));
+			s.body.querySelectorAll("[data-start]").forEach((b) => {
+				b.classList.toggle("on", b === start);
+				b.setAttribute("aria-pressed", String(b === start));
+			});
 			return;
 		}
 		if (e.target.closest("[data-stickers]")) openStickers(stickers, () => s.close());
@@ -6207,6 +6152,58 @@ function openOptions(stickers) {
 	});
 }
 
+// pages/layout-menu.js
+async function layoutMenu(id, redraw) {
+	const p = await getProject(id);
+	if (!p) return;
+	const key = await choiceSheet({
+		title: p.name,
+		options: [
+			{
+				key: "rename",
+				label: "Rename",
+				detail: "Also names the exported files."
+			},
+			{
+				key: "duplicate",
+				label: "Duplicate",
+				detail: "A copy with its own photos."
+			},
+			{
+				key: "delete",
+				label: "Delete",
+				detail: "It and its photos go from this device.",
+				danger: true
+			}
+		]
+	});
+	if (key === "rename") {
+		const v = await promptSheet({
+			title: "Rename",
+			value: p.name
+		});
+		if (!v || v === p.name) return;
+		await saveProject({
+			...p,
+			name: v
+		});
+	} else if (key === "duplicate") {
+		await duplicateProject(p.id, `${p.name} copy`);
+	} else if (key === "delete") {
+		const ok = await confirmSheet({
+			title: "Delete layout?",
+			message: `<b>${esc(p.name)}</b> and its photos will be deleted from this device. Photos in your camera roll stay where they are.`,
+			confirmLabel: "Delete",
+			danger: true
+		});
+		if (!ok) return;
+		await deleteProject(p.id);
+	} else {
+		return;
+	}
+	await redraw();
+}
+
 // pages/book-touch.js
 function addTouch(ed) {
 	Object.assign(ed, { onKey });
@@ -6217,11 +6214,6 @@ function addTouch(ed) {
 		canStart: (e) => ed.root.dataset.mode === "closed" && !ed.root.classList.contains("is-sticking") && Math.abs(e.clientX - window.innerWidth / 2) <= ed.geo.W * .62 && Math.abs(e.clientY - window.innerHeight / 2) <= ed.geo.H * .56
 	});
 	ed.turn = turn;
-	const nav = mountNav(ed.toc.querySelector(".ed-tools"), {
-		onShut: () => location.hash = "#/",
-		onSwiped: () => ed.swiped = true
-	});
-	ed.nav = nav;
 	ed.tocBook.addEventListener("pointerdown", (e) => {
 		ed.swipe = {
 			id: e.pointerId,
@@ -6292,14 +6284,17 @@ function addTouch(ed) {
 			else ed.startNew();
 			return;
 		}
-		const t = e.target.closest("[data-toc]");
-		if (t) {
-			if (t.dataset.toc === "shut") nav.shut();
-			else if (t.dataset.toc === "first") ed.leftEl.scrollTo({
-				top: 0,
-				behavior: "smooth"
-			});
-			else ed.startNew();
+		if (e.target.closest("[data-books]")) {
+			location.hash = "#/";
+			return;
+		}
+		if (e.target.closest("[data-band-add], [data-toc=\"new\"]")) {
+			ed.startNew();
+			return;
+		}
+		const more = e.target.closest("[data-layout-more]");
+		if (more) {
+			if (!sheetIsOpen()) layoutMenu(more.dataset.layoutMore, ed.drawToc);
 			return;
 		}
 		if (e.target.closest("[data-tip-off]")) {
@@ -6351,9 +6346,6 @@ function mountBook(view, startMode, onNew) {
       </div>
       <div class="nb-toc" hidden>
         <div class="toc-page" data-tocbook data-left></div>
-        <nav class="ed-tools" aria-label="Contents">
-          ${navHtml()}
-        </nav>
       </div>
     </div>
     <button type="button" class="nb-sun" aria-label="App options">${ICONS.sun}</button>`;
@@ -6446,7 +6438,6 @@ function mountBook(view, startMode, onNew) {
 	};
 	ed.step = step;
 	function setMode(next, instant = false) {
-		ed.nav.reset();
 		if (next !== "closed") {
 			stickers.drop();
 			ed.turn.reset();
@@ -6504,7 +6495,6 @@ function mountBook(view, startMode, onNew) {
 			document.removeEventListener("keydown", ed.onKey);
 			ed.releaseThumbs();
 			stickers.destroy();
-			ed.nav.destroy();
 			delete document.body.dataset.route;
 		}
 	};
@@ -6561,27 +6551,25 @@ function welcome(name, openTour) {
 	return true;
 }
 
+// components/guide-marks.js
+function marksHtml(names, at) {
+	const last = names.length - 1;
+	const marks = names.map((_, i) => {
+		const line = i ? `<span class="guide-line${i <= at ? " inked" : ""}"></span>` : "";
+		return `${line}<span class="guide-mark${i === at ? " now" : i < at ? " done" : ""}"></span>`;
+	}).join("");
+	const words = names.map((n, i) => {
+		const where = i === 0 ? "left:0" : i === last ? "right:0" : `left:${i / last * 100}%`;
+		return `<span class="guide-mark-name${i <= at ? " reached" : ""}${i && i < last ? " mid" : ""}" style="${where}">${esc(n)}</span>`;
+	}).join("");
+	return `<div class="guide-marks" role="img" aria-label="Step ${at + 1} of ${names.length}: ${esc(names[at])}"><div class="guide-mark-row">${marks}</div><div class="guide-mark-names" aria-hidden="true">${words}</div></div>`;
+}
+
 // data/starters.js
 async function seedStarters() {
 	if (await getMeta("startersSeeded")) return;
 	await saveTemplates(starterTemplates());
 	await setMeta("startersSeeded", true);
-}
-
-// components/template-picture.js
-const HILLS = ["M0 100V64L24 36L44 58L70 24L100 62V100Z", "M0 100V56L30 26L54 60L78 40L100 66V100Z"];
-function layoutSvg(t) {
-	const W = SLIDE_W;
-	const H = RATIOS[t.ratio].h;
-	const n = t.slides;
-	let s = "";
-	for (let i = 0; i < n; i++) s += `<rect x="${i * W}" y="0" width="${W}" height="${H}" fill="${esc(t.background)}"/>`;
-	t.frames.forEach((f, i) => {
-		s += `<svg x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" class="lay-sky"/><path d="${HILLS[i % 2]}" class="lay-land"/></svg>`;
-	});
-	for (let i = 1; i < n; i++) s += `<line x1="${i * W}" y1="0" x2="${i * W}" y2="${H}" class="lay-seam"/>`;
-	s += `<rect x="0" y="0" width="${n * W}" height="${H}" class="lay-edge"/>`;
-	return `<svg class="tpl-svg" viewBox="0 0 ${n * W} ${H}" preserveAspectRatio="xMinYMid meet" aria-hidden="true">${s}</svg>`;
 }
 
 // pages/template-menu.js
@@ -6660,88 +6648,224 @@ async function templateMenu(id, redraw) {
 	await redraw();
 }
 
-// pages/new-chapter.js
-const sizeOption = (r) => ({
-	key: r,
-	label: RATIOS[r].label,
-	detail: `${RATIOS[r].size}. ${RATIOS[r].detail}`
-});
-const dateName = () => `Chapter ${shortDate(new Date().toISOString())}`;
-async function createProject(layout, name) {
-	const p = await saveProject({
-		name: name || dateName(),
-		photoIds: [],
-		thumb: null,
-		...layout
-	});
-	location.hash = `#/edit/${p.id}`;
+// components/template-picture.js
+function spreadSvg(t, boxes = true) {
+	const W = SLIDE_W;
+	const H = RATIOS[t.ratio].h;
+	const rects = boxes ? (t.frames || []).filter((f) => f.x < 2 * W).map((f) => `<rect class="spread-box" x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}"/>`).join("") : "";
+	return `<svg class="spread-svg" viewBox="0 0 ${2 * W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><rect class="spread-paper" width="${2 * W}" height="${H}"/>${rects}<line class="spread-seam" x1="${W}" y1="0" x2="${W}" y2="${H}" stroke-width="16" stroke-dasharray="53 53"/></svg>`;
 }
-async function newChapter() {
-	await seedStarters();
-	const name = await promptSheet({
-		title: "New chapter",
-		label: "Chapter name",
-		placeholder: dateName(),
-		confirmLabel: "Next",
-		allowEmpty: true
-	});
-	if (name === null) return false;
-	const ratio = await choiceSheet({
-		title: "New chapter",
-		options: [
-			...RATIO_ORDER.map(sizeOption),
-			{ heading: "Other sizes" },
-			...MORE_RATIOS.map(sizeOption)
+
+// pages/new-layout-steps.js
+const MARKS = [
+	"Name",
+	"Size",
+	"Template"
+];
+const SIZE_GROUPS = [
+	["Feed and story", [
+		[
+			"4:5",
+			"Feed",
+			"4:5"
+		],
+		[
+			"3:4",
+			"Feed",
+			"3:4"
+		],
+		[
+			"1:1",
+			"Square",
+			"1:1"
+		],
+		[
+			"9:16",
+			"Story",
+			"9:16"
 		]
-	});
-	return ratio ? chooseTemplate(ratio, name) : false;
+	]],
+	["Print", [
+		[
+			"2:3",
+			"Photo",
+			"4 × 6"
+		],
+		[
+			"5:7",
+			"Photo",
+			"5 × 7"
+		],
+		[
+			"8:10",
+			"Print",
+			"8 × 10"
+		],
+		[
+			"a4",
+			"A4",
+			""
+		]
+	]],
+	["Screen", [
+		[
+			"3:2",
+			"Landscape",
+			"3:2"
+		],
+		[
+			"4:3",
+			"Landscape",
+			"4:3"
+		],
+		[
+			"16:9",
+			"Wide",
+			"16:9"
+		],
+		[
+			"letter",
+			"Letter",
+			"US"
+		]
+	]]
+];
+const MORE = "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"5\" r=\"1.6\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"12\" r=\"1.6\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"19\" r=\"1.6\" fill=\"currentColor\"/></svg>";
+const head = (title, ask) => `<h1 class="page-title">${esc(title)}</h1><p class="page-ask">${esc(ask)}</p>`;
+function nameStep(W) {
+	return `${head("Name", "What is this one called?")}
+    <input class="guide-input" type="text" data-name value="${esc(W.name)}" placeholder="${esc(W.defaultName)}" aria-label="Name" autocomplete="off" enterkeyhint="next" />`;
 }
+function shape(ratio) {
+	const r = SLIDE_W / RATIOS[ratio].h;
+	let w = Math.sqrt(2025 * r);
+	let h = Math.sqrt(2025 / r);
+	const k = Math.min(1, 60 / Math.max(w, h));
+	w *= k;
+	h *= k;
+	return `<span class="size-shape-box"><span class="size-shape" style="width:${w.toFixed(1)}px;height:${h.toFixed(1)}px"></span></span>`;
+}
+function sizeStep(W) {
+	const card = ([key, name, sub]) => `<button type="button" class="size-card" role="radio" aria-checked="${key === W.ratio}" data-ratio="${key}" aria-label="${esc(RATIOS[key].label)}">${shape(key)}<span class="size-name">${esc(name)}</span><span class="size-sub">${esc(sub)}</span></button>`;
+	return `${head("Size", "Where will this one live?")}
+    ${SIZE_GROUPS.map(([group, sizes]) => `<p class="guide-group">${esc(group)}</p><div class="size-cards" role="radiogroup" aria-label="${esc(group)}">${sizes.map(card).join("")}</div>`).join("")}`;
+}
+function templateStep(W, list, blank) {
+	const card = (t, id) => `
+    <div class="tpl-pick${W.template === id ? " on" : ""}">
+      <button type="button" class="tpl-pick-btn" role="radio" aria-checked="${W.template === id}" data-use="${esc(id)}">
+        <span class="tpl-pick-art">${spreadSvg(t, !!id)}</span>
+        <span class="tpl-pick-name">${esc(t.name)}</span>
+      </button>
+      ${id ? `<button type="button" class="tpl-pick-more" data-tmore="${esc(id)}" aria-label="More for ${esc(t.name)}">${MORE}</button>` : ""}
+    </div>`;
+	return `${head("Template", "Start from a layout you've saved, or blank.")}
+    <div class="tpl-picks" role="radiogroup" aria-label="Template">${card(blank, "")}${list.map((t) => card(t, t.id)).join("")}</div>
+    <p class="guide-small">Save any layout as a template from its More menu.</p>`;
+}
+
+// pages/new-layout.js
+const dateName = () => `Layout, ${shortDate(new Date().toISOString())}`;
 const inRatio = (t, ratio) => t.ratio === ratio ? t : changeRatio(t, ratio);
-function chooseTemplate(ratio, name) {
+async function newLayout() {
+	await seedStarters();
 	return new Promise((resolve) => {
 		let made = false;
+		const W = {
+			step: 0,
+			name: "",
+			defaultName: dateName(),
+			ratio: "3:4",
+			template: ""
+		};
+		let list = [];
 		const s = openSheet({
-			title: "Templates",
-			className: "sheet-templates",
+			title: "New layout",
+			className: "sheet-page sheet-guide",
 			onClose: () => resolve(made)
 		});
-		let list = [];
-		async function draw() {
-			list = (await listTemplates()).filter((t) => t.starterKey !== "story" && t.starterKey !== "full-bleed");
+		s.body.innerHTML = `
+      ${shortBandHtml({
+			name: "New layout",
+			backAttr: "data-back",
+			end: {
+				label: "Close",
+				attr: "data-close",
+				svg: CLOSE
+			}
+		})}
+      <div class="page-scroll" data-scroll></div>
+      <div class="page-foot guide-foot">
+        <button type="button" class="btn secondary" data-back>Back</button>
+        <button type="button" class="btn primary" data-next></button>
+      </div>`;
+		const scroll = s.body.querySelector("[data-scroll]");
+		const next = s.body.querySelector("[data-next]");
+		async function draw(keepPlace = false) {
+			if (W.step === 2) list = (await listTemplates()).filter((t) => t.starterKey !== "story" && t.starterKey !== "full-bleed");
+			if (!s.overlay.isConnected) return;
 			const blank = {
-				...blankLayout(ratio),
+				...blankLayout(W.ratio),
 				name: "Blank"
 			};
-			const card = (t, id) => {
-				const shaped = inRatio(t, ratio);
-				return `
-          <div class="tpl-card">
-            <button type="button" class="tpl-open" data-use="${esc(id)}" aria-label="Start from ${esc(t.name)}">
-              <span class="tpl-art">${layoutSvg(shaped)}</span>
-              <span class="row-main">
-                <span class="row-name">${esc(t.name)}</span>
-                <span class="row-meta">${shaped.slides} ${esc(pageWord(shaped, shaped.slides !== 1))}</span>
-              </span>
-            </button>
-            ${id ? `<button type="button" class="mini-btn" data-tmore="${esc(id)}" aria-label="More for ${esc(t.name)}">${ICONS.more}</button>` : ""}
-          </div>`;
-			};
-			s.body.innerHTML = `<div class="card-list">${card(blank, "")}${list.map((t) => card(t, t.id)).join("")}</div>`;
+			const body = W.step === 0 ? nameStep(W) : W.step === 1 ? sizeStep(W) : templateStep(W, list.map((t) => inRatio(t, W.ratio)), blank);
+			const top = scroll.scrollTop;
+			scroll.innerHTML = marksHtml(MARKS, W.step) + body;
+			scroll.scrollTop = keepPlace ? top : 0;
+			next.textContent = W.step < 2 ? `Next: ${MARKS[W.step + 1]}` : "Make it";
+			const name = scroll.querySelector("[data-name]");
+			name?.addEventListener("input", () => W.name = name.value);
+			name?.addEventListener("keydown", (e) => {
+				if (e.key === "Enter") {
+					e.preventDefault();
+					go(1);
+				}
+			});
 		}
-		draw();
+		async function make() {
+			const t = list.find((x) => x.id === W.template);
+			const layout = t ? layoutFromTemplate(inRatio(t, W.ratio)) : blankLayout(W.ratio);
+			made = true;
+			const p = await saveProject({
+				name: W.name.trim() || W.defaultName,
+				photoIds: [],
+				thumb: null,
+				...layout
+			});
+			s.close();
+			location.hash = `#/edit/${p.id}`;
+		}
+		function go(dir) {
+			if (dir < 0 && W.step === 0) return s.close();
+			if (dir > 0 && W.step === 2) return make();
+			W.step += dir;
+			draw();
+		}
 		s.body.addEventListener("click", (e) => {
+			if (e.target.closest("[data-back]")) return go(-1);
+			if (e.target.closest("[data-next]")) return go(1);
+			const size = e.target.closest("[data-ratio]");
+			if (size) {
+				W.ratio = size.dataset.ratio;
+				return draw(true);
+			}
 			const more = e.target.closest("[data-tmore]");
 			if (more) {
-				templateMenu(more.dataset.tmore, draw);
-				return;
+				return templateMenu(more.dataset.tmore, async () => {
+					await draw(true);
+					if (W.template && !list.some((t) => t.id === W.template)) {
+						W.template = "";
+						draw(true);
+					}
+				});
 			}
-			const b = e.target.closest("[data-use]");
-			if (!b) return;
-			const t = list.find((x) => x.id === b.dataset.use);
-			made = true;
-			s.close();
-			createProject(t ? layoutFromTemplate(inRatio(t, ratio)) : blankLayout(ratio), name);
+			const use = e.target.closest("[data-use]");
+			if (use) {
+				W.template = use.dataset.use;
+				draw(true);
+			}
 		});
+		draw();
 	});
 }
 
@@ -6776,7 +6900,7 @@ async function route() {
 		} else {
 			view.dataset.route = "book";
 			if (book) book.setMode(modeOfHash(h));
-			else book = mountBook(view, modeOfHash(h), newChapter);
+			else book = mountBook(view, modeOfHash(h), newLayout);
 		}
 	} catch (e) {
 		console.error(e);
@@ -6789,9 +6913,9 @@ if (suite || startsOnFirstPage()) {
 	if ((location.hash || "#/") === "#/") history.replaceState(null, "", "#/contents");
 }
 route();
-if (suite && suite.at === "new") setTimeout(newChapter, 400);
+if (suite && suite.at === "new") setTimeout(newLayout, 400);
 else if (suite && suite.firstVisit) setTimeout(() => {
-	if (!document.querySelector(".sheet-overlay")) welcome("Contact Sheet", openIntro);
+	if (!document.querySelector(".sheet-overlay")) welcome("Layouts", openIntro);
 }, 900);
 try {
 	const o = screen.orientation;

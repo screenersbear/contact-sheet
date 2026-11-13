@@ -1,13 +1,13 @@
 // The editor's zoom and layout: how big the notebook is, where its pages sit,
 // and going from one spread to the next (the pages slide, no page turn).
-import { SLIDE_W, MAX_SLIDES } from '../data/formats.js';
+import { SLIDE_W, MAX_SLIDES, pageWord } from '../data/formats.js';
 import { spreadOf, spreadCount } from '../data/spreads.js';
 import { clamp } from '../components/util.js';
 import { OUT, RIM, GAP, PEEK, bookSize, bookLeft } from '../components/frame.js';
 import { ROOM, lineH } from './editor-sizes.js';
 
 export function addLayout(ed) {
-  Object.assign(ed, { wsSize, fitZ, layout, placeBook, setZoom, visibleSlide, pageX, scrollToX, showSlide, fitTo, fitIfNeeded, flipTo, turnPage, toUnits });
+  Object.assign(ed, { wsSize, fitZ, layout, placeBook, placeWhere, setZoom, visibleSlide, pageX, scrollToX, showSlide, fitTo, fitIfNeeded, flipTo, turnPage, toUnits });
   // ---------- Zoom and layout ----------
   function wsSize() {
     return { w: ed.ws.clientWidth || 360, h: ed.ws.clientHeight || 480 };
@@ -19,7 +19,8 @@ export function addLayout(ed) {
     const { h } = wsSize();
     const g = sizes();
     const room = (mode === 'all' ? g.both : g.one) - RIM - GAP;
-    return Math.max(0.02, Math.min(room / SLIDE_W, (h - 2 * ROOM) / ed.H()));
+    // Room above for the labels, and below for the name, dots and Add a slide.
+    return Math.max(0.02, Math.min(room / SLIDE_W, (h - ROOM - (ed.nameEl.offsetHeight || 110)) / ed.H()));
   }
   // One notebook page, from the spine out.
   function pageW() {
@@ -42,8 +43,9 @@ export function addLayout(ed) {
     ed.bookX = bookLeft(w, pw);
     ed.pageLeft = ed.bookX + pw - sw; // the two pages meet at the spine
     ed.margX = ed.pageLeft - ed.spread * both;
-    // The photos sit in the middle, with room above for their labels.
-    const room = Math.max(ROOM, (h - sh) / 2);
+    // The photos sit in the middle, with room above for their labels and
+    // below for the name, the dots and Add a slide.
+    const room = Math.max(ROOM, (h - sh - (ed.nameEl.offsetHeight || 110)) / 2);
     ed.margY = Math.max(lineH(), Math.round(room));
     ed.inner.style.width = `${2 * pw + 2 * ed.bookX}px`;
     ed.inner.style.height = `${Math.max(h, sh + ed.margY + room)}px`;
@@ -56,12 +58,15 @@ export function addLayout(ed) {
     const a = ed.spread * both;
     const b = Math.min(total, a + both);
     ed.strip.style.clipPath = `inset(0 ${total - b}px 0 ${a}px)`;
+    // Their soft shadow, behind them (the clip would cut one off the strip).
+    Object.assign(ed.shadowEl.style, { left: `${ed.margX + a}px`, top: `${ed.margY}px`, width: `${b - a}px`, height: `${sh}px` });
     ed.nbEl.style.width = `${2 * pw}px`;
     // Everything below the photos stays inside the notebook's edges.
     ed.editorEl.style.setProperty('--ed-in', `${2 * pw + 2 * OUT <= w + 1 ? ed.bookX + RIM + GAP : PEEK}px`);
     placeBook();
     placeAdd();
     placeName();
+    placeWhere();
   }
 
   // The notebook stays put up and down and slides with the pages side to side.
@@ -70,30 +75,33 @@ export function addLayout(ed) {
     ed.nbEl.style.transform = t;
   }
 
-  // The chapter name sits in the middle of the space under the photos.
+  // The layout's name, the spread dots and Add a slide sit just under the
+  // photos (round 2, 04-editor), kept above the tray.
   function placeName() {
     const { h } = wsSize();
-    const lh = lineH();
     const under = Math.min(h, ed.margY + ed.H() * ed.z);
-    const mid = Math.min((under + h) / 2, h - lh / 2);
-    // Kept above the tray.
-    let top = Math.round(ed.ws.offsetTop + mid - lh / 2);
-    if (top + lh > ed.ws.offsetTop + h) top = ed.ws.offsetTop + h - lh;
+    const top = Math.round(ed.ws.offsetTop + Math.max(0, Math.min(under + 14, h - ed.nameEl.offsetHeight)));
     ed.nameEl.style.top = `${top}px`;
     // Zoomed in, the photos reach behind it and it needs a backing.
     ed.nameEl.classList.toggle('is-over', ed.ws.offsetTop + under > top);
   }
 
-  // The add-a-slide button stays in the bottom-right corner of the page, so
-  // it never scrolls out of reach and stays clear of the seams. It lives
-  // outside the scroller, so the strip scrolls under it.
+  // Add a slide goes once there are as many as there can be.
   function placeAdd() {
     ed.addBtn.hidden = ed.p.slides >= MAX_SLIDES;
-    if (ed.addBtn.hidden) return;
-    const { w, h } = wsSize();
-    const edge = parseFloat(ed.editorEl.style.getPropertyValue('--ed-in')) || PEEK;
-    ed.addBtn.style.left = `${ed.ws.offsetLeft + w - 44 - edge}px`;
-    ed.addBtn.style.top = `${ed.ws.offsetTop + h - 44 - 4}px`;
+  }
+
+  // Which slides are showing, on the slim line at the top ("Slides 1 and 2
+  // of 8", or one at a time "Slide 3 of 8"), and which spread, as dots.
+  function placeWhere() {
+    const n = ed.p.slides;
+    const one = ed.zoomFit === 'one' ? visibleSlide() : null;
+    const first = one ?? firstPage(), last = one ?? lastPage();
+    ed.whereEl.textContent = first === last
+      ? `${pageWord(ed.p)} ${first + 1} of ${n}`
+      : `${pageWord(ed.p, true)} ${first + 1} and ${last + 1} of ${n}`;
+    const count = spreadCount(ed.p);
+    ed.dotsEl.innerHTML = count > 1 ? Array.from({ length: count }, (_, i) => `<i${i === ed.spread ? ' class="on"' : ''}></i>`).join('') : '';
   }
 
   function setZoom(nz, cx, cy) {

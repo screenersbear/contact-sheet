@@ -47,6 +47,7 @@
 :root[data-book="berry"] { --book-cover: url(../art/berry-cover.webp); --book-block: url(../art/berry-block.webp); --book-back: #a80a73; --book-rim: #bf0b83; --book-pale: #f2cee6; }
 :root[data-book="fern"] { --book-cover: url(../art/fern-cover.webp); --book-block: url(../art/fern-block.webp); --book-back: #286b4a; --book-rim: #2e7a55; --book-pale: #d5e4dd; }
 :root[data-book="ocean"] { --book-cover: url(../art/ocean-cover.webp); --book-block: url(../art/ocean-block.webp); --book-back: #1f5095; --book-rim: #235caa; --book-pale: #d3deee; }
+:root[data-book="leaf"] { --book-cover: url(../art/leaf-cover.webp); --book-block: url(../art/leaf-block.webp); --book-back: #249073; --book-rim: #28a583; --book-pale: #d4ede7; }
 :root[data-book="ink"] { --book-cover: url(../art/ink-cover.webp); --book-block: url(../art/ink-block.webp); --book-back: #2a353c; --book-rim: #303d44; --book-pale: #d6d8da; }
 
 /* The notebook's frame, the same in the contents and every chapter. */

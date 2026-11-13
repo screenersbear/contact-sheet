@@ -8,7 +8,7 @@
 // and everything drawn over the photos stays grey, white or black, so the
 // colours of the photos are never thrown off by the app's own.
 // Its parts are in the editor-*.js files beside this one.
-import { slideH } from '../data/formats.js';
+import { slideH, pageWord } from '../data/formats.js';
 import { defaultCrop } from '../data/templates.js';
 import { clampedCrop } from '../components/placement.js';
 import { keepInSpreads } from '../data/spreads.js';
@@ -163,7 +163,12 @@ export async function mountEditor(view, id) {
   async function makeThumb() {
     try {
       const get = await previewSources();
-      const c = previewCanvas(p, get, { height: 200, count: Math.min(3, p.slides) });
+      // The home page's strip: 2px of white between the slides, at its size.
+      const c = previewCanvas(p, get, { height: 200, count: Math.min(3, p.slides), gap: 11 });
+      const ctx = c.getContext('2d');
+      ctx.globalCompositeOperation = 'destination-over';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, c.width, c.height);
       const blob = await canvasToBlob(c, 'image/jpeg', 0.8);
       c.width = c.height = 0;
       p.thumb = blob;
@@ -174,10 +179,12 @@ export async function mountEditor(view, id) {
   // ---------- DOM ----------
   view.innerHTML = `
     <div class="editor" data-editor>
+      <p class="ed-line"><b>Layouts</b><span data-where></span></p>
       <div class="nb-open" data-nb></div>
       <div class="ws" data-ws>
         <div class="ws-inner" data-inner>
           <div class="ws-labels" data-labels></div>
+          <div class="strip-shadow" data-shadow></div>
           <div class="strip" data-strip>
             <div class="strip-frames" data-frames></div>
             <div class="strip-bands" data-bands></div>
@@ -191,8 +198,11 @@ export async function mountEditor(view, id) {
           </div>
         </div>
       </div>
-      <button type="button" class="ws-add" data-act="add-slide" aria-label="Add a slide">${ICONS.plus}</button>
-      <div class="ed-name" data-name><button type="button" data-act="rename" aria-label="Rename this chapter"><span>${esc(p.name)}</span></button></div>
+      <div class="ed-under" data-name>
+        <button type="button" class="ed-name-btn" data-act="rename" aria-label="Rename this layout"><span>${esc(p.name)}</span></button>
+        <span class="ed-dots" data-dots aria-hidden="true"></span>
+        <button type="button" class="ed-add" data-act="add-slide">${ICONS.plus}Add a ${esc(pageWord(p))}</button>
+      </div>
       <div class="ed-adjust" data-adjust hidden>
         <span class="ed-adjust-label">Zoom</span>
         <input type="range" min="1" max="5" step="0.01" value="1" data-zoom aria-label="Photo zoom" />
@@ -218,12 +228,16 @@ export async function mountEditor(view, id) {
   const selEl = $('[data-sel]'); ed.selEl = selEl;
   const adjustEl = $('[data-adjust]'); ed.adjustEl = adjustEl;
   const zoomInput = $('[data-zoom]'); ed.zoomInput = zoomInput;
-  const addBtn = $('.ws-add'); ed.addBtn = addBtn;
+  const addBtn = $('.ed-add'); ed.addBtn = addBtn;
+  ed.whereEl = $('[data-where]');
+  ed.dotsEl = $('[data-dots]');
+  ed.shadowEl = $('[data-shadow]');
   const nameEl = $('[data-name]'); ed.nameEl = nameEl;
   const trayEl = $('[data-tray]'); ed.trayEl = trayEl;
   const toolsEl = $('[data-tools]'); ed.toolsEl = toolsEl;
   ws.addEventListener('scroll', () => {
     ed.placeBook();
+    ed.placeWhere();
     if (ed.sel) ed.placeX();
   }, { passive: true });
   addLayout(ed);
@@ -249,9 +263,8 @@ export async function mountEditor(view, id) {
   ro.observe(ws);
 
   ed.render();
-  const zOne = ed.fitZ('one');
-  const zAll = ed.fitZ('all');
-  ed.fitTo(zAll >= zOne * 0.6 ? 'all' : 'one', 0);
+  // Round 2 (04-editor): it opens on the first two slides side by side.
+  ed.fitTo('all', 0);
   ed.render();
   if (!p.thumb) thumbSoon();
 

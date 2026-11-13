@@ -42,6 +42,14 @@ built/app.css
   styles/contents.css
   styles/editor-page.css
   styles/header-band.css
+  styles/band-colors.css
+  styles/band.css
+  styles/sheets.css
+  styles/options-sheet.css
+  styles/sheet-page.css
+  styles/new-layout-guide.css
+  styles/editor-look.css
+  styles/export.css
 
 # The scripts: app.js and every ES module it imports (and those import), joined
 # by following the imports, so they aren't listed one by one.

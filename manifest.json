@@ -1,6 +1,6 @@
 {
-  "name": "Contact Sheet",
-  "short_name": "Contact Sheet",
+  "name": "Layouts",
+  "short_name": "Layouts",
   "description": "Build Instagram carousels and Stories from your photos, with photos that run across slides.",
   "id": "./",
   "start_url": "./",

@@ -1,11 +1,10 @@
-// The printable notebook: its cover, its contents pages and every chapter's
-// pages laid out on sheets for the PDF.
-import { SLIDE_W, slideH } from './formats.js';
+// Everything as one PDF: a cover in the notebook's colour, then every
+// layout's slides laid out on sheets (round 2: no contents pages).
 import { SHEET_W, SHEET_H } from './pdf.js';
 import { listProjects, photosForProject } from './db.js';
 import { loadImage, canvasToBlob } from '../components/util.js';
 import { renderSlides } from './slide-images.js';
-import { FULL_AREA, BOOK_AREA, TOC_ROWS, INK, pagesPerSheet, printedW, printScale, checkPictures } from './print-check.js';
+import { FULL_AREA, BOOK_AREA, INK, pagesPerSheet, printedW, printScale, checkPictures } from './print-check.js';
 
 // Facing pages side by side on landscape sheets, touching at the middle so a
 // photo running across two pages stays whole. Wide pages get a sheet each.
@@ -48,9 +47,10 @@ function fitText(ctx, str, max) {
   return `${s.trimEnd()}...`;
 }
 
+// The cover: the notebook's own cover art, in the colour picked in Options.
 async function coverSheet() {
   try {
-    const img = await loadImage(`art/${document.documentElement.dataset.book || 'orange'}-cover.webp`);
+    const img = await loadImage(`art/${document.documentElement.dataset.book || 'berry'}-cover.webp`);
     const { c, ctx } = whiteCanvas(1000, 1360);
     ctx.drawImage(img, 0, 0, 1000, 1360);
     const h = FULL_AREA.h;
@@ -61,73 +61,42 @@ async function coverSheet() {
   }
 }
 
-// Each contents sheet is drawn whole, so the handwriting prints as it looks.
-async function contentsSheets(rows) {
-  const sheets = [];
-  for (let i = 0; i < rows.length; i += TOC_ROWS) {
-    const { c, ctx } = whiteCanvas(2200, 1700);
-    ctx.fillStyle = INK;
-    ctx.textAlign = 'center';
-    ctx.font = '112px "Klee One", "Bradley Hand", cursive';
-    ctx.fillText('Table of contents', 1100, 250);
-    ctx.fillStyle = '#d6dadd';
-    ctx.fillRect(300, 320, 1600, 3);
-    rows.slice(i, i + TOC_ROWS).forEach((row, n) => {
-      const y = 320 + n * 128;
-      ctx.fillStyle = INK;
-      ctx.textAlign = 'left';
-      ctx.font = '68px "Klee One", "Bradley Hand", cursive';
-      ctx.fillText(fitText(ctx, row.name, 1360), 320, y + 90);
-      ctx.textAlign = 'right';
-      ctx.font = '60px "Klee One", "Bradley Hand", cursive';
-      ctx.fillText(String(row.page), 1880, y + 88);
-      ctx.fillStyle = '#d6dadd';
-      ctx.fillRect(300, y + 128, 1600, 3);
-    });
-    sheets.push({ images: [{ ...(await finishCanvas(c)), x: 0, y: 0, w: SHEET_W, h: SHEET_H }], text: [] });
-  }
-  return sheets;
-}
+const FONT = '"Figtree", system-ui, sans-serif';
 
+// The layout's name at the foot of each of its sheets.
 async function nameStrip(name) {
   const { c, ctx } = whiteCanvas(1400, 72);
   ctx.fillStyle = INK;
   ctx.textBaseline = 'middle';
-  ctx.font = '46px "Klee One", "Bradley Hand", cursive';
+  ctx.font = `500 44px ${FONT}`;
   ctx.fillText(fitText(ctx, name, 1380), 0, 38);
   return { ...(await finishCanvas(c)), x: 36, y: 12, w: 504, h: 25.92 };
 }
 
-// A sheet's number, drawn so the handwriting prints as it looks.
+// A sheet's number, at the foot on the right.
 async function numberMark(str) {
   const { c, ctx } = whiteCanvas(160, 72);
   ctx.fillStyle = INK;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  ctx.font = '46px "Klee One", "Bradley Hand", cursive';
+  ctx.font = `500 44px ${FONT}`;
   ctx.fillText(str, 156, 38);
   return { ...(await finishCanvas(c)), x: SHEET_W - 36 - 57.6, y: 12, w: 57.6, h: 25.92 };
 }
 
-// The cover, the contents, then every chapter from its own full-size pages.
-// Returns { sheets, report }, or null if there are no chapters or `stillOpen` says stop.
+// The cover, then every layout from its own full-size slides. Returns
+// { sheets, report }, or null if there are no layouts or `stillOpen` says stop.
 export async function makeNotebook(onProgress, stillOpen = () => true) {
-  const chapters = await listProjects();
-  if (!chapters.length) return null;
-  if (document.fonts && document.fonts.load) await document.fonts.load('60px "Klee One"').catch(() => {});
-  const total = chapters.reduce((sum, p) => sum + p.slides, 0);
-  let page = 1;
-  const rows = chapters.map((p) => {
-    const row = { name: p.name, page };
-    page += Math.ceil(p.slides / pagesPerSheet(SLIDE_W, slideH(p)));
-    return row;
-  });
+  const layouts = await listProjects();
+  if (!layouts.length) return null;
+  if (document.fonts && document.fonts.load) await document.fonts.load(`500 44px ${FONT}`).catch(() => {});
+  const total = layouts.reduce((sum, p) => sum + p.slides, 0);
   const cover = await coverSheet();
-  const sheets = [...(cover ? [cover] : []), ...(await contentsSheets(rows))];
+  const sheets = cover ? [cover] : [];
   const report = { checked: 0, low: [] };
   let made = 0;
   let number = 1;
-  for (const p of chapters) {
+  for (const p of layouts) {
     if (!stillOpen()) return null;
     const photos = Object.fromEntries((await photosForProject(p.id)).map((ph) => [ph.id, ph]));
     const files = await renderSlides(p, photos, 'jpeg', (i) => onProgress && onProgress(p.name, (made + i) / total), { thumbs: false, scale: printScale(p, BOOK_AREA) });
@@ -138,9 +107,8 @@ export async function makeNotebook(onProgress, stillOpen = () => true) {
     report.checked += found.checked;
     report.low.push(...found.low);
     for (const sheet of own) {
-      const str = String(number++);
       sheet.images.push(strip);
-      sheet.images.push(await numberMark(str));
+      sheet.images.push(await numberMark(String(number++)));
       sheets.push(sheet);
     }
   }

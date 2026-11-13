@@ -1,4 +1,4 @@
-// Saving the whole notebook, or one chapter, as a printable PDF.
+// Saving every layout as one printable PDF, or one layout's picked slides.
 import { pageWord } from '../data/formats.js';
 import { showPdf } from './pdfview.js';
 import { openSheet } from '../components/sheet.js';
@@ -8,9 +8,8 @@ import { sheetsOf, makeNotebook } from '../data/notebook-pdf.js';
 
 export function openNotebookExport() {
   let free = null;
-  const s = openSheet({ title: 'Export notebook', className: 'sheet-export', onClose: () => free && free() });
+  const s = openSheet({ title: 'Everything as one PDF', className: 'sheet-export', onClose: () => free && free() });
   async function run() {
-    s.setTitle('Export notebook');
     s.body.innerHTML = `
       <p class="sheet-message" data-msg>Getting ready</p>
       <div class="progress"><div class="progress-bar" data-bar></div></div>
@@ -34,18 +33,18 @@ export function openNotebookExport() {
     }
     if (!s.overlay.isConnected) return;
     if (!book) {
-      s.body.innerHTML = '<p class="sheet-message">There are no chapters to export yet.</p>';
+      s.body.innerHTML = '<p class="sheet-message">There are no layouts to export yet.</p>';
       return;
     }
-    free = showPdf(s, { ...book, fileName: 'contact-sheet-notebook.pdf', onSaved: () => s.close() });
+    free = showPdf(s, { ...book, fileName: 'layouts.pdf', onSaved: () => s.close() });
   }
   run();
   return s;
 }
 
-// One chapter's chosen pages, made at print size, then the preview on top of
+// One layout's chosen slides, made at print size, then the preview on top of
 // the export screen. Closing it goes back to the picks.
-export function openChapterPdf(p, photos, order, base, exportSheet) {
+export function openLayoutPdf(p, photos, order, base, exportSheet) {
   let free = null;
   const s = openSheet({ title: 'Printable PDF', className: 'sheet-export', onClose: () => free && free() });
   async function run() {

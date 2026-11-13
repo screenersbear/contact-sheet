@@ -1,0 +1,63 @@
+/* The new layout guide (round 2, 02-new-layout-size, 03-new-layout-template):
+   a page of its own (sheet-page.css) with the short band (back, NEW LAYOUT,
+   close), the step marks named underneath (as in Ref's and The Eye's
+   guides), the step's title and question, its cards, and Back / Next at the
+   foot. pages/new-layout.js draws it. */
+
+/* The marks: done = solid 14px, this one = 22px with a dot, still to come =
+   an open 13px ring. The line is inked up to this step. */
+.guide-marks { position: relative; height: 50px; margin-top: 2px; }
+.guide-mark-row { display: flex; align-items: center; height: 28px; }
+.guide-mark { flex: none; box-sizing: border-box; width: 13px; height: 13px; border: 1.5px solid #9AA3A8; border-radius: 50%; background: var(--paper); }
+.guide-mark.done { width: 14px; height: 14px; border: 0; background: var(--text); }
+.guide-mark.now { position: relative; width: 22px; height: 22px; border: 0; background: var(--text); }
+.guide-mark.now::after { content: ''; position: absolute; inset: 6px; border-radius: 50%; background: var(--ink); }
+.guide-line { flex: 1 1 auto; height: 1px; background: #D6DADD; }
+.guide-line.inked { background: var(--text); }
+.guide-mark-names { position: relative; height: 12px; margin-top: 4px; }
+.guide-mark-name { position: absolute; top: 0; font: 700 10px/12px var(--ui); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; color: var(--dim); }
+.guide-mark-name.reached { color: var(--text); }
+.guide-mark-name.mid { transform: translateX(-50%); }
+
+/* The step's field and words (its title and question are in sheet-page.css). */
+.guide-small { margin: 16px 0 0; font: 400 15px/21px var(--ui); color: var(--dim); }
+.guide-group { margin: 18px 0 8px; font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.page-ask + .guide-group { margin-top: 0; }
+.guide-input {
+  display: block; width: 100%; box-sizing: border-box; height: 52px; margin: 0; padding: 0 14px; border: 0; border-radius: 8px;
+  background: #FFFFFF; box-shadow: inset 0 0 0 1px #E1E1DC; font: 400 17px/22px var(--ui); color: var(--text); outline: none; -webkit-appearance: none;
+}
+.guide-input:focus { box-shadow: inset 0 0 0 2px var(--text); }
+.guide-input::placeholder { color: #9AA3A8; }
+
+/* Sizes: white cards four across, each with its shape at its true
+   proportion (in the notebook's colour once picked), its name and size. */
+.size-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.size-card { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; padding: 12px 6px 10px; border: 0; border-radius: 12px; background: #FFFFFF; color: var(--text); letter-spacing: 0; text-transform: none; cursor: pointer; }
+.size-card[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--text); }
+.size-shape-box { display: flex; align-items: flex-end; height: 64px; }
+.size-shape { display: block; background: #9AA3A8; }
+.size-card[aria-checked="true"] .size-shape { background: var(--ink); }
+.size-name { font: 400 14px/18px var(--ui); }
+.size-card[aria-checked="true"] .size-name { font-weight: 500; }
+.size-sub { min-height: 15px; font: 400 12px/15px var(--ui); color: var(--dim); font-variant-numeric: tabular-nums; }
+
+/* Templates: white cards two across, a two-slide spread with a dashed seam,
+   the name, and a ... menu at the corner for the saved ones. */
+.tpl-picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tpl-pick { position: relative; min-width: 0; padding: 14px 10px 10px; border-radius: 12px; background: #FFFFFF; }
+.tpl-pick.on { box-shadow: inset 0 0 0 2px var(--text); }
+.tpl-pick-btn { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; padding: 0; border: 0; background: none; color: var(--text); letter-spacing: 0; text-transform: none; cursor: pointer; }
+.tpl-pick-art { display: block; width: 108px; height: 66px; }
+.spread-svg { display: block; width: 100%; height: 100%; }
+.spread-paper { fill: #FFFFFF; }
+.spread-box { fill: #9AA3A8; }
+.tpl-pick.on .spread-box { fill: var(--ink); }
+.spread-seam { stroke: #E1E1DC; }
+.tpl-pick-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 14px/18px var(--ui); }
+.tpl-pick.on .tpl-pick-name { font-weight: 500; }
+.tpl-pick-more { position: absolute; right: 0; top: 0; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; background: none; color: var(--dim); cursor: pointer; }
+
+/* Back (outlined) and Next (the notebook's colour), at the foot. */
+.guide-foot .btn { flex: 1 1 0; min-width: 0; white-space: nowrap; }
+.guide-foot .btn.primary { flex-grow: 1.3; }

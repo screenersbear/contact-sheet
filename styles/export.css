@@ -1,0 +1,42 @@
+/* Export in the round 2 look (06-export): the slides four across, numbered
+   in posting order in the notebook's colour; a left-out one fades and loses
+   its number. Under them how many go, and the Printable PDF row; the save
+   button at the foot says how many. Also the progress bar while they're made. */
+.progress { height: 4px; margin: 8px 0 0; border: 0; border-radius: 2px; background: #E1E1DC; overflow: hidden; }
+.progress-bar { border-radius: 2px; background: var(--ink); }
+
+.sheet-page .order-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 2px 0 0; }
+.sheet-page .order-grid li { border-radius: 4px; overflow: hidden; background: #EFEFEA; }
+.sheet-page .order-grid img { border: 0; }
+.sheet-page .order-grid li.is-off, .order-ghost.is-off { opacity: .3; }
+.sheet-page .order-grid li.is-off img, .order-ghost.is-off img { opacity: 1; }
+.sheet-page .order-num, .order-ghost .order-num {
+  left: 5px; top: 5px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 10px;
+  background: var(--ink); color: var(--on-ink); font: 700 11px/1 var(--ui); font-variant-numeric: tabular-nums;
+}
+.sheet-page .order-num:empty { display: flex; }
+.sheet-page li.is-off .order-num, .order-ghost.is-off .order-num { background: #9AA3A8; }
+/* Left out is said by the fade; the words stay for screen readers. */
+.sheet-page .order-off, .sheet-page li.is-off .order-off, .order-ghost .order-off {
+  display: block; left: 0; top: 0; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); transform: none; white-space: nowrap;
+}
+/* A video: a small white play mark at the corner, as in the tray. */
+.sheet-page .order-vid, .order-ghost .order-vid { left: 6px; bottom: 6px; width: 0; height: 0; background: none; border-left: 9px solid #FFFFFF; border-top: 6px solid transparent; border-bottom: 6px solid transparent; filter: drop-shadow(0 0 1px rgba(0, 0, 0, .45)); }
+.sheet-page .order-vid svg, .order-ghost .order-vid svg { display: none; }
+.order-count { margin: 12px 0 0; font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); font-variant-numeric: tabular-nums; }
+.sheet-page .tip { margin: 16px 0 0; padding-left: 12px; border-left: 3px solid var(--ink); font: 400 15px/21px var(--ui); color: var(--dim); }
+.sheet-page .video-live { margin-top: 20px; }
+
+/* Printable PDF: a white row with its icon, name, what it does and a chevron. */
+.exp-row { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 20px; padding: 14px; border: 0; border-radius: 12px; background: #FFFFFF; color: var(--text); text-align: left; letter-spacing: 0; text-transform: none; cursor: pointer; }
+.exp-row-icon { display: flex; color: var(--band-on-paper, var(--ink)); }
+.exp-row-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.exp-row-name { font: 400 17px/22px var(--ui); }
+.exp-row-sub { font: 400 14px/19px var(--ui); color: var(--dim); }
+.exp-row-go { display: flex; color: #9AA3A8; }
+
+/* The foot: the save button, and what to tap in the share sheet. */
+.exp-foot { flex-direction: column; }
+.exp-foot .btn { width: 100%; }
+.exp-hint { margin: 0; text-align: center; font: 400 13px/17px var(--ui); color: var(--dim); }
+.exp-hint b { font-weight: 600; color: var(--text); }

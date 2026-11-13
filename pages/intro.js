@@ -1,13 +1,13 @@
-// The tour: a few cards on how Contact Sheet works. Options > How it works
+// The tour: a few cards on how Layouts works. Options > How it works
 // shows them, and inside Documenting Fictions they're offered the first time
 // the notebook is opened (welcome.js).
 import { openSheet } from '../components/sheet.js';
 
 const CARDS = [
-  ['A chapter is a post', 'Tap New chapter, pick a size and start from a template or a blank page. Each chapter is one post: slides for a carousel, or stories.'],
-  ['Fill the frames', 'Double-tap a frame to add a photo or video. A frame can run across the edge of a slide, so one photo carries on into the next.'],
-  ['Save it out', 'In a chapter, Export saves its slides to Photos, ready to post. Options can save the whole notebook as a PDF.'],
-  ['Keep a copy', 'Your chapters are saved inside the app, on this phone. Now and then, save a backup in Options.'],
+  ['A layout is a post', 'Tap New layout, pick a size and start from a template or a blank one. Each layout is one post: slides for a carousel, or stories.'],
+  ['Fill the boxes', 'Double-tap a box to add a photo or video. A box can run across the edge of a slide, so one photo carries on into the next.'],
+  ['Save it out', 'In a layout, Export saves its slides to Photos, ready to post. Options can save everything as one PDF.'],
+  ['Keep a copy', 'Your layouts are saved inside the app, on this phone. Now and then, save a backup in Options.'],
 ];
 
 export function openIntro() {

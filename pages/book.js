@@ -1,10 +1,9 @@
 // The notebook: floating shut on white with its two tabs. Opened, it zooms in
-// until its first page covers the screen, and the Table of contents is a plain
-// page that scrolls. Routes: #/ (shut), #/contents. Each draft is a chapter.
+// until its first page covers the screen, and the home page (every layout)
+// is a plain page that scrolls. Routes: #/ (shut), #/contents.
 // Its contents and what touching it does are in book-*.js beside this one.
 import { ICONS } from '../components/icons.js';
 import { mountStickers } from '../components/stickers.js';
-import { navHtml } from '../components/navicon.js';
 import { RATIO, STACK, TURNED, PERSPECTIVE, TAB_OUT, RIM, OVER, OPEN_MS, ZOOM_MS, TABS, artReady, currentMode } from './book-sizes.js';
 import { addContents } from './book-contents.js';
 import { addTouch } from './book-touch.js';
@@ -41,9 +40,6 @@ export function mountBook(view, startMode, onNew) {
       </div>
       <div class="nb-toc" hidden>
         <div class="toc-page" data-tocbook data-left></div>
-        <nav class="ed-tools" aria-label="Contents">
-          ${navHtml()}
-        </nav>
       </div>
     </div>
     <button type="button" class="nb-sun" aria-label="App options">${ICONS.sun}</button>`;
@@ -136,7 +132,6 @@ export function mountBook(view, startMode, onNew) {
   }; ed.step = step;
 
   function setMode(next, instant = false) {
-    ed.nav.reset();
     if (next !== 'closed') {
       stickers.drop();
       ed.turn.reset();
@@ -201,7 +196,6 @@ export function mountBook(view, startMode, onNew) {
       document.removeEventListener('keydown', ed.onKey);
       ed.releaseThumbs();
       stickers.destroy();
-      ed.nav.destroy();
       delete document.body.dataset.route;
     },
   };
