@@ -13,6 +13,9 @@
   "art/ocean-cover.webp": "10cc99905913b9ff3680033bf4018b1f9d6f1bd10f903ac41e6fdf84493e4603",
   "art/orange-block.webp": "28aaa50ce8f604a23b29a86cee7569cbab107a5b9efc679edf182cd571ef657e",
   "art/orange-cover.webp": "48985368f222d0fff351958eaa590785ed44cbe4742c04a598820bc5a6b46a7a",
+  "built/app.css": "6e8795c08927a33273281a932f0cecd3a17573c18695d4b9d54e51bacd25a1ad",
+  "built/app.js": "349a1d63dfa754d2186144093b84a897f5023cbbac80593ae9243ff9b76cde48",
+  "built/shared-data.js": "022998949d22b685c35a6d2efdabc725b0330db6288cbe016d234f52b77ab0ce",
   "components/dialogs.js": "342322868e722d46ef7286daff515e3e35c8c08944b562342566615b739d941c",
   "components/frame.js": "8418fb30835704cac6c1ba0a6feebf24e4ade6f98e19a2acced9f2b7db59f1fa",
   "components/icons.js": "a362ac99dd1ae2f383b719cc635918aa8841f985fae372d99c108ea45bb08502",
@@ -59,6 +62,7 @@
   "data/templates.js": "6c6e5f419a1db0964bbaa38f14312365829344ef53441ba7e73e39c26371d542",
   "data/videoexport.js": "4f2facc8c1471322d183c76a4db67ff45de40abd03ed7fd25eaada6557ea6625",
   "data/zip.js": "4f298d7018597d3884ca0f3ca74c8af3b79c4a953b251f0f9838a473dc910d82",
+  "files.txt": "b9996698ada2973d2b95b0cb7044b3473edcbbc655f9a245d51bdb8a032c0834",
   "fonts/ArchivoBlack-OFL.txt": "3173acd82f8c6159b5b1037b539fcbd4edff68e65c2ea8b9412b5a5ca97b08ff",
   "fonts/Figtree-OFL.txt": "140d37233e7f3ce7313798befa9600893bcceaf41a55fa0fa5ad52f7f657a268",
   "fonts/KaiseiDecol-OFL.txt": "6c5445d4febbf6d84025b874a85c51e7e4bfa7495279eccdb4c317a6de857b46",
@@ -71,7 +75,7 @@
   "icons/icon-192.png": "9aff575c994a117f99d7cc9cdb7d674bdbca1bc6293bf084c8833d099e94644f",
   "icons/icon-512.png": "178439aa2d2876e7bb118bade150e47d747ead74ceff614799b168c76893057b",
   "icons/icon.svg": "ea9ae8952133e5dd87ab70c5b95419cb1eec1baf1ab656ec24803689bfdeba6c",
-  "index.html": "cc2078fb5a25d1b7c4c87122ac9f38bf0c11f3dd47165f0b375260dbfd33839d",
+  "index.html": "08c60137342bb902e97930c63ea964b65088ea29f4af05e7b03ce51fc0befbb7",
   "manifest.json": "b2f2f1757c929c6d39e5f346141519dc4dc5b0cd657653cc96ad050215ca6e99",
   "pages/book-contents.js": "d93aab1d4551324d2871a3f5d402e9ef557d5aa7085369ee15c939f541583fc9",
   "pages/book-sizes.js": "d4273251e7c13cad7c06909ac19764a05fc282f9fb6bf0eada7af3c0cda2c227",
@@ -123,7 +127,7 @@
   "styles/toast.css": "435192209a304082ee468478c43202798af8f46864719cbc48c4b5b236305b1c",
   "styles/top-bar.css": "c5ea772c2e51e56b9729d3f4804e4a191c1bdfba2b9db039ae44d6dd21b64658",
   "styles/wide.css": "5a3034b58572cca76d606c96cfe3af86303630c138dcb47122a9254ef1f302a5",
-  "sw.js": "51cf2c7fcec3d0a4d3c2c106413220da435e59a435ec47f72914e271722375f4"
+  "sw.js": "daa6078842ea6257ee3fe54cb693bd08049036435ac71d0fccd1759f3d4d930a"
  },
  "keep": [
   ".DS_Store",
@@ -140,6 +144,6 @@
  ],
  "name": "Contact Sheet",
  "notebook": "contact-sheet",
- "suite": "70e50ff + changes not committed",
+ "suite": "77404f8 + changes not committed",
  "suite_folder": "../Documenting Fictions"
 }

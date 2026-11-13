@@ -1,0 +1,48 @@
+# Contact Sheet is made of the files below. tools/join.mjs joins the files under
+# each built/ name, in this order, into that one file, and index.html loads the
+# built file: one trip to the server instead of one per file.
+# After changing, adding or removing a file listed here, run: node tools/join.mjs
+
+# What the notebooks share (window.DFData): copies of the suite's shared/data/,
+# made by tools/sync.py shared.
+built/shared-data.js
+  data/shared/basics.js
+  data/shared/files.js
+  data/shared/overthoughts.js
+  data/shared/the-eye.js
+  data/shared/journal-move.js
+  data/shared/json-backup.js
+  data/shared/zip-format.js
+  data/shared/zip-backup.js
+  data/shared/zip-restore.js
+  data/shared/links.js
+  data/shared/df-data.js
+
+# How it looks, in the order the rules apply.
+built/app.css
+  styles/base.css
+  styles/hero-band.css
+  styles/top-bar.css
+  styles/sections.css
+  styles/buttons.css
+  styles/chapters.css
+  styles/sheet.css
+  styles/forms.css
+  styles/editor-sheets.css
+  styles/editor.css
+  styles/editor-frames.css
+  styles/editor-video.css
+  styles/toast.css
+  styles/wide.css
+  styles/notebook.css
+  styles/options.css
+  styles/cover.css
+  styles/stickers.css
+  styles/cover-depth.css
+  styles/contents.css
+  styles/editor-page.css
+  styles/header-band.css
+
+# The scripts: app.js and every ES module it imports (and those import), joined
+# by following the imports, so they aren't listed one by one.
+built/app.js from app.js
