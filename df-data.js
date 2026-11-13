@@ -292,21 +292,30 @@
     try { data = JSON.parse(await file.text()); } catch (e) { throw new Error("That file isn't a notebook backup."); }
     if (!data || !data.stores || (app && data.app !== app) || data.database !== dbName) throw new Error('That file is a backup of a different notebook.');
     const db = await open(dbName);
-    const names = Object.keys(data.stores).filter((n) => db.objectStoreNames.contains(n));
-    const unpacked = {};
-    for (const n of names) {
-      unpacked[n] = [];
-      for (const [k, v] of data.stores[n].rows) unpacked[n].push([await unpack(k), await unpack(v)]);
+    try {
+      const names = Object.keys(data.stores).filter((n) => db.objectStoreNames.contains(n));
+      if (!names.length) throw new Error('That file is a backup of a different notebook.');
+      const unpacked = {};
+      for (const n of names) {
+        unpacked[n] = [];
+        for (const [k, v] of data.stores[n].rows) unpacked[n].push([await unpack(k), await unpack(v)]);
+      }
+      const tx = db.transaction(names, 'readwrite');
+      const done = finish(tx);
+      try {
+        names.forEach((n) => {
+          const os = tx.objectStore(n);
+          if (replace) os.clear();
+          unpacked[n].forEach(([k, v]) => { if (os.keyPath) os.put(v); else os.put(v, k); });
+        });
+      } catch (e) {
+        tx.abort(); // a row a store can't take at all: nothing goes in, not even the clear
+      }
+      await done;
+      return { extra: data.extra || {}, counts: Object.fromEntries(names.map((n) => [n, unpacked[n].length])) };
+    } finally {
+      db.close();
     }
-    const tx = db.transaction(names, 'readwrite');
-    names.forEach((n) => {
-      const os = tx.objectStore(n);
-      if (replace) os.clear();
-      unpacked[n].forEach(([k, v]) => { if (os.keyPath) os.put(v); else os.put(v, k); });
-    });
-    await finish(tx);
-    db.close();
-    return { extra: data.extra || {}, counts: Object.fromEntries(names.map((n) => [n, unpacked[n].length])) };
   }
 
   // ---------- A notebook as a zip, and back ----------
@@ -833,7 +842,6 @@
     return v;
   }
   const keyText = (k) => JSON.stringify(k instanceof Date ? { d: k.getTime() } : k);
-  const atPath = (v, p) => p.split('.').reduce((o, f) => (o == null ? o : o[f]), v);
   // One database swapped for its part of the backup. Rows go in a few at a
   // time over what's there; once they're all in, whatever the backup doesn't
   // have is taken out. A database this device doesn't have yet is made as
@@ -856,13 +864,17 @@
       for (const n of names) {
         keep[n] = new Set();
         const keyPath = db.transaction(n).objectStore(n).keyPath;
-        const keyOf = (k, v) => (keyPath == null ? k : Array.isArray(keyPath) ? keyPath.map((p) => atPath(v, p)) : atPath(v, keyPath));
         let batch = [];
         const sizes = { n: 0 };
         const write = async () => {
           const tx = db.transaction(n, 'readwrite');
           const os = tx.objectStore(n);
-          batch.forEach(([k, v]) => { if (keyPath == null) os.put(v, k); else os.put(v); });
+          // Each row is kept under the key it went in with: a row of an
+          // auto-increment store that had none is given one here.
+          batch.forEach(([k, v]) => {
+            const r = keyPath == null ? os.put(v, k) : os.put(v);
+            r.onsuccess = () => keep[n].add(keyText(r.result));
+          });
           await finish(tx);
           batch = [];
           sizes.n = 0;
@@ -870,7 +882,6 @@
         for (const [pk, pv] of part.stores[n].rows || []) {
           const k = await unzipValue(pk, b.zip, sizes);
           const v = await unzipValue(pv, b.zip, sizes);
-          keep[n].add(keyText(keyOf(k, v)));
           batch.push([k, v]);
           if (sizes.n >= BATCH || batch.length >= 40) await write();
           onRow();

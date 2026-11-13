@@ -36,13 +36,16 @@ function openDb() {
     };
     req.onsuccess = () => {
       const db = req.result;
-      // Another tab upgrading the database: step aside so it can.
-      db.onversionchange = () => db.close();
+      // Another tab upgrading the database: step aside so it can, and open
+      // it afresh the next time it's needed.
+      db.onversionchange = () => { db.close(); dbPromise = null; };
       resolve(db);
     };
     req.onerror = () => reject(req.error);
     req.onblocked = () => reject(new Error('Close Contact Sheet in your other tabs, then try again.'));
   });
+  // A failed open isn't kept: the next call tries again.
+  dbPromise.catch(() => { dbPromise = null; });
   return dbPromise;
 }
 
