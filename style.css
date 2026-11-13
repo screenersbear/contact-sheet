@@ -1752,6 +1752,9 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
    below it keeps 10px clear of the edge. */
 .nb-toc .ed-tools { bottom: max(10px, calc(var(--sa-b) - 14px)); }
 html.is-short .nb-toc .ed-tools { bottom: 10px; }
+/* Installed, the bars and the sun show once iOS has its height right (ui.js
+   adds .settled), so they never show high and then drop. */
+@media (display-mode: standalone) { html:not(.settled) :is(.ed-tools, .nb-sun) { visibility: hidden; } }
 /* The navigation icon (navicon.js): the icon in the same 21px row as the
    other tools' icons, the triangles tucked up against it, its name below. */
 .nb-nav .tool-label { line-height: normal; }

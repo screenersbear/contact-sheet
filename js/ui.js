@@ -86,10 +86,16 @@ export function nudgeScreen(tries = 5, full = 0) {
     else go(tries);
   });
 }
+// Installed, the bars show once iOS has its height right (style.css), so
+// they never show high and then drop.
+if (!iPhoneApp) html.classList.add('settled');
+else setTimeout(() => html.classList.add('settled'), 3500); // whatever happens, they show
 if (iPhoneApp) {
   const soon = (ms) => setTimeout(() => {
     if (turned()) return;
+    if (!nudging && screenGap() > 0) html.classList.remove('settled'); // short again (coming back)
     nudgeScreen().then((gap) => {
+      html.classList.add('settled');
       if (turned()) return;
       html.classList.toggle('is-short', gap > 0);
       window.dispatchEvent(new Event('resize'));
