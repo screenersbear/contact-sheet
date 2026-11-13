@@ -1543,6 +1543,8 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
+/* Open at a page from the start, the cover's art waits until the book shuts (book.js). */
+.nb.cover-later .nb-front { background-image: none; }
 /* Stickers. Each is cut off at the cover's edge, curves away there, and the
    next bit wraps round the edge, standing at right angles to the cover. */
 .nb-stickers, .nb-sticker-edges, .nb-stick-clip, .nb-fold { position: absolute; inset: 0; pointer-events: none; }

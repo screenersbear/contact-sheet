@@ -144,7 +144,8 @@
   // ---------- The Eye's own data, read from where it keeps it ----------
   const EYE_STATE = 'dailies_state_v1';
   const EYE_IDB = 'starky-moodboards';
-  const openEyePhotos = () => open(EYE_IDB, 1, (db) => { if (!db.objectStoreNames.contains('images')) db.createObjectStore('images'); });
+  // Version 1: the upgrade only runs when the database is first made, so the store is always new.
+  const openEyePhotos = () => open(EYE_IDB, 1, (db) => db.createObjectStore('images'));
   function eyeState() {
     const raw = store.get(EYE_STATE);
     if (!raw) return null;
@@ -361,12 +362,9 @@
   // as it goes (pieces read as slices piled up before they were freed).
   const crcAdd = (c, bytes) => { for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8); return c; };
   const crcBytes = (bytes) => (crcAdd(0xffffffff, bytes) ^ 0xffffffff) >>> 0;
-  async function crcOf(blob, onBytes = () => {}) {
+  async function crcOf(blob) {
     let c = 0xffffffff;
-    const eat = (bytes) => {
-      c = crcAdd(c, bytes);
-      onBytes(bytes.length);
-    };
+    const eat = (bytes) => { c = crcAdd(c, bytes); };
     if (typeof blob.stream === 'function') {
       const reader = blob.stream().getReader();
       for (;;) {
@@ -390,9 +388,9 @@
     };
   }
 
-  // entries: [{ name, blob }], stored as they are. The Blob that comes back is
-  // made of the entries' own Blobs.
-  async function zipOf(entries, onBytes) {
+  // entries: [{ name, blob, crc }], stored as they are, each with its CRC
+  // already worked out. The Blob that comes back is made of the entries' own Blobs.
+  async function zipOf(entries) {
     const enc = new TextEncoder();
     const { time, date } = dosTime(new Date());
     const parts = [];
@@ -401,7 +399,7 @@
     for (const e of entries) {
       const name = enc.encode(e.name);
       const size = e.blob.size;
-      const crc = e.crc != null ? e.crc : await crcOf(e.blob, onBytes);
+      const { crc } = e;
       const big = size >= ZIP_LIMIT;
       const far = offset >= ZIP_LIMIT;
       const local = new DataView(new ArrayBuffer(30 + (big ? 20 : 0)));
@@ -526,9 +524,9 @@
     }
     return {
       has: (name) => byName.has(name),
+      // Only asked for names has() found: openBackupZip checks every one first.
       async get(name) {
         const f = byName.get(name);
-        if (!f) throw new Error('Part of that backup is missing.');
         const head = await view(f.at, 30);
         const start = f.at + 30 + head.getUint16(26, true) + head.getUint16(28, true);
         const part = file.slice(start, start + f.packed);
@@ -790,7 +788,7 @@
       if (got.size < of) throw new Error(`That backup is in ${of} files, and ${got.size} of them ${got.size === 1 ? 'was' : 'were'} picked. Pick all ${of} together.`);
       use = [...got.values()];
     }
-    const zip = { has: (n) => use.some((z) => z.has(n)), get: (n) => (use.find((z) => z.has(n)) || head).get(n) };
+    const zip = { has: (n) => use.some((z) => z.has(n)), get: (n) => use.find((z) => z.has(n)).get(n) };
     const names = [];
     const walk = (v) => {
       if (Array.isArray(v)) v.forEach(walk);
@@ -937,9 +935,10 @@
   // Pictures are kept as bytes, not Blobs: Safari's stored Blobs break when
   // a record is saved again.
   const LINKS = 'df-links';
+  // Version 1: the upgrade only runs when the database is first made, so the stores are always new.
   const openLinks = () => open(LINKS, 1, (db) => {
-    if (!db.objectStoreNames.contains('links')) db.createObjectStore('links', { keyPath: 'id' });
-    if (!db.objectStoreNames.contains('pictures')) db.createObjectStore('pictures');
+    db.createObjectStore('links', { keyPath: 'id' });
+    db.createObjectStore('pictures');
   });
   async function withLinks(fn) {
     const db = await openLinks();

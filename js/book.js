@@ -199,7 +199,7 @@ const currentMode = () => modeOfHash((location.hash || '#/').slice(1) || '/');
 export function mountBook(view, startMode, onNew) {
   document.body.dataset.route = 'book';
   view.innerHTML = `
-    <div class="nb no-anim${startMode === 'closed' ? ' is-waiting' : ''}" data-mode="${startMode}">
+    <div class="nb no-anim${startMode === 'closed' ? ' is-waiting' : ' cover-later'}" data-mode="${startMode}">
       <div class="nb-ground"></div>
       <div class="nb-float">
         <div class="nb-book">
@@ -376,6 +376,7 @@ export function mountBook(view, startMode, onNew) {
     }
     clearTimeout(timer);
     const wasShut = root.dataset.mode === 'closed';
+    if (next === 'closed') root.classList.remove('cover-later');
     root.classList.toggle('no-anim', instant);
     if (next === 'toc') {
       drawToc();
@@ -518,7 +519,17 @@ export function mountBook(view, startMode, onNew) {
   measure();
   setMode(startMode, true);
   placeTabHits();
-  Promise.race([Promise.all([artReady(), stickers.ready]), new Promise((done) => setTimeout(done, 1500))]).then(() => root.classList.remove('is-waiting'));
+  if (startMode === 'closed') {
+    Promise.race([Promise.all([artReady(), stickers.ready]), new Promise((done) => setTimeout(done, 1500))]).then(() => root.classList.remove('is-waiting'));
+  } else {
+    // Opened at a page (as it always is in Documenting Fictions), the cover is
+    // turned away, so its art isn't put on until the book starts to shut
+    // (setMode). It's fetched once the page has loaded, ready for then, rather
+    // than holding up the page that's actually showing.
+    const warm = () => setTimeout(artReady, 0);
+    if (document.readyState === 'complete') warm();
+    else window.addEventListener('load', warm, { once: true });
+  }
 
   return {
     setMode,
