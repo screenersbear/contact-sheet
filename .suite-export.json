@@ -15,10 +15,10 @@
   "art/ocean-cover.webp": "32efa825ee3bacfd82dbea49892636d16d8e1544dc88f263427b8f859029242f",
   "art/orange-block.webp": "28aaa50ce8f604a23b29a86cee7569cbab107a5b9efc679edf182cd571ef657e",
   "art/orange-cover.webp": "8fcb91da31a06f2f566a8d19f54ccbfb3fed261474a0028ab6cf958b626adaa8",
-  "built/app.css": "19755e878b1dcc40a9f545da917321087ae89caebe55caa3f82f90fec41a876b",
-  "built/app.js": "06a36cd075af3ec423c2699887d427fe05bc94ec1f3cfbe657fdbb4eb73b1eea",
+  "built/app.css": "c887efcc801787f3373f9861108e3ada49ad7a31244e7a471cf948c7307d734c",
+  "built/app.js": "60ee5ab27dbfd39b3314b02c84528cb6ce1c74244bb472c481adfa00449a68b5",
   "built/shared-data.js": "022998949d22b685c35a6d2efdabc725b0330db6288cbe016d234f52b77ab0ce",
-  "components/band.js": "72e68e93774d78913ff6812dedd09d711640e92252c8b62ed702d1268352148a",
+  "components/band.js": "34a81d0a95b47cc17dcd3d2c4a259add5fac4604ba3c443340cca8673a297c19",
   "components/dialogs.js": "342322868e722d46ef7286daff515e3e35c8c08944b562342566615b739d941c",
   "components/frame.js": "8418fb30835704cac6c1ba0a6feebf24e4ade6f98e19a2acced9f2b7db59f1fa",
   "components/guide-marks.js": "00319365716121a70be575922d0077232cadf027fcbc4cc546af125e3127d191",
@@ -80,9 +80,9 @@
   "icons/icon.svg": "ea9ae8952133e5dd87ab70c5b95419cb1eec1baf1ab656ec24803689bfdeba6c",
   "index.html": "a0ed89f9e71ef0b2a27f489ef65c3430f3b0c19706d79cc7e96604ce90b7850c",
   "manifest.json": "17ab588993afbcd59169d12d011b29bb8e44c30c30e0d31c460bcf6bab7d04a3",
-  "pages/book-contents.js": "c2f2422f830fb0f2de8b1f0d22cb3c11c5a1facaac0e2302fceeb23f111d92a4",
+  "pages/book-contents.js": "d98e9008c7431f58f450b7afe90abbbd52a71c13caacb62580dc75b5b2de3850",
   "pages/book-sizes.js": "202facc0807e78ff2269c4626279092eb08aa719fd9517175c3feeb416330214",
-  "pages/book-touch.js": "61b222ce964e82b32f90f824c0ac8b3abb625d36596729c1882abe716de94047",
+  "pages/book-touch.js": "946f6f3ace71e9451b82462b9063618104b32fc8c9c43ef3a98eebbd1150cd83",
   "pages/book.js": "b38e95727b6329c26756f957f33ee10e4570e7af3f121b09f7aa53fe553b7aaf",
   "pages/cover-spin.js": "4acf6c059ec8c32d2ce9fb8df97ee76069d206c7da7cecbd35d646d2693b0e69",
   "pages/editor-buttons.js": "4dfa16991bd4812f995c4b5e328ccde83c5ee1e63b4393dde67208a2ff175c9b",
@@ -112,7 +112,7 @@
   "pages/template-menu.js": "fc4bfcf4714d8663d31f6186526972504d2b4abdde5e6c749936af5cd4d88fbf",
   "pages/welcome.js": "4880850ce25256e0c2720bd80dbfb8046f1d044e2d6379e19a0633de91386430",
   "styles/band-colors.css": "a173df4f4c6fd98c3e163e14fb9a3d7bd61999c0e0735f6df265ec0e33e32075",
-  "styles/band.css": "fb944a3ec1c7953afd7f72d161151f35fceeb306f0e6d057d57c1cfa02d8490a",
+  "styles/band.css": "322546c7ecd94872e75940fecdff73afe4c175a88bd8e299bd2e8c74c34b0583",
   "styles/base.css": "8057fcdd6758d3f74ed36f7df8e0e60526987c16ebb28fb0f39d5beb39133a64",
   "styles/buttons.css": "5a96c4da118e6827853dfec369237998219bd85c384be5b4c13633930a7dee39",
   "styles/chapters.css": "4bef684cb45c4fdbd4d384848823e837df161e76be5fa4a9724591fd005736f2",
@@ -141,7 +141,7 @@
   "styles/toast.css": "435192209a304082ee468478c43202798af8f46864719cbc48c4b5b236305b1c",
   "styles/top-bar.css": "c5ea772c2e51e56b9729d3f4804e4a191c1bdfba2b9db039ae44d6dd21b64658",
   "styles/wide.css": "5a3034b58572cca76d606c96cfe3af86303630c138dcb47122a9254ef1f302a5",
-  "sw.js": "56c297c16ec308e15585343f3596f2e359ebc98c5466a33d9aef7b6e3d271c44"
+  "sw.js": "a09f33427ed0bfbf8844bd7adacf71d78c5fb726a1fb15deb15edd0fa0360269"
  },
  "keep": [
   ".DS_Store",
@@ -158,6 +158,6 @@
  ],
  "name": "Contact Sheet",
  "notebook": "contact-sheet",
- "suite": "88f28b3 + changes not committed",
+ "suite": "3f082b9 + changes not committed",
  "suite_folder": "../Documenting Fictions"
 }

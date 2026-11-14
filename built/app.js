@@ -3039,11 +3039,11 @@ const bandDate = (d = new Date()) => d.toLocaleDateString("en-GB", {
 	day: "numeric",
 	month: "short"
 }).replace(",", "");
-function bandHtml({ title, place, add }) {
+function bandHtml({ title, place }) {
 	return `
     <header class="band">
       <h1 class="band-title">${esc(title)}</h1>
-      <div class="band-btns">${ring("Back to your notebooks", "data-books", BOOKS)}${ring(add, "data-band-add", PLUS)}${ring("Options", "data-app-menu", MENU)}</div>
+      <div class="band-btns">${ring("Back to your notebooks", "data-books", BOOKS)}${ring("Options", "data-app-menu", MENU)}</div>
       ${MARK}
       <p class="band-line"><b>${esc(place)}</b><span class="band-rule"></span><span class="band-date">${bandDate()}</span></p>
     </header>`;
@@ -5745,8 +5745,7 @@ function addContents(ed) {
 		return `
       ${bandHtml({
 			title: "Layouts",
-			place: "All layouts",
-			add: "New layout"
+			place: "All layouts"
 		})}
       <div class="list-head"><h2>Newest first <span>${ed.chapters.length}</span></h2><button type="button" class="list-act" data-toc="new">${PLUS}New layout</button></div>
       <div class="list-rule"></div>
@@ -6288,7 +6287,7 @@ function addTouch(ed) {
 			location.hash = "#/";
 			return;
 		}
-		if (e.target.closest("[data-band-add], [data-toc=\"new\"]")) {
+		if (e.target.closest("[data-toc=\"new\"]")) {
 			ed.startNew();
 			return;
 		}

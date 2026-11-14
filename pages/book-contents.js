@@ -28,7 +28,7 @@ export function addContents(ed) {
   function pageHtml() {
     const rows = ed.chapters.map(rowHtml).join('');
     return `
-      ${bandHtml({ title: 'Layouts', place: 'All layouts', add: 'New layout' })}
+      ${bandHtml({ title: 'Layouts', place: 'All layouts' })}
       <div class="list-head"><h2>Newest first <span>${ed.chapters.length}</span></h2><button type="button" class="list-act" data-toc="new">${PLUS}New layout</button></div>
       <div class="list-rule"></div>
       <div class="toc-list">${rows || '<p class="toc-empty">No layouts yet.</p>'}</div>

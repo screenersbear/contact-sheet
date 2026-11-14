@@ -1,6 +1,6 @@
 // The band on top of the home page (round 2, DESIGN.md 9.1), as Ref's: the
-// title in the partner colour, its ring buttons (the notebooks button, only
-// in the suite; a +; Options), the rising mark (three bars), and the label
+// title in the partner colour, its two ring buttons (the notebooks button,
+// only in the suite, and Options: 14 Nov, NEW LAYOUT sits beside the list), the rising mark (three bars), and the label
 // line: where you are, a hairline, today's date. Also the short band for a
 // page inside (the new layout guide, export).
 import { esc } from './util.js';
@@ -18,12 +18,12 @@ export const MORE = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden
 // FRI 13 NOV (the capitals are the band's).
 export const bandDate = (d = new Date()) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '');
 
-// title: the band's big word; place: the label line's; add: the + button's name.
-export function bandHtml({ title, place, add }) {
+// title: the band's big word; place: the label line's.
+export function bandHtml({ title, place }) {
   return `
     <header class="band">
       <h1 class="band-title">${esc(title)}</h1>
-      <div class="band-btns">${ring('Back to your notebooks', 'data-books', BOOKS)}${ring(add, 'data-band-add', PLUS)}${ring('Options', 'data-app-menu', MENU)}</div>
+      <div class="band-btns">${ring('Back to your notebooks', 'data-books', BOOKS)}${ring('Options', 'data-app-menu', MENU)}</div>
       ${MARK}
       <p class="band-line"><b>${esc(place)}</b><span class="band-rule"></span><span class="band-date">${bandDate()}</span></p>
     </header>`;

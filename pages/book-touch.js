@@ -87,12 +87,12 @@ export function addTouch(ed) {
       return;
     }
     // The band: the notebooks button shuts the notebook (inside the suite,
-    // back to the shelf); + and New layout start a new one.
+    // back to the shelf); NEW LAYOUT starts a new one.
     if (e.target.closest('[data-books]')) {
       location.hash = '#/';
       return;
     }
-    if (e.target.closest('[data-band-add], [data-toc="new"]')) {
+    if (e.target.closest('[data-toc="new"]')) {
       ed.startNew();
       return;
     }

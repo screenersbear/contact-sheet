@@ -38,7 +38,7 @@ html:not(.df-suite) [data-books] { display: none; }
 .list-head h2 span { font-weight: 500; color: var(--dim); font-variant-numeric: tabular-nums; }
 .list-act { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 8px; margin-right: -8px; border: 0; background: none;
   font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--band-on-paper, var(--ink)); cursor: pointer; }
-.list-act svg { width: 14px; height: 14px; stroke-width: 2.4; }
+.list-act svg { width: 16px; height: 16px; stroke-width: 2; }
 .list-rule { flex: none; border-top: 1px solid var(--text); }
 
 /* The short band: 56px under the safe area, back and a ring at the right,
