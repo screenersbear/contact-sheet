@@ -1,0 +1,32 @@
+/* How the notebooks connect, the looks every notebook shares (round 2,
+   connect/NOTES.md): the two minis with an arrow, a slip at the top of a
+   list ("FROM THE EYE"), and the rows of what passed on and came in.
+   The markup comes from shared/data/connect.js. This is the master copy:
+   tools/sync.py shared copies it into each notebook's styles/shared/. */
+.df-pair { flex: none; display: inline-flex; align-items: center; gap: 4px; color: #313D45; }
+.df-mini { flex: none; display: inline-flex; width: 20px; height: 20px; border-radius: 4px; }
+
+/* PASSED ON and CAME IN: a record, each row opening the other notebook. */
+.df-record { margin-top: 8px; border-top: 1px solid #313D45; }
+.df-record-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 0; border: 0; border-bottom: 1px solid #E1E1DC; background: none; color: #313D45; font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+.df-record-row[aria-disabled="true"] { cursor: default; }
+.df-record-words { flex: 1; min-width: 0; }
+.df-record-title { display: block; font-size: 17px; line-height: 22px; }
+.df-record-line { display: block; margin-top: 2px; font-size: 14px; line-height: 19px; color: #5C666D; }
+.df-record-chev { flex: none; display: inline-flex; color: #9AA3A8; }
+.df-record-chev svg { width: 18px; height: 18px; }
+
+/* A slip at the top of a notebook's list (connect/03, 05, 06): white, the
+   Rounds card shadow, a notched FROM tag in the sender's colours, a light
+   title, one dim line, what it brought, then the main button (in the
+   receiving notebook's colour: --df-slip-main, --df-slip-main-text) and NOT NOW. */
+.df-slip { margin-top: 12px; padding: 14px 14px 10px; border-radius: 8px; background: #FFFFFF; color: #313D45; box-shadow: 0 1px 0 #E1E1DC, 0 10px 24px rgba(49, 61, 69, .10); }
+.df-slip-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.df-slip-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 20px 0 4px; border-radius: 3px 0 0 3px; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); font-size: 11px; font-weight: 700; letter-spacing: .12em; line-height: 14px; text-transform: uppercase; white-space: nowrap; }
+.df-slip-tag svg { flex: none; width: 18px; height: 18px; border-radius: 3px; }
+.df-slip-when { font-size: 11px; font-weight: 500; letter-spacing: .12em; line-height: 14px; text-transform: uppercase; color: #5C666D; }
+.df-slip-title { margin: 12px 0 0; font-size: 22px; font-weight: 300; line-height: 27px; overflow-wrap: anywhere; }
+.df-slip-line { margin: 4px 0 0; font-size: 15px; line-height: 21px; color: #5C666D; }
+.df-slip-actions { display: flex; align-items: center; gap: 4px; margin-top: 14px; }
+.df-slip-main { height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: var(--df-slip-main, #313D45); color: var(--df-slip-main-text, #FFFFFF); font: inherit; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.df-slip-later { height: 44px; padding: 0 12px; border: 0; background: none; color: #5C666D; font: inherit; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }

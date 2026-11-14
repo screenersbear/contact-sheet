@@ -1,7 +1,11 @@
-// The home page (round 2, 01-home): the band, then every layout newest
-// first, each a strip of its first slides, its name, "N slides · date" and
-// its ... menu; the tip at the end.
+// The home page (round 2, 01-home): the band, a slip when posts have come
+// from The Eye (posts-slip.js), then every layout newest first, each a strip
+// of its first slides, its name, "N slides · date" and its ... menu; the tip
+// at the end.
 import { listProjects } from '../data/db.js';
+import { makePostsFromEye } from '../data/from-eye.js';
+import { slipsHtml, wireSlips } from './posts-slip.js';
+import { openPosts } from './posts.js';
 import { bandHtml, PLUS, MORE } from '../components/band.js';
 import { esc, shortDate, isIOS, isStandalone } from '../components/util.js';
 import { pageWord } from '../data/formats.js';
@@ -9,6 +13,9 @@ import { TIP_KEY, TIP } from './book-sizes.js';
 
 export function addContents(ed) {
   Object.assign(ed, { drawPages, releaseThumbs, drawToc });
+  ed.slips = '';
+  ed.slipUrls = [];
+  wireSlips(ed.leftEl, () => drawToc(), openPosts);
   function rowHtml(p) {
     const u = ed.thumbs.get(p.id);
     return `
@@ -29,6 +36,7 @@ export function addContents(ed) {
     const rows = ed.chapters.map(rowHtml).join('');
     return `
       ${bandHtml({ title: 'Layouts', place: 'All layouts' })}
+      ${ed.slips}
       <div class="list-head"><h2>Newest first <span>${ed.chapters.length}</span></h2><button type="button" class="list-act" data-toc="new">${PLUS}New layout</button></div>
       <div class="list-rule"></div>
       <div class="toc-list">${rows || '<p class="toc-empty">No layouts yet.</p>'}</div>
@@ -42,12 +50,19 @@ export function addContents(ed) {
   function releaseThumbs() {
     ed.thumbs.forEach((u) => URL.revokeObjectURL(u));
     ed.thumbs = new Map();
+    ed.slipUrls.forEach((u) => URL.revokeObjectURL(u));
+    ed.slipUrls = [];
   }
 
+  // Finals waiting from The Eye are made into posts first (once), then drawn.
+  let making = false;
   async function drawToc() {
-    const projects = await listProjects();
-    if (ed.destroyed) return;
+    const [projects, urls] = [await listProjects(), []];
+    const slips = await slipsHtml(urls).catch(() => '');
+    if (ed.destroyed) { urls.forEach((u) => URL.revokeObjectURL(u)); return; }
     releaseThumbs();
+    ed.slips = slips;
+    ed.slipUrls = urls;
     ed.chapters = projects;
     ed.chapters.forEach((p) => p.thumb && ed.thumbs.set(p.id, URL.createObjectURL(p.thumb)));
     ed.showTip = (() => {
@@ -59,5 +74,9 @@ export function addContents(ed) {
       }
     })();
     drawPages();
+    if (!making) {
+      making = true;
+      makePostsFromEye().catch(() => 0).then((n) => { making = false; if (n && !ed.destroyed) drawToc(); });
+    }
   }
 }

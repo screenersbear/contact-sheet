@@ -22,6 +22,14 @@ export function blankLayout(ratio = DEFAULT_RATIO) {
   };
 }
 
+// A post of photos edge to edge, one to a slide (the posts made from The
+// Eye's finals): as many slides as photos, at least one.
+export function stripLayout(photoIds, ratio = DEFAULT_RATIO) {
+  const ids = photoIds && photoIds.length ? photoIds : [null];
+  const h = RATIOS[ratio].h;
+  return { ...blankLayout(ratio), slides: ids.length, frames: ids.map((id, i) => newFrame(i * SLIDE_W, 0, SLIDE_W, h, id)) };
+}
+
 // A template's layout as a fresh project: same frames, all empty.
 export function layoutFromTemplate(t) {
   const out = {};

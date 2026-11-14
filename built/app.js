@@ -357,6 +357,15 @@ function blankLayout(ratio = "3:4") {
 		frames: [newFrame(0, 0, SLIDE_W, h)]
 	};
 }
+function stripLayout(photoIds, ratio = "3:4") {
+	const ids = photoIds && photoIds.length ? photoIds : [null];
+	const h = RATIOS[ratio].h;
+	return {
+		...blankLayout(ratio),
+		slides: ids.length,
+		frames: ids.map((id, i) => newFrame(i * SLIDE_W, 0, SLIDE_W, h, id))
+	};
+}
 function layoutFromTemplate(t) {
 	const out = {};
 	LAYOUT_KEYS.forEach((k) => out[k] = t[k]);
@@ -5719,6 +5728,340 @@ function modeOfHash(h) {
 }
 const currentMode = () => modeOfHash((location.hash || "#/").slice(1) || "/");
 
+// data/from-eye.js
+const EYE_PHOTOS = "starky-moodboards";
+const D$2 = /* @__PURE__ */ __name(() => window.DFData, "D");
+const C$2 = /* @__PURE__ */ __name(() => window.DFConnect, "C");
+const ready = () => !!(D$2() && C$2() && D$2().linksWhere);
+function eyeFinals(shootId) {
+	return new Promise((done) => {
+		let req;
+		try {
+			req = indexedDB.open(EYE_PHOTOS, 1);
+		} catch {
+			done([]);
+			return;
+		}
+		req.onupgradeneeded = () => req.result.createObjectStore("images");
+		req.onerror = () => done([]);
+		req.onblocked = () => done([]);
+		req.onsuccess = () => {
+			const db = req.result;
+			try {
+				const get = db.transaction("images").objectStore("images").get(`${shootId}__final`);
+				get.onsuccess = () => {
+					db.close();
+					const v = get.result;
+					done(Array.isArray(v) ? v.map((x) => typeof x === "string" ? { src: x } : x).filter((x) => x && x.src) : []);
+				};
+				get.onerror = () => {
+					db.close();
+					done([]);
+				};
+			} catch {
+				db.close();
+				done([]);
+			}
+		};
+	});
+}
+async function asFile(src, name) {
+	const blob = await (await fetch(src)).blob();
+	return new File([blob], name, { type: blob.type || "image/jpeg" });
+}
+async function thumbOf(p, photos) {
+	const urls = [];
+	try {
+		const map = {};
+		for (const ph of photos) {
+			const u = URL.createObjectURL(ph.preview);
+			urls.push(u);
+			map[ph.id] = {
+				photo: ph,
+				src: await loadImage(u)
+			};
+		}
+		const c = previewCanvas(p, (pid) => map[pid] || null, {
+			height: 200,
+			count: Math.min(3, p.slides),
+			gap: 11
+		});
+		const ctx = c.getContext("2d");
+		ctx.globalCompositeOperation = "destination-over";
+		ctx.fillStyle = "#ffffff";
+		ctx.fillRect(0, 0, c.width, c.height);
+		const blob = await canvasToBlob(c, "image/jpeg", .8);
+		c.width = c.height = 0;
+		return blob;
+	} catch {
+		return null;
+	} finally {
+		urls.forEach((u) => URL.revokeObjectURL(u));
+	}
+}
+async function makePost(link, finals, picks, kind) {
+	const title = String(link.title || "").trim() || "New work";
+	const p = await saveProject({
+		name: `${title}, ${kind}`,
+		photoIds: [],
+		thumb: null,
+		...stripLayout([]),
+		caption: link.caption || "",
+		fromEye: link.id,
+		post: kind
+	});
+	const files = await Promise.all(picks.map((i) => asFile(finals[i].src, `${title} ${i + 1}.jpg`)));
+	const { photos } = await importFiles(p.id, files);
+	const ids = photos.map((ph) => ph.id);
+	const made = {
+		...p,
+		...stripLayout(ids),
+		photoIds: ids
+	};
+	made.thumb = await thumbOf(made, photos);
+	return saveProject(made);
+}
+async function postsFor(link) {
+	const finals = await eyeFinals(link.fromId);
+	const { carousel, single } = C$2().pickPosts(finals.length);
+	const one = single !== null ? await makePost(link, finals, [single], "single") : null;
+	const many = carousel.length ? await makePost(link, finals, carousel, "carousel") : null;
+	return [many, one].filter(Boolean).map((p) => p.id);
+}
+let running = null;
+function makePostsFromEye() {
+	if (!ready()) return Promise.resolve(0);
+	if (!running) {
+		running = (async () => {
+			let n = 0;
+			const waiting = (await D$2().linksWhere({
+				toApp: "contact-sheet",
+				type: "finals"
+			})).filter((l) => !l.madeAt);
+			for (const l of waiting) {
+				const now = await D$2().getLink(l.id);
+				if (!now || now.madeAt) continue;
+				const postIds = await postsFor(now);
+				await D$2().saveLink({
+					...now,
+					madeAt: new Date().toISOString(),
+					postIds
+				});
+				n += 1;
+			}
+			return n;
+		})().finally(() => {
+			running = null;
+		});
+	}
+	return running;
+}
+async function postsOf(linkId, getProject) {
+	if (!ready()) return null;
+	const link = await D$2().getLink(linkId);
+	if (!link) return null;
+	const posts = [];
+	for (const id of link.postIds || []) {
+		const p = await getProject(id);
+		if (p) posts.push({
+			p,
+			photos: await photosForProject(id)
+		});
+	}
+	return {
+		link,
+		posts
+	};
+}
+
+// pages/posts-slip.js
+const C$1 = /* @__PURE__ */ __name(() => window.DFConnect, "C");
+async function coverOf(id, urls) {
+	const p = await getProject(id);
+	const first = p && p.frames.find((f) => f.photoId);
+	const ph = first && await getPhoto(first.photoId);
+	if (!ph || !ph.thumb) return {
+		p,
+		url: ""
+	};
+	const url = URL.createObjectURL(ph.thumb);
+	urls.push(url);
+	return {
+		p,
+		url
+	};
+}
+function postThumb({ p, url }) {
+	if (!p) return "";
+	const many = p.post !== "single";
+	const face = `<span class="cs-slip-face">${url ? `<img src="${url}" alt="" draggable="false" />` : ""}</span>`;
+	return `<span class="cs-slip-post"><span class="cs-slip-stack${many ? " is-many" : ""}" aria-hidden="true">${face}</span>
+    <span class="cs-slip-what">${many ? `Carousel · ${p.slides}` : "Single"}</span></span>`;
+}
+async function slipsHtml(urls) {
+	if (!C$1() || !window.DFData) return "";
+	const waiting = (await C$1().slipsFor("contact-sheet")).filter((l) => l.type === "finals" && l.madeAt && (l.postIds || []).length);
+	const out = [];
+	for (const link of waiting) {
+		const posts = await Promise.all(link.postIds.map((id) => coverOf(id, urls)));
+		const made = posts.filter((x) => x.p);
+		if (!made.length) continue;
+		out.push(C$1().slipHtml({
+			link,
+			title: link.title || "From a shoot",
+			line: C$1().postsLine(link.count || 0, made.length),
+			body: `<div class="cs-slip-posts">${made.map(postThumb).join("")}</div>`,
+			main: "Look them over"
+		}));
+	}
+	return out.join("");
+}
+function wireSlips(root, redraw, open) {
+	root.addEventListener("click", async (e) => {
+		const slip = e.target.closest("[data-slip]");
+		if (!slip || !C$1()) return;
+		const go = e.target.closest("[data-slip-open]");
+		if (!go && !e.target.closest("[data-slip-later]")) return;
+		const link = await window.DFData.getLink(slip.dataset.slip);
+		if (!link) return;
+		await (go ? C$1().openSlip(link) : C$1().tuckSlip(link));
+		slip.remove();
+		redraw();
+		if (go) open(link.id);
+	});
+}
+
+// pages/posts.js
+const D$1 = /* @__PURE__ */ __name(() => window.DFData, "D");
+const C = () => window.DFConnect;
+const NOTE = {
+	carousel: "Picked through the set, so it isn't five of one look. The cover is the first final.",
+	single: "A shot left over, for a second day."
+};
+function postHtml({ p }, i) {
+	const what = p.post === "single" ? "Single" : `Carousel, ${p.slides} ${p.slides === 1 ? "shot" : "shots"}`;
+	const dots = p.slides > 1 ? `<div class="posts-dots" aria-hidden="true">${"<span></span>".repeat(p.slides)}</div>` : "";
+	return `<section class="posts-post" data-post="${esc(p.id)}">
+    <p class="posts-label">Post ${i + 1} · ${esc(what)}</p>
+    <div class="posts-strip" data-strip aria-label="${esc(p.name)}" role="img"></div>${dots}
+    <label class="posts-label posts-cap-label" for="cap-${esc(p.id)}">Caption</label>
+    <textarea class="posts-caption" id="cap-${esc(p.id)}" rows="4" data-caption>${esc(p.caption || "")}</textarea>
+    <p class="posts-note">${esc(NOTE[p.post] || "")}</p>
+    <div class="posts-actions"><button type="button" class="posts-edit" data-edit>Edit</button><button type="button" class="posts-share" data-share>Save and share</button></div>
+  </section>`;
+}
+async function drawStrip(strip, { p, photos }) {
+	const urls = [];
+	const map = {};
+	for (const ph of photos) {
+		if (!ph.preview) continue;
+		const u = URL.createObjectURL(ph.preview);
+		urls.push(u);
+		map[ph.id] = {
+			photo: ph,
+			src: await loadImage(u).catch(() => null)
+		};
+	}
+	for (let i = 0; i < p.slides; i++) {
+		const c = previewCanvas(p, (pid) => map[pid] && map[pid].src ? map[pid] : null, {
+			height: 640,
+			from: i,
+			count: 1
+		});
+		c.className = "posts-slide";
+		strip.append(c);
+	}
+	urls.forEach((u) => URL.revokeObjectURL(u));
+}
+function followDots(post) {
+	const strip = post.querySelector("[data-strip]");
+	const dots = [...post.querySelectorAll(".posts-dots span")];
+	if (!dots.length) return;
+	const mark = () => {
+		const w = strip.firstElementChild ? strip.firstElementChild.getBoundingClientRect().width + 8 : 1;
+		const at = Math.min(dots.length - 1, Math.round(strip.scrollLeft / w));
+		dots.forEach((d, k) => d.classList.toggle("on", k === at));
+	};
+	strip.addEventListener("scroll", mark, { passive: true });
+	mark();
+}
+async function tellRounds(p, shoot) {
+	if (!D$1() || !C() || !C().connectOn("posts")) return;
+	const handles = C().handlesIn(p.caption);
+	if (!handles.length) return;
+	const [had] = await D$1().linksWhere({
+		fromApp: "contact-sheet",
+		fromId: p.id,
+		type: "post-people"
+	});
+	if (had && had.takenAt) return;
+	await D$1().saveLink({
+		...had || {},
+		fromApp: "contact-sheet",
+		fromId: p.id,
+		toApp: "rounds",
+		toId: "",
+		type: "post-people",
+		title: shoot,
+		handles,
+		sharedAt: new Date().toISOString()
+	});
+}
+async function copyCaption(text) {
+	try {
+		await navigator.clipboard.writeText(text);
+		return true;
+	} catch {
+		return false;
+	}
+}
+async function openPosts(linkId) {
+	const got = await postsOf(linkId, getProject);
+	if (!got || !got.posts.length) {
+		toast("Those posts are gone.");
+		return null;
+	}
+	const { link, posts } = got;
+	if (!link.openedAt && !link.tuckedAt) C().openSlip(link).catch(() => {});
+	document.querySelectorAll(`[data-slip="${CSS.escape(link.id)}"]`).forEach((el) => el.remove());
+	const s = openSheet({
+		title: C().postsTitle(posts.length, link.title),
+		className: "sheet-page sheet-posts"
+	});
+	s.body.innerHTML = `
+    ${shortBandHtml({
+		name: posts.length === 1 ? "A post" : "Two posts",
+		backAttr: "data-close"
+	})}
+    <div class="page-scroll">
+      <div class="posts-tag">${C().tagHtml(link.fromApp)}</div>
+      <h1 class="page-title posts-title">${esc(C().postsTitle(posts.length, link.title))}</h1>
+      <p class="page-ask posts-ask">Picked from the finals, in the order you added them. Credits come from the shoot's team.</p>
+      ${posts.map(postHtml).join("")}
+    </div>`;
+	posts.forEach((post) => {
+		const el = s.body.querySelector(`[data-post="${CSS.escape(post.p.id)}"]`);
+		drawStrip(el.querySelector("[data-strip]"), post).then(() => followDots(el));
+		const save = debounce(() => saveProject(post.p).catch(() => {}), 500);
+		el.querySelector("[data-caption]").addEventListener("input", (e) => {
+			post.p.caption = e.target.value;
+			save();
+		});
+		el.querySelector("[data-edit]").addEventListener("click", async () => {
+			await saveProject(post.p).catch(() => {});
+			s.close();
+			location.hash = `#/edit/${encodeURIComponent(post.p.id)}`;
+		});
+		el.querySelector("[data-share]").addEventListener("click", () => {
+			if (post.p.caption) copyCaption(post.p.caption).then((ok) => ok && toast("Caption copied, to paste in with the post."));
+			saveProject(post.p).catch(() => {});
+			tellRounds(post.p, link.title).catch(() => {});
+			openExport(post.p, Object.fromEntries(post.photos.map((ph) => [ph.id, ph])));
+		});
+	});
+	return s;
+}
+
 // pages/book-contents.js
 function addContents(ed) {
 	Object.assign(ed, {
@@ -5726,6 +6069,9 @@ function addContents(ed) {
 		releaseThumbs,
 		drawToc
 	});
+	ed.slips = "";
+	ed.slipUrls = [];
+	wireSlips(ed.leftEl, () => drawToc(), openPosts);
 	function rowHtml(p) {
 		const u = ed.thumbs.get(p.id);
 		return `
@@ -5747,6 +6093,7 @@ function addContents(ed) {
 			title: "Layouts",
 			place: "All layouts"
 		})}
+      ${ed.slips}
       <div class="list-head"><h2>Newest first <span>${ed.chapters.length}</span></h2><button type="button" class="list-act" data-toc="new">${PLUS}New layout</button></div>
       <div class="list-rule"></div>
       <div class="toc-list">${rows || "<p class=\"toc-empty\">No layouts yet.</p>"}</div>
@@ -5758,11 +6105,20 @@ function addContents(ed) {
 	function releaseThumbs() {
 		ed.thumbs.forEach((u) => URL.revokeObjectURL(u));
 		ed.thumbs = new Map();
+		ed.slipUrls.forEach((u) => URL.revokeObjectURL(u));
+		ed.slipUrls = [];
 	}
+	let making = false;
 	async function drawToc() {
-		const projects = await listProjects();
-		if (ed.destroyed) return;
+		const [projects, urls] = [await listProjects(), []];
+		const slips = await slipsHtml(urls).catch(() => "");
+		if (ed.destroyed) {
+			urls.forEach((u) => URL.revokeObjectURL(u));
+			return;
+		}
 		releaseThumbs();
+		ed.slips = slips;
+		ed.slipUrls = urls;
 		ed.chapters = projects;
 		ed.chapters.forEach((p) => p.thumb && ed.thumbs.set(p.id, URL.createObjectURL(p.thumb)));
 		ed.showTip = (() => {
@@ -5774,6 +6130,13 @@ function addContents(ed) {
 			}
 		})();
 		drawPages();
+		if (!making) {
+			making = true;
+			makePostsFromEye().catch(() => 0).then((n) => {
+				making = false;
+				if (n && !ed.destroyed) drawToc();
+			});
+		}
 	}
 }
 
@@ -6912,7 +7275,8 @@ if (suite || startsOnFirstPage()) {
 	if ((location.hash || "#/") === "#/") history.replaceState(null, "", "#/contents");
 }
 route();
-if (suite && suite.at === "new") setTimeout(newLayout, 400);
+if (suite && suite.get("posts")) makePostsFromEye().catch(() => 0).then(() => openPosts(suite.get("posts")));
+else if (suite && suite.at === "new") setTimeout(newLayout, 400);
 else if (suite && suite.firstVisit) setTimeout(() => {
 	if (!document.querySelector(".sheet-overlay")) welcome("Layouts", openIntro);
 }, 900);

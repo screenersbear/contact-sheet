@@ -1,4 +1,5 @@
 // Contact Sheet starts here. Routes: #/  #/book  #/contents  #/edit/<project id>
+// (and inside the suite, ?posts=<id>: the posts made from a shoot's finals)
 // Set up once, before anything else: sheets above the keyboard, the iPhone's
 // screen, no page zoom.
 import './components/keyboard-fit.js';
@@ -13,6 +14,8 @@ import { esc } from './components/util.js';
 import { openIntro } from './pages/intro.js';
 import { welcome } from './pages/welcome.js';
 import { newLayout } from './pages/new-layout.js';
+import { makePostsFromEye } from './data/from-eye.js';
+import { openPosts } from './pages/posts.js';
 
 const view = document.getElementById('view');
 let destroyCurrent = null;
@@ -60,7 +63,9 @@ window.addEventListener('hashchange', route);
 // Set in Options: open on the home page instead of the shut notebook.
 if (suite || startsOnFirstPage()) { if ((location.hash || '#/') === '#/') history.replaceState(null, '', '#/contents'); }
 route();
-if (suite && suite.at === 'new') setTimeout(newLayout, 400);
+// From The Eye's record of a shoot (?posts=<the hand-off>): its posts, once made.
+if (suite && suite.get('posts')) makePostsFromEye().catch(() => 0).then(() => openPosts(suite.get('posts')));
+else if (suite && suite.at === 'new') setTimeout(newLayout, 400);
 // Inside Documenting Fictions, the first time: how to get back to the shelf,
 // and the tour if it's wanted.
 else if (suite && suite.firstVisit) setTimeout(() => { if (!document.querySelector('.sheet-overlay')) welcome('Layouts', openIntro); }, 900);

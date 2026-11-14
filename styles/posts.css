@@ -1,0 +1,31 @@
+/* Posts made from a shoot's finals (round 2, connect/03 and 04): the slip's
+   posts on the home list (pages/posts-slip.js) and the Two posts page
+   (pages/posts.js). The slip itself: styles/shared/connect.css. */
+:root { --df-slip-main: var(--band); --df-slip-main-text: var(--band-small); }
+.toc-page .df-slip { margin: 12px 0 18px; }
+.cs-slip-posts { display: flex; align-items: flex-end; gap: 18px; margin-top: 14px; }
+.cs-slip-post { display: flex; flex-direction: column; gap: 6px; }
+.cs-slip-stack { position: relative; display: block; width: 108px; height: 140px; padding-top: 12px; box-sizing: border-box; isolation: isolate; }
+.cs-slip-face { position: relative; display: block; width: 96px; height: 128px; border-radius: 4px; overflow: hidden; background: #EFEFEA; }
+.cs-slip-face img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cs-slip-stack.is-many::before, .cs-slip-stack.is-many::after { content: ''; position: absolute; width: 96px; height: 128px; border-radius: 4px; background: #D6DADD; box-shadow: 0 0 0 1px #FFFFFF; }
+.cs-slip-stack.is-many::before { left: 6px; top: 6px; z-index: -1; background: #E1E1DC; }
+.cs-slip-stack.is-many::after { left: 12px; top: 0; z-index: -2; }
+.cs-slip-what { font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+
+.posts-tag { display: flex; }
+.posts-title { margin-top: 12px; }
+.posts-label { display: block; margin: 22px 0 0; font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.posts-strip { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.posts-strip::-webkit-scrollbar { display: none; }
+.posts-slide { flex: none; display: block; width: 240px; height: 320px; border-radius: 4px; background: #EFEFEA; scroll-snap-align: start; }
+.posts-dots { display: flex; justify-content: center; gap: 5px; margin-top: 10px; }
+.posts-dots span { width: 6px; height: 6px; border-radius: 50%; background: #D6DADD; }
+.posts-dots span.on { background: var(--text); }
+.posts-label.posts-cap-label { margin: 14px 0 6px; }
+.posts-caption { display: block; width: 100%; box-sizing: border-box; margin: 0; padding: 12px 14px; border: 0; border-radius: 12px; background: #FFFFFF; box-shadow: inset 0 0 0 1px #E1E1DC; color: var(--text); font: 400 16px/23px var(--ui); resize: vertical; }
+.posts-note { margin: 8px 0 0; font: 400 13px/18px var(--ui); color: var(--dim); }
+.posts-actions { display: flex; gap: 8px; margin-top: 14px; padding-bottom: 12px; border-bottom: 1px solid #E1E1DC; }
+.posts-edit, .posts-share { height: 48px; padding: 0 18px; border: 0; border-radius: 8px; font: 700 13px/1 var(--ui); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.posts-edit { flex: 1; background: none; box-shadow: inset 0 0 0 1.5px var(--text); color: var(--text); }
+.posts-share { flex: 1.6; background: var(--band); color: var(--band-small); }

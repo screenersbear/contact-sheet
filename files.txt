@@ -16,11 +16,13 @@ built/shared-data.js
   data/shared/zip-backup.js
   data/shared/zip-restore.js
   data/shared/links.js
+  data/shared/connect.js
   data/shared/df-data.js
 
 # How it looks, in the order the rules apply.
 built/app.css
   styles/base.css
+  styles/shared/connect.css
   styles/hero-band.css
   styles/top-bar.css
   styles/sections.css
@@ -50,6 +52,7 @@ built/app.css
   styles/new-layout-guide.css
   styles/editor-look.css
   styles/export.css
+  styles/posts.css
 
 # The scripts: app.js and every ES module it imports (and those import), joined
 # by following the imports, so they aren't listed one by one.
