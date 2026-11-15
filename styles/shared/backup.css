@@ -1,0 +1,37 @@
+/* Back up and Restore (round 2, backup/01-back-up.html): the sheet every
+   notebook and the shelf share, from shared/components/backup-sheet.js and
+   restore-sheet.js. It looks the same wherever it opens, so it sets its own
+   colours. This is the master copy: tools/sync.py shared copies it into each
+   notebook's styles/shared/. */
+.dfb-dim { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: flex-end; justify-content: center; background: rgba(49, 61, 69, 0); transition: background .2s; }
+.dfb-dim.in { background: rgba(49, 61, 69, .5); }
+.dfb-sheet { width: 100%; max-width: 480px; max-height: calc(100% - 40px); overflow-y: auto; box-sizing: border-box; padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px)); border-radius: 20px 20px 0 0; background: #FFFFFF; color: #313D45; text-align: left; transform: translateY(100%); transition: transform .22s ease-out; }
+.dfb-dim.in .dfb-sheet { transform: none; }
+.dfb-grab { display: block; width: 36px; height: 5px; margin: 8px auto 0; border-radius: 3px; background: #D6DADD; }
+.dfb-head { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; }
+.dfb-head h2 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .12em; line-height: 16px; text-transform: uppercase; color: #313D45; }
+.dfb-close { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-right: -8px; padding: 0; border: 0; background: none; color: #313D45; cursor: pointer; }
+.dfb-close span { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #313D45; }
+
+/* The two rows: Just <the notebook>, then All four notebooks. */
+.dfb-rows { margin-top: 10px; border-top: 1px solid #313D45; }
+.dfb-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px 0; border: 0; border-bottom: 1px solid #E1E1DC; background: none; color: #313D45; font: inherit; text-align: left; cursor: pointer; }
+.dfb-row:disabled { cursor: default; opacity: .45; }
+.dfb-row[aria-busy="true"] { opacity: 1; }
+.dfb-rows.made .dfb-row:not(.chosen) { opacity: .45; } /* a backup's ready: the row it's of stands out */
+.dfb-tile { flex: none; display: inline-flex; width: 30px; height: 30px; border-radius: 6px; }
+.dfb-four { flex: none; display: grid; grid-template-columns: 14px 14px; gap: 2px; }
+.dfb-four span { display: inline-flex; width: 14px; height: 14px; border-radius: 3px; }
+.dfb-words { flex: 1; min-width: 0; }
+.dfb-title { display: block; font-size: 17px; line-height: 22px; }
+.dfb-line { display: block; margin-top: 2px; font-size: 14px; line-height: 19px; color: #5C666D; }
+.dfb-chev { flex: none; display: inline-flex; color: #9AA3A8; }
+
+/* What's happening, and the buttons: SAVE THE BACKUP, RESTORE, JUST REF. */
+.dfb-text { margin: 14px 0 0; font-size: 15px; line-height: 21px; color: #313D45; }
+.dfb-note { margin: 14px 0 0; font-size: 14px; line-height: 19px; color: #5C666D; }
+.dfb-btn { display: block; width: 100%; height: 48px; margin-top: 12px; padding: 0 12px; border: 0; border-radius: 8px; background: #313D45; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.dfb-btn.quiet { margin-top: 8px; background: none; box-shadow: inset 0 0 0 1.5px #313D45; color: #313D45; }
+.dfb-btn.danger { background: #A1062A; }
+.dfb-btn:disabled { cursor: default; opacity: .6; }
+.dfb-btn[hidden], .dfb-note[hidden] { display: none; }

@@ -1,54 +1,26 @@
-// Options' Backup and Restore: every chapter saved in one zip, and a backup
-// put back.
-import { openSheet } from '../components/sheet.js';
+// Options' Back up and Restore: Back up is the sheet every notebook shares
+// (components/shared/backup-sheet.js: just Layouts, or all four), and
+// Restore puts a backup back.
 import { confirmSheet } from '../components/dialogs.js';
 import { toast } from '../components/toast.js';
-import { makeBackup, isZipBackup, restoreBackup as restoreZip } from '../data/backup.js';
+import { isZipBackup, restoreBackup as restoreZip } from '../data/backup.js';
 
-// Everything in the notebook as one file, and back (backup.js: the
-// notebooks' zip, which the phone never has to hold in memory). Made first, then saved from a tap of
-// its own, as an iPhone only shares a file straight from a tap.
-export function saveBackup() {
-  const D = window.DFData;
-  let open = true;
-  let made = null;
-  const s = openSheet({
-    title: 'Save a backup',
-    className: 'sheet-small sheet-options',
-    body: '<p class="sheet-message" data-msg>Putting it together</p>',
-    onClose: () => { open = false; if (made) made.done(); },
-  });
-  const msg = s.body.querySelector('[data-msg]');
-  makeBackup({
-    extra: { book: document.documentElement.dataset.book || '' },
-    onProgress: (f) => { if (open) msg.textContent = `Putting it together, ${Math.floor(f * 100)}%`; },
-  }).then((m) => {
-    made = m;
-    if (!open) { if (m) m.done(); return; }
-    if (!m) { msg.textContent = 'There is nothing to back up yet.'; return; }
-    const steps = D.backupSteps(m); // one file, or a few on a phone: a tap each
-    msg.textContent = steps.note;
-    msg.insertAdjacentHTML('afterend', `<button type="button" class="btn secondary opt-wide" data-save>${steps.label}</button>`);
-    const btn = s.body.querySelector('[data-save]');
-    btn.addEventListener('click', async () => {
-      try {
-        if (!(await steps.tap())) { btn.textContent = steps.label; return; }
-        s.close();
-        toast('Backup saved');
-      } catch (err) {
-        console.error(err);
-        toast(err.message || 'The backup wasn\'t saved.');
-      }
-    });
-  }).catch((err) => {
-    console.error(err);
-    if (open) msg.textContent = err.message || 'The backup couldn\'t be made.';
-  });
+// Just this notebook, or all four notebooks, as one zip (a few on a phone).
+export function backUp() {
+  window.DFBackupSheet.open({ here: 'contact-sheet' });
 }
+
+// A backup of all four asks first (components/shared/restore-sheet.js):
+// just Layouts' part, the other notebooks left as they are, or all four.
 export async function restoreBackup(close) {
   const D = window.DFData;
-  const files = await D.pickFiles('.zip,application/zip,.json,application/json'); // straight from the tap, or iOS won't open the picker
+  const R = window.DFRestore;
+  let files = await D.pickFiles(R.PICK); // straight from the tap, or iOS won't open the picker
   if (!files.length) return;
+  const pick = await R.which(files, 'contact-sheet');
+  if (!pick) return;
+  if (pick.all) { close(); R.confirm(files); return; }
+  files = pick.files;
   if (!(await confirmSheet({ title: 'Restore backup', message: 'Everything in Layouts now is swapped for what\'s in the file.', confirmLabel: 'Restore', danger: true }))) return;
   toast('Restoring the backup', { ms: 600000 });
   try {

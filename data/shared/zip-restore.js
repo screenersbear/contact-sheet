@@ -172,5 +172,9 @@
     return { manifest: b.manifest, extra: b.manifest.extra || {}, counts, local };
   }
 
-  Object.assign(parts, { restoreZip });
+  // What's in a backup (its manifest: kind, app, databases, local), read
+  // without changing anything: to say what a restore will do before it does it.
+  const backupManifest = async (file) => (await openBackupZip(file)).manifest;
+
+  Object.assign(parts, { restoreZip, backupManifest });
 })();

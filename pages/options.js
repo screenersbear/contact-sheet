@@ -6,7 +6,7 @@ import { openSheet } from '../components/sheet.js';
 import { openNotebookExport } from './notebook-export.js';
 import { openStickers } from '../components/sticker-sheets.js';
 import { openIntro } from './intro.js';
-import { saveBackup, restoreBackup } from './options-backup.js';
+import { backUp, restoreBackup } from './options-backup.js';
 
 export const BOOK_KEY = 'contact-sheet-book'; // also read in index.html, before the first paint
 export const START_KEY = 'contact-sheet-start';
@@ -60,7 +60,7 @@ export function openOptions(stickers) {
       <div class="opt-rows">${row('data-pdf', 'Everything as one PDF', 'A cover in the app colour, then each layout')}</div>
       ${alone ? `<span class="opt-label opt-gap">Cover</span><div class="opt-rows">${row('data-stickers', 'Stickers')}</div>` : ''}
       <span class="opt-label opt-gap">Backups</span>
-      <div class="opt-rows">${row('data-save-backup', 'Save a backup')}${row('data-restore-backup', 'Restore a backup')}</div>
+      <div class="opt-rows">${row('data-backup', 'Back up')}${row('data-restore-backup', 'Restore a backup')}</div>
       <span class="opt-label opt-gap">Help</span>
       <div class="opt-rows">${row('data-intro', 'How it works')}</div>`,
   });
@@ -90,7 +90,7 @@ export function openOptions(stickers) {
     } else if (e.target.closest('[data-intro]')) {
       s.close();
       openIntro();
-    } else if (e.target.closest('[data-save-backup]')) saveBackup();
+    } else if (e.target.closest('[data-backup]')) backUp();
     else if (e.target.closest('[data-restore-backup]')) restoreBackup(() => s.close());
   });
 }

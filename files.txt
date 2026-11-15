@@ -5,8 +5,8 @@
 # "smaller" after a built name: its comments and extra spaces are taken out
 # (tools/smaller.mjs), so the page arrives sooner. Read the files listed, not it.
 
-# What the notebooks share (window.DFData): copies of the suite's shared/data/,
-# made by tools/sync.py shared.
+# What the notebooks share (window.DFData, and Back up and Restore): copies of
+# the suite's shared/data/ and shared/components/, made by tools/sync.py shared.
 built/shared-data.js smaller
   data/shared/basics.js
   data/shared/files.js
@@ -21,11 +21,17 @@ built/shared-data.js smaller
   data/shared/people.js
   data/shared/people-things.js
   data/shared/df-data.js
+  data/shared/backup-books.js
+  data/shared/backup-json.js
+  data/shared/backups.js
+  components/shared/backup-sheet.js
+  components/shared/restore-sheet.js
 
 # How it looks, in the order the rules apply.
 built/app.css smaller
   styles/base.css
   styles/shared/connect.css
+  styles/shared/backup.css
   styles/hero-band.css
   styles/top-bar.css
   styles/sections.css

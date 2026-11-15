@@ -5,7 +5,7 @@
   const parts = window.DFDataParts;
   const {
     open, rows, getOne, putMany, deleteOne, hasText, nowIso, todayStr, uid, eyeState, eyeShootName,
-    exportDb, importDb, sizeText, zipBackup, backupSteps, isZipFile, restoreZip, linksWhere,
+    exportDb, importDb, sizeText, zipBackup, backupSteps, isZipFile, restoreZip, backupManifest, linksWhere,
     getLink, saveLink, linkPictures, dropLinks, pictureUrl, boardFile, readBoardFile, saveFile,
     pickFiles, pickFile, inSuite, notebookUrl, cleanHandle, personKeys, findPerson, maybePairs,
     peopleAll, getPerson, gatherPeople, answerSame, editPerson, personFor, personUrl,
@@ -16,7 +16,7 @@
     open, rows, getOne, putMany, deleteOne, hasText, todayStr, uid, nowIso,
     eyeState, eyeShootName,
     exportDb, importDb, saveFile, pickFile, pickFiles,
-    zipBackup, backupSteps, isZipFile, restoreZip, sizeText,
+    zipBackup, backupSteps, isZipFile, restoreZip, backupManifest, sizeText,
     inSuite, notebookUrl,
     linksWhere, getLink, saveLink, linkPictures, dropLinks, pictureUrl, boardFile, readBoardFile,
     cleanHandle, personKeys, findPerson, maybePairs, peopleAll, getPerson, gatherPeople, answerSame,
