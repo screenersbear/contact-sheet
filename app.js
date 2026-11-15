@@ -16,6 +16,7 @@ import { welcome } from './pages/welcome.js';
 import { newLayout } from './pages/new-layout.js';
 import { makePostsFromEye } from './data/from-eye.js';
 import { openPosts } from './pages/posts.js';
+import { tellPeople, tellPeopleFromNowOn } from './data/people-out.js';
 
 const view = document.getElementById('view');
 let destroyCurrent = null;
@@ -61,8 +62,13 @@ async function route() {
 
 window.addEventListener('hashchange', route);
 // Set in Options: open on the home page instead of the shut notebook.
-if (suite || startsOnFirstPage()) { if ((location.hash || '#/') === '#/') history.replaceState(null, '', '#/contents'); }
+// Opened at a layout from a person's page on the shelf (?layout=<id>).
+if (suite && suite.get('layout')) history.replaceState(null, '', `#/edit/${encodeURIComponent(suite.get('layout'))}`);
+else if (suite || startsOnFirstPage()) { if ((location.hash || '#/') === '#/') history.replaceState(null, '', '#/contents'); }
 route();
+// Layouts tells the one list of people its layouts, now and after each change.
+tellPeopleFromNowOn();
+tellPeople(3000);
 // From The Eye's record of a shoot (?posts=<the hand-off>): its posts, once made.
 if (suite && suite.get('posts')) makePostsFromEye().catch(() => 0).then(() => openPosts(suite.get('posts')));
 else if (suite && suite.at === 'new') setTimeout(newLayout, 400);

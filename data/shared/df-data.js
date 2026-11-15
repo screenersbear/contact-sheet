@@ -9,7 +9,9 @@
     eyeShootName, eyeBackupFile, readEyeFile, journalMoved, somethingToMove, moveJournal,
     exportDb, importDb, sizeText, zipBackup, backupSteps, isZipFile, restoreZip, linksWhere,
     getLink, saveLink, linkPictures, dropLinks, pictureUrl, boardFile, readBoardFile, saveFile,
-    pickFiles, pickFile, inSuite, notebookUrl
+    pickFiles, pickFile, inSuite, notebookUrl, cleanHandle, personKeys, findPerson, maybePairs,
+    peopleAll, getPerson, gatherPeople, answerSame, editPerson, personFor, personUrl,
+    PEOPLE_APPS, pictureOf, shootPeople, publishThings, thingsAll, personView, searchIn, searchAll
   } = parts;
 
   window.DFData = {
@@ -21,5 +23,7 @@
     zipBackup, backupSteps, isZipFile, restoreZip, sizeText,
     inSuite, notebookUrl,
     linksWhere, getLink, saveLink, linkPictures, dropLinks, pictureUrl, boardFile, readBoardFile,
+    cleanHandle, personKeys, findPerson, maybePairs, peopleAll, getPerson, gatherPeople, answerSame,
+    editPerson, personFor, personUrl, PEOPLE_APPS, pictureOf, shootPeople, publishThings, thingsAll, personView, searchIn, searchAll,
   };
 })();

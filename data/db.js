@@ -85,9 +85,16 @@ export async function listProjects() {
 
 export const getProject = (id) => getOne('projects', id);
 
+// Anything that hears of a layout saved or deleted (the one list of people,
+// data/people-out.js).
+const watchers = [];
+export const onProjectsChange = (fn) => { watchers.push(fn); };
+const projectsChanged = () => watchers.forEach((fn) => fn());
+
 export async function saveProject(p) {
   const rec = stamp(p);
   await tx(['projects'], 'readwrite', (t) => t.objectStore('projects').put(rec));
+  projectsChanged();
   return rec;
 }
 
@@ -98,6 +105,7 @@ export async function saveProjectThumb(id, thumb) {
     const p = await done(s.get(id));
     if (p) s.put({ ...p, thumb });
   });
+  projectsChanged();
 }
 
 export async function deleteProject(id) {
@@ -107,6 +115,7 @@ export async function deleteProject(id) {
     const keys = await done(photos.index('projectId').getAllKeys(id));
     keys.forEach((k) => photos.delete(k));
   });
+  projectsChanged();
 }
 
 // A copy of a draft with its own copies of the photos, so deleting either
