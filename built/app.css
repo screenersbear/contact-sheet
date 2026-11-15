@@ -1,149 +1,103 @@
 /* Made by tools/join.mjs from the files listed in files.txt. Never edit it: change those files, then run node tools/join.mjs. */
 
 /* ---- styles/base.css ---- */
-/* Contact Sheet's basics: fonts, colours, the type scale and the page itself.
-   The other stylesheets in this folder are listed in index.html, in the order they apply. */
-/* Contact Sheet: the Documenting Fictions look, copied here so the two apps
-   can change on their own. White, "berry blade black" navy for text,
-   #bf0b83 magenta for the header, borders and fills, and "mango yellow";
-   square corners, Arial Black titles in capitals, Courier for everything
-   else. Dark mode keeps the same colours, with deep slate shades for the
-   page and surfaces.
-
-   The one exception is the editing canvas: the area around the slides and
-   anything drawn over photos (seams, guides, selection) is grey, white or
-   black only, so the app's colours never throw off how a photo looks. */
-
 :root {
-  --focus-glow: color-mix(in srgb, var(--accent) 45%, transparent);
-  --navy: #313d45;
-  --magenta: #bf0b83;
-  --yellow: #ffd103;
-
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --text: #313d45;
-  --text-dim: rgba(49, 61, 69, 0.72);
-  /* Chrome: heading bars, borders, fills. Separate from --text so dark mode
-     can lift it while text stays readable. */
-  --ink: #bf0b83;
-  --on-ink: #ffffff;
-  --accent: #ffd103;
-  --on-accent: #313d45;
-  --hero: #bf0b83;
-  --line: #d9d9d9;
-  --field: #ffffff;
-  --overlay: rgba(191, 11, 131, 0.9);
-  --danger: #b3261e;
-
-  /* The editing canvas: neutral greys only. */
-  --canvas: #8f8f8f;
-  --canvas-label: #222222;
-
-  --font-title: "Arial Black", "Helvetica Neue", Arial, sans-serif;
-  --font-body: "Courier New", Courier, monospace;
-
-  color-scheme: light;
+--focus-glow: color-mix(in srgb, var(--accent) 45%, transparent);
+--navy: #313d45;
+--magenta: #bf0b83;
+--yellow: #ffd103;
+--bg: #ffffff;
+--surface: #ffffff;
+--text: #313d45;
+--text-dim: rgba(49, 61, 69, 0.72);
+--ink: #bf0b83;
+--on-ink: #ffffff;
+--accent: #ffd103;
+--on-accent: #313d45;
+--hero: #bf0b83;
+--line: #d9d9d9;
+--field: #ffffff;
+--overlay: rgba(191, 11, 131, 0.9);
+--danger: #b3261e;
+--canvas: #8f8f8f;
+--canvas-label: #222222;
+--font-title: "Arial Black", "Helvetica Neue", Arial, sans-serif;
+--font-body: "Courier New", Courier, monospace;
+color-scheme: light;
 }
-
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #1d252a;
-    --surface: #263037;
-    --text: #f6f6f3;
-    --text-dim: rgba(246, 246, 243, 0.7);
-    --ink: #4a5b67;
-    --on-ink: #ffffff;
-    --hero: #bf0b83;
-    --line: rgba(255, 255, 255, 0.18);
-    --field: #1d252a;
-    --overlay: rgba(12, 16, 19, 0.86);
-    --danger: #ff8a80;
-    --canvas: #3a3a3a;
-    --canvas-label: #d8d8d8;
-    color-scheme: dark;
-    --focus-glow: color-mix(in srgb, var(--accent) 22%, transparent);
-  }
+:root:not([data-theme="light"]) {
+--bg: #1d252a;
+--surface: #263037;
+--text: #f6f6f3;
+--text-dim: rgba(246, 246, 243, 0.7);
+--ink: #4a5b67;
+--on-ink: #ffffff;
+--hero: #bf0b83;
+--line: rgba(255, 255, 255, 0.18);
+--field: #1d252a;
+--overlay: rgba(12, 16, 19, 0.86);
+--danger: #ff8a80;
+--canvas: #3a3a3a;
+--canvas-label: #d8d8d8;
+color-scheme: dark;
+--focus-glow: color-mix(in srgb, var(--accent) 22%, transparent);
 }
-
+}
 :root[data-theme="dark"] {
-  --bg: #1d252a;
-  --surface: #263037;
-  --text: #f6f6f3;
-  --text-dim: rgba(246, 246, 243, 0.7);
-  --ink: #4a5b67;
-  --on-ink: #ffffff;
-  --hero: #bf0b83;
-  --line: rgba(255, 255, 255, 0.18);
-  --field: #1d252a;
-  --overlay: rgba(12, 16, 19, 0.86);
-  --danger: #ff8a80;
-  --canvas: #3a3a3a;
-  --canvas-label: #d8d8d8;
-  color-scheme: dark;
-  --focus-glow: color-mix(in srgb, var(--accent) 22%, transparent);
+--bg: #1d252a;
+--surface: #263037;
+--text: #f6f6f3;
+--text-dim: rgba(246, 246, 243, 0.7);
+--ink: #4a5b67;
+--on-ink: #ffffff;
+--hero: #bf0b83;
+--line: rgba(255, 255, 255, 0.18);
+--field: #1d252a;
+--overlay: rgba(12, 16, 19, 0.86);
+--danger: #ff8a80;
+--canvas: #3a3a3a;
+--canvas-label: #d8d8d8;
+color-scheme: dark;
+--focus-glow: color-mix(in srgb, var(--accent) 22%, transparent);
 }
-
-/* Type scale, kept to a few steps so the same kind of text always looks the same.
-   Courier (body): 13 capitals labels and badges, 14 small and grey text,
-   15 secondary text and text links, 16 body, 18 fields.
-   Arial Black (titles): 13 buttons, 15 small buttons, 17 names on cards,
-   19 section bars, sheet titles and empty states, 26 page titles. */
-
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
-
 html { background: var(--hero); }
-
 body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 16px;
-  line-height: 1.4;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: clip;
-  overscroll-behavior-y: none;
-  min-height: 100dvh;
+margin: 0;
+background: var(--bg);
+color: var(--text);
+font-family: var(--font-body);
+font-size: 16px;
+line-height: 1.4;
+-webkit-font-smoothing: antialiased;
+overflow-x: clip;
+overscroll-behavior-y: none;
+min-height: 100dvh;
 }
-
 body.sheet-open { overflow: hidden; }
-
 button, input, select, textarea { font-family: inherit; color: inherit; }
 button { letter-spacing: 1px; cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 a:not([class]) { font-weight: 700; }
-
 ::placeholder { color: var(--text); opacity: 0.45; }
-
 h1, h2, h3 { font-family: var(--font-title); font-weight: 700; }
-
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-
 button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
-
 #app {
-  max-width: 560px;
-  margin: 0 auto;
-  min-height: var(--turn-h, 100dvh);
-  padding: var(--sa-t) 16px calc(32px + var(--sa-b));
-  background: var(--bg);
+max-width: 560px;
+margin: 0 auto;
+min-height: var(--turn-h, 100dvh);
+padding: var(--sa-t) 16px calc(32px + var(--sa-b));
+background: var(--bg);
 }
-
 .view { outline: none; padding-top: 4px; }
 .view[data-route="drafts"] { padding-top: 0; }
 
 /* ---- styles/shared/connect.css ---- */
-/* How the notebooks connect, the looks every notebook shares (round 2,
-   connect/NOTES.md): the two minis with an arrow, a slip at the top of a
-   list ("FROM THE EYE"), and the rows of what passed on and came in.
-   The markup comes from shared/data/connect.js. This is the master copy:
-   tools/sync.py shared copies it into each notebook's styles/shared/. */
 .df-pair { flex: none; display: inline-flex; align-items: center; gap: 4px; color: #313D45; }
 .df-mini { flex: none; display: inline-flex; width: 20px; height: 20px; border-radius: 4px; }
-
-/* PASSED ON and CAME IN: a record, each row opening the other notebook. */
 .df-record { margin-top: 8px; border-top: 1px solid #313D45; }
 .df-record-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 0; border: 0; border-bottom: 1px solid #E1E1DC; background: none; color: #313D45; font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
 .df-record-row[aria-disabled="true"] { cursor: default; }
@@ -152,11 +106,6 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 .df-record-line { display: block; margin-top: 2px; font-size: 14px; line-height: 19px; color: #5C666D; }
 .df-record-chev { flex: none; display: inline-flex; color: #9AA3A8; }
 .df-record-chev svg { width: 18px; height: 18px; }
-
-/* A slip at the top of a notebook's list (connect/03, 05, 06): white, the
-   Rounds card shadow, a notched FROM tag in the sender's colours, a light
-   title, one dim line, what it brought, then the main button (in the
-   receiving notebook's colour: --df-slip-main, --df-slip-main-text) and NOT NOW. */
 .df-slip { margin-top: 12px; padding: 14px 14px 10px; border-radius: 8px; background: #FFFFFF; color: #313D45; box-shadow: 0 1px 0 #E1E1DC, 0 10px 24px rgba(49, 61, 69, .10); }
 .df-slip-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .df-slip-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 20px 0 4px; border-radius: 3px 0 0 3px; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); font-size: 11px; font-weight: 700; letter-spacing: .12em; line-height: 14px; text-transform: uppercase; white-space: nowrap; }
@@ -169,269 +118,232 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 .df-slip-later { height: 44px; padding: 0 12px; border: 0; background: none; color: #5C666D; font: inherit; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
 
 /* ---- styles/hero-band.css ---- */
-/* The hero band at the top of a list, and the strip of colour a pull shows. */
-/* ---------- Hero band (Drafts) ---------- */
-
 .hero-band {
-  background: var(--hero);
-  width: var(--turn-w, 100vw);
-  margin-left: calc(50% - var(--turn-w, 100vw) / 2);
-  margin-top: calc(-1 * var(--sa-t));
-  margin-bottom: 20px;
-  padding: calc(var(--sa-t) + 20px) max(16px, calc(var(--turn-w, 100vw) / 2 - 264px)) 20px;
-  border-bottom: 4px solid var(--accent);
-  position: relative;
+background: var(--hero);
+width: var(--turn-w, 100vw);
+margin-left: calc(50% - var(--turn-w, 100vw) / 2);
+margin-top: calc(-1 * var(--sa-t));
+margin-bottom: 20px;
+padding: calc(var(--sa-t) + 20px) max(16px, calc(var(--turn-w, 100vw) / 2 - 264px)) 20px;
+border-bottom: 4px solid var(--accent);
+position: relative;
 }
-
-/* Pulling the page down past the top shows a strip of header colour, so
-   the header seems to stretch instead of flashing white. */
 .hero-band::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 100%;
-  height: var(--turn-h, 100vh);
-  background: var(--hero);
-  pointer-events: none;
+content: '';
+position: absolute;
+left: 0;
+right: 0;
+bottom: 100%;
+height: var(--turn-h, 100vh);
+background: var(--hero);
+pointer-events: none;
 }
-
-/* fitBrandTitle() in app.js sets this row's font size so the logo and title
-   fill the header's width; both are sized in em from it. */
 .brand-row {
-  display: flex;
-  align-items: center;
-  gap: 0.35em;
-  margin-bottom: 18px;
-  font-size: 28px;
+display: flex;
+align-items: center;
+gap: 0.35em;
+margin-bottom: 18px;
+font-size: 28px;
 }
 .brand-row:last-child { margin-bottom: 0; }
-
 .brand-logo-wrap {
-  width: 1.3em;
-  height: 1.3em;
-  flex-shrink: 0;
+width: 1.3em;
+height: 1.3em;
+flex-shrink: 0;
 }
-
 .brand-logo { width: 100%; height: 100%; display: block; }
-
 .brand-title {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  font-size: 1em;
-  font-weight: 900;
-  color: var(--accent);
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  line-height: 1.1;
+flex: 1;
+min-width: 0;
+margin: 0;
+font-size: 1em;
+font-weight: 900;
+color: var(--accent);
+text-transform: uppercase;
+white-space: nowrap;
+overflow: hidden;
+line-height: 1.1;
 }
-
 .shine-sweep { position: relative; overflow: hidden; }
 .shine-sweep::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.75) 50%, transparent 100%);
-  animation: shine-sweep-move 8s ease-in-out infinite;
-  will-change: transform;
-  pointer-events: none;
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+width: 50%;
+height: 100%;
+background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.75) 50%, transparent 100%);
+animation: shine-sweep-move 8s ease-in-out infinite;
+will-change: transform;
+pointer-events: none;
 }
 @keyframes shine-sweep-move {
-  0% { transform: translateX(-150%) skewX(-20deg); }
-  12% { transform: translateX(260%) skewX(-20deg); }
-  100% { transform: translateX(260%) skewX(-20deg); }
+0% { transform: translateX(-150%) skewX(-20deg); }
+12% { transform: translateX(260%) skewX(-20deg); }
+100% { transform: translateX(260%) skewX(-20deg); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .shine-sweep::after { animation: none; display: none; }
+.shine-sweep::after { animation: none; display: none; }
 }
-
 .hero-cta {
-  display: block;
-  width: 100%;
-  background: var(--accent);
-  color: var(--on-accent);
-  border: 2px solid var(--magenta);
-  padding: 16px;
-  font-size: 19px;
-  font-weight: 700;
-  font-family: var(--font-title);
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  text-align: center;
-  text-decoration: none;
+display: block;
+width: 100%;
+background: var(--accent);
+color: var(--on-accent);
+border: 2px solid var(--magenta);
+padding: 16px;
+font-size: 19px;
+font-weight: 700;
+font-family: var(--font-title);
+letter-spacing: 1.5px;
+text-transform: uppercase;
+text-align: center;
+text-decoration: none;
 }
 
 /* ---- styles/top-bar.css ---- */
-/* The top bar. */
-/* ---------- Top bar ---------- */
-
 .topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 20px 0 12px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+padding: 20px 0 12px;
 }
-
 .topbar h1 {
-  font-size: 26px;
-  margin: 0;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+font-size: 26px;
+margin: 0;
+letter-spacing: 0.5px;
+text-transform: uppercase;
 }
-
 .text-btn {
-  border: none;
-  background: none;
-  padding: 8px 0;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+border: none;
+background: none;
+padding: 8px 0;
+font-size: 15px;
+font-weight: 700;
+letter-spacing: 0.5px;
 }
 
 /* ---- styles/sections.css ---- */
-/* Section blocks. */
-/* ---------- Section blocks ---------- */
-
 .section-block { margin-bottom: 26px; }
-
 .section-block h2 {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 19px;
-  text-transform: uppercase;
-  letter-spacing: -0.3px;
-  padding: 8px 18px;
-  margin: 0 0 12px;
-  user-select: none;
+display: flex;
+align-items: center;
+gap: 6px;
+font-size: 19px;
+text-transform: uppercase;
+letter-spacing: -0.3px;
+padding: 8px 18px;
+margin: 0 0 12px;
+user-select: none;
 }
-
 .section-block h2.heading-yellow {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-left: 11px solid var(--magenta);
+background: var(--accent);
+color: var(--on-accent);
+border-left: 11px solid var(--magenta);
 }
-
 .card-list { display: flex; flex-direction: column; gap: 10px; }
 
 /* ---- styles/buttons.css ---- */
-/* Buttons. */
-/* ---------- Buttons ---------- */
-
 .btn {
-  border: 2px solid var(--ink);
-  background: var(--surface);
-  color: var(--text);
-  padding: 10px 8px;
-  font-family: var(--font-title);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  line-height: 1.15;
-  min-height: 44px;
+border: 2px solid var(--ink);
+background: var(--surface);
+color: var(--text);
+padding: 10px 8px;
+font-family: var(--font-title);
+font-size: 13px;
+font-weight: 700;
+letter-spacing: 0.8px;
+text-transform: uppercase;
+line-height: 1.15;
+min-height: 44px;
 }
 .btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--magenta); }
 .btn.secondary { background: var(--surface); }
 .btn.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
 .btn:disabled { opacity: 0.4; cursor: default; }
-
 .primary { background: var(--accent); color: var(--on-accent); }
-
 .small-btn {
-  border: 2px solid var(--magenta);
-  padding: 9px 14px;
-  font-family: var(--font-title);
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 1px;
-  align-self: flex-start;
-  text-align: left;
+border: 2px solid var(--magenta);
+padding: 9px 14px;
+font-family: var(--font-title);
+font-weight: 700;
+font-size: 15px;
+letter-spacing: 1px;
+align-self: flex-start;
+text-align: left;
 }
 .small-btn.secondary { background: var(--surface); color: var(--text); border-color: var(--ink); }
 .small-btn:disabled { opacity: 0.4; cursor: default; }
-
 .modal-cta {
-  display: block;
-  width: 100%;
-  margin-top: 8px;
-  padding: 15px;
-  border: 2px solid var(--magenta);
-  font-size: 17px;
-  font-weight: 700;
-  font-family: var(--font-title);
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
+display: block;
+width: 100%;
+margin-top: 8px;
+padding: 15px;
+border: 2px solid var(--magenta);
+font-size: 17px;
+font-weight: 700;
+font-family: var(--font-title);
+letter-spacing: 1.5px;
+text-transform: uppercase;
 }
 .modal-cta.secondary { background: var(--surface); color: var(--text); border-color: var(--ink); }
 .modal-cta:disabled { opacity: 0.4; cursor: default; }
-
 .mini-btn {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--ink);
-  background: var(--surface);
-  color: var(--text);
-  padding: 0;
-  letter-spacing: 0;
+width: 40px;
+height: 40px;
+flex-shrink: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+border: 2px solid var(--ink);
+background: var(--surface);
+color: var(--text);
+padding: 0;
+letter-spacing: 0;
 }
 .mini-btn svg { width: 20px; height: 20px; }
 .mini-btn:disabled { opacity: 0.3; cursor: default; }
-
 .button-stack { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .button-stack.wide { align-items: stretch; }
 .button-stack .modal-cta { margin-top: 0; }
 
 /* ---- styles/chapters.css ---- */
-/* Chapters and templates in lists. */
-/* ---------- Drafts and templates ---------- */
-
 .draft-card, .tpl-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--surface);
-  border: 3px solid var(--ink);
-  padding: 10px 10px 10px 10px;
+display: flex;
+align-items: center;
+gap: 10px;
+background: var(--surface);
+border: 3px solid var(--ink);
+padding: 10px 10px 10px 10px;
 }
 .draft-open, .tpl-open {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: inherit;
-  text-align: left;
-  background: none;
-  border: none;
-  padding: 0;
-  letter-spacing: 0;
-  font-size: inherit;
+flex: 1;
+min-width: 0;
+display: flex;
+align-items: center;
+gap: 12px;
+color: inherit;
+text-align: left;
+background: none;
+border: none;
+padding: 0;
+letter-spacing: 0;
+font-size: inherit;
 }
 .draft-thumb {
-  flex-shrink: 0;
-  height: 72px;
-  min-width: 54px;
-  max-width: 45%;
-  background: var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+flex-shrink: 0;
+height: 72px;
+min-width: 54px;
+max-width: 45%;
+background: var(--line);
+display: flex;
+align-items: center;
+justify-content: center;
+overflow: hidden;
 }
 .draft-thumb img { height: 72px; width: auto; max-width: 100%; object-fit: cover; object-position: left center; display: block; box-shadow: inset 0 0 0 1px var(--line); }
 .draft-thumb-empty svg { width: 26px; height: 26px; color: var(--text-dim); }
-
 .tpl-card { align-items: flex-start; }
 .tpl-open { flex-direction: column; align-items: stretch; gap: 8px; }
 .tpl-art { display: block; height: 108px; }
@@ -443,307 +355,273 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 .lay-frame { fill: var(--ink); fill-opacity: 0.3; stroke: var(--ink); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .lay-seam { stroke: var(--text); stroke-width: 1.5; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 .lay-edge { fill: none; stroke: var(--ink); stroke-width: 2; vector-effect: non-scaling-stroke; }
-
 .row-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .row-name { font-family: var(--font-title); font-size: 17px; line-height: 1.15; overflow-wrap: anywhere; }
 .row-meta { font-size: 14px; color: var(--text-dim); }
-
 .badge {
-  display: inline-block;
-  vertical-align: 2px;
-  margin-left: 4px;
-  background: var(--accent);
-  color: var(--on-accent);
-  border: 1px solid var(--magenta);
-  padding: 1px 6px;
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+display: inline-block;
+vertical-align: 2px;
+margin-left: 4px;
+background: var(--accent);
+color: var(--on-accent);
+border: 1px solid var(--magenta);
+padding: 1px 6px;
+font-family: var(--font-body);
+font-size: 11px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 1px;
 }
-
 .tip-card {
-  border: 3px solid var(--ink);
-  border-left: 8px solid var(--accent);
-  padding: 10px 14px 4px;
-  margin-bottom: 20px;
-  font-size: 15px;
+border: 3px solid var(--ink);
+border-left: 8px solid var(--accent);
+padding: 10px 14px 4px;
+margin-bottom: 20px;
+font-size: 15px;
 }
 .tip-card p { margin: 0; }
-
 .empty {
-  text-align: center;
-  padding: 32px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: stretch;
+text-align: center;
+padding: 32px 8px;
+display: flex;
+flex-direction: column;
+gap: 12px;
+align-items: stretch;
 }
 .empty p { margin: 0; }
 .empty-title { font-family: var(--font-title); font-size: 19px; text-transform: uppercase; }
-
 .hint { font-size: 14px; color: var(--text-dim); margin: 0 0 12px; }
 .hint-after { margin-top: 16px; }
 .tip { border-left: 5px solid var(--accent); padding-left: 12px; font-size: 15px; }
-
 .seg { display: flex; border: 2px solid var(--ink); }
 .seg-option { flex: 1; position: relative; cursor: pointer; }
 .seg-option + .seg-option { border-left: 2px solid var(--ink); }
 .seg-option input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .seg-option span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  min-height: 44px;
-  padding: 6px 4px;
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+display: flex;
+align-items: center;
+justify-content: center;
+text-align: center;
+min-height: 44px;
+padding: 6px 4px;
+font-size: 14px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.5px;
 }
 .seg-option input:checked + span { background: var(--hero); color: #fff; }
 .seg-option input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: -3px; }
 
 /* ---- styles/sheet.css ---- */
-/* Sheets, the tour cards and the button that stays in reach. */
-/* ---------- Sheets ---------- */
-
 .sheet-overlay {
-  position: fixed;
-  /* The visible part of the screen, above the keyboard when it's up. */
-  top: var(--vv-top, 0px);
-  left: 0;
-  right: 0;
-  height: var(--vv-height, 100%);
-  background: var(--overlay);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  animation: fade 0.15s ease;
+position: fixed;
+top: var(--vv-top, 0px);
+left: 0;
+right: 0;
+height: var(--vv-height, 100%);
+background: var(--overlay);
+display: flex;
+align-items: flex-end;
+justify-content: center;
+animation: fade 0.15s ease;
 }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-
-/* Only the body scrolls, so pulling a long sheet down past its top moves
-   the content, never the header off the top. */
 .sheet {
-  background: var(--surface);
-  width: 100%;
-  max-width: 560px;
-  max-height: calc(var(--vv-height, 100svh) * 0.92);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border-top: 4px solid var(--accent);
-  animation: slideUp 0.2s ease;
-  outline: none;
+background: var(--surface);
+width: 100%;
+max-width: 560px;
+max-height: calc(var(--vv-height, 100svh) * 0.92);
+display: flex;
+flex-direction: column;
+overflow: hidden;
+border-top: 4px solid var(--accent);
+animation: slideUp 0.2s ease;
+outline: none;
 }
 @keyframes slideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+from { transform: translateY(30px); opacity: 0; }
+to { transform: translateY(0); opacity: 1; }
 }
-
 .sheet-header {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  background: var(--hero);
-  padding: 14px 16px 14px 20px;
+flex-shrink: 0;
+display: flex;
+justify-content: space-between;
+align-items: center;
+gap: 12px;
+background: var(--hero);
+padding: 14px 16px 14px 20px;
 }
 .sheet-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: none;
-  padding: 16px 20px calc(var(--sa-b) + 20px);
+flex: 1 1 auto;
+min-height: 0;
+overflow-y: auto;
+overscroll-behavior: none;
+padding: 16px 20px calc(var(--sa-b) + 20px);
 }
 .sheet-header h2 {
-  margin: 0;
-  font-size: 19px;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  line-height: 1.15;
-  overflow-wrap: anywhere;
+margin: 0;
+font-size: 19px;
+color: var(--accent);
+text-transform: uppercase;
+letter-spacing: 0.5px;
+line-height: 1.15;
+overflow-wrap: anywhere;
 }
-
 .close-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: none;
-  background: var(--accent);
-  color: var(--on-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  flex-shrink: 0;
-  padding: 0;
+width: 34px;
+height: 34px;
+border-radius: 50%;
+border: none;
+background: var(--accent);
+color: var(--on-accent);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 22px;
+flex-shrink: 0;
+padding: 0;
 }
 .x-icon { width: 0.6em; height: 0.6em; display: block; }
-
 .sheet-message { margin: 0 0 14px; font-size: 16px; }
 .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
-/* The tour's cards (intro.js) and the first visit's (welcome.js), as Ref's. */
 .sheet-actions.one { grid-template-columns: 1fr; }
 .wz-dots { display: flex; gap: 6px; padding: 0 4px; }
 .wz-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
 .wz-dots i.on { background: var(--ink); }
 .intro-dots { justify-content: center; }
 .intro .sheet-message { min-height: 5.6em; }
-
 .choice-list { display: flex; flex-direction: column; gap: 8px; }
 .choice {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  text-align: left;
-  border: 3px solid var(--ink);
-  background: var(--surface);
-  padding: 12px 14px;
-  letter-spacing: 0;
+display: flex;
+align-items: center;
+gap: 12px;
+width: 100%;
+text-align: left;
+border: 3px solid var(--ink);
+background: var(--surface);
+padding: 12px 14px;
+letter-spacing: 0;
 }
 .choice.current { background: var(--accent); color: var(--on-accent); border-color: var(--magenta); }
 .choice.is-danger .choice-label { color: var(--danger); }
 .choice-text { display: flex; flex-direction: column; gap: 2px; }
 .choice-label { font-family: var(--font-title); font-size: 17px; text-transform: uppercase; letter-spacing: 0.5px; }
 .choice-detail { font-size: 14px; opacity: 0.8; }
-
-/* The main button stays in reach however long the list is. */
 .sheet.has-footer .sheet-body { padding-bottom: 0; }
 .sheet-footer {
-  position: sticky;
-  bottom: 0;
-  background: var(--surface);
-  margin: 12px -20px 0;
-  padding: 8px 20px calc(var(--sa-b) + 16px);
-  border-top: 3px solid var(--ink);
+position: sticky;
+bottom: 0;
+background: var(--surface);
+margin: 12px -20px 0;
+padding: 8px 20px calc(var(--sa-b) + 16px);
+border-top: 3px solid var(--ink);
 }
 
 /* ---- styles/forms.css ---- */
-/* Form pieces: fields, choices, the colour picker. */
-/* ---------- Forms ---------- */
-
 .form { display: flex; flex-direction: column; gap: 22px; }
-
 .field { display: flex; flex-direction: column; gap: 0; border: none; margin: 0; padding: 0; min-width: 0; }
-
 .field input:not([type="radio"]):not([type="checkbox"]):not([type="range"]):not([type="color"]) {
-  width: 100%;
-  background: var(--field);
-  border: 1px solid var(--line);
-  border-bottom: 3px solid var(--ink);
-  border-radius: 0;
-  padding: 10px 12px;
-  font-size: 18px;
-  color: var(--text);
-  min-height: 46px;
+width: 100%;
+background: var(--field);
+border: 1px solid var(--line);
+border-bottom: 3px solid var(--ink);
+border-radius: 0;
+padding: 10px 12px;
+font-size: 18px;
+color: var(--text);
+min-height: 46px;
 }
 .field input[type="range"] { width: 100%; margin: 6px 0 2px; accent-color: var(--magenta); }
-
 .field-label {
-  display: block;
-  margin: 0 0 8px;
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-dim);
+display: block;
+margin: 0 0 8px;
+font-size: 13px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 1px;
+color: var(--text-dim);
 }
 .range-val { color: var(--text); margin-left: 6px; }
 .field-hint { display: block; margin-top: 6px; font-size: 14px; color: var(--text-dim); }
-
 .check {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  min-height: 40px;
-  margin-top: 8px;
+display: inline-flex;
+align-items: center;
+gap: 8px;
+font-size: 15px;
+font-weight: 700;
+cursor: pointer;
+min-height: 40px;
+margin-top: 8px;
 }
 .check input { width: 20px; height: 20px; accent-color: var(--magenta); margin: 0; }
-
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
 .swatch { position: relative; cursor: pointer; }
 .swatch > input[type="radio"] { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .swatch > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: 2px solid var(--ink);
-  background: var(--surface);
-  padding: 7px 12px;
-  font-size: 15px;
-  font-weight: 700;
-  min-height: 40px;
+display: inline-flex;
+align-items: center;
+gap: 8px;
+border: 2px solid var(--ink);
+background: var(--surface);
+padding: 7px 12px;
+font-size: 15px;
+font-weight: 700;
+min-height: 40px;
 }
 .swatch i { width: 18px; height: 18px; border: 1px solid var(--line); display: inline-block; }
 .swatch > input:checked + span { background: var(--accent); color: var(--on-accent); border-color: var(--magenta); }
 .swatch > input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
-/* The colour picker sits above the radio so a tap opens it. */
 .swatch input[type="color"] {
-  position: relative;
-  z-index: 1;
-  width: 28px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid var(--line);
-  background: none;
-  cursor: pointer;
+position: relative;
+z-index: 1;
+width: 28px;
+height: 22px;
+padding: 0;
+border: 1px solid var(--line);
+background: none;
+cursor: pointer;
 }
 
 /* ---- styles/editor-sheets.css ---- */
-/* The editor's sheets, and the export list. */
-/* ---------- Editor sheets ---------- */
-
 .progress { height: 14px; border: 2px solid var(--ink); margin: 0 0 8px; }
 .progress-bar { height: 100%; width: 0; background: var(--accent); transition: width 0.2s ease; }
-
 .order-note {
-  margin: 0 0 12px;
-  background: var(--accent);
-  color: var(--on-accent);
-  border-left: 11px solid var(--magenta);
-  padding: 8px 14px;
-  font-family: var(--font-title);
-  font-size: 15px;
-  text-transform: uppercase;
+margin: 0 0 12px;
+background: var(--accent);
+color: var(--on-accent);
+border-left: 11px solid var(--magenta);
+padding: 8px 14px;
+font-family: var(--font-title);
+font-size: 15px;
+text-transform: uppercase;
 }
 .order-grid {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 16px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 8px;
+list-style: none;
+padding: 0;
+margin: 0 0 16px;
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+gap: 8px;
 }
 .order-grid li { position: relative; }
 .order-grid img { width: 100%; display: block; object-fit: cover; border: 1px solid var(--line); }
-/* Export: tap to leave an image out, hold and drag to move it. */
 .order-grid.is-pick li { cursor: pointer; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .order-grid.is-pick img { pointer-events: none; -webkit-user-drag: none; }
 .order-num:empty { display: none; }
 .order-off {
-  display: none;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  padding: 3px 6px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
+display: none;
+position: absolute;
+left: 50%;
+top: 50%;
+transform: translate(-50%, -50%);
+padding: 3px 6px;
+background: var(--surface);
+color: var(--text);
+font-size: 11px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+white-space: nowrap;
 }
 .order-grid li.is-off img, .order-ghost.is-off img { opacity: 0.3; }
 .order-grid li.is-off .order-off, .order-ghost.is-off .order-off { display: block; }
@@ -751,31 +629,29 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 .order-ghost { position: fixed; left: 0; top: 0; z-index: 400; margin: 0; padding: 0; list-style: none; pointer-events: none; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35); }
 .order-ghost img { width: 100%; display: block; object-fit: cover; }
 .order-num {
-  position: absolute;
-  left: 0;
-  top: 0;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 4px;
-  background: var(--hero);
-  color: #fff;
-  font-family: var(--font-title);
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+position: absolute;
+left: 0;
+top: 0;
+min-width: 24px;
+height: 24px;
+padding: 0 4px;
+background: var(--hero);
+color: #fff;
+font-family: var(--font-title);
+font-size: 13px;
+display: flex;
+align-items: center;
+justify-content: center;
 }
-
 .r-3x4 { aspect-ratio: 3 / 4; }
 .r-4x5 { aspect-ratio: 4 / 5; }
 .r-1x1 { aspect-ratio: 1 / 1; }
 .r-9x16 { aspect-ratio: 9 / 16; }
-
 .pick-grid {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin-bottom: 16px;
+display: flex;
+align-items: flex-start;
+gap: 6px;
+margin-bottom: 16px;
 }
 .pick-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .pick-photo { display: block; width: 100%; padding: 0; border: none; background: var(--line); position: relative; -webkit-touch-callout: none; }
@@ -783,22 +659,21 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 .pick-photo.is-current { outline: 4px solid var(--accent); outline-offset: -4px; }
 .pick-photo.is-picked { outline: 4px solid var(--magenta); outline-offset: -4px; }
 .pick-num {
-  position: absolute;
-  right: 6px;
-  top: 6px;
-  min-width: 26px;
-  height: 26px;
-  border-radius: 13px;
-  background: var(--magenta);
-  color: #fff;
-  font-family: var(--font-title);
-  font-size: 14px;
-  display: none;
-  align-items: center;
-  justify-content: center;
+position: absolute;
+right: 6px;
+top: 6px;
+min-width: 26px;
+height: 26px;
+border-radius: 13px;
+background: var(--magenta);
+color: #fff;
+font-family: var(--font-title);
+font-size: 14px;
+display: none;
+align-items: center;
+justify-content: center;
 }
 .pick-photo.is-picked .pick-num { display: flex; }
-
 .slide-list { list-style: none; padding: 0; margin: 0 0 10px; display: flex; flex-direction: column; gap: 8px; }
 .slide-row { display: flex; align-items: center; gap: 10px; border: 3px solid var(--ink); padding: 6px; }
 .slide-thumb { height: 72px; flex-shrink: 0; padding: 0; border: none; background: var(--line); }
@@ -807,159 +682,148 @@ button:active, .draft-open:active, .tpl-open:active { opacity: 0.6; }
 .slide-acts { display: flex; gap: 3px; }
 .slide-acts .mini-btn { width: 32px; height: 36px; }
 .slide-acts .mini-btn svg { width: 18px; height: 18px; }
-
 .layout-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
 .layout-opt {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 6px;
-  border: 3px solid var(--ink);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0;
-  text-align: center;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 6px;
+padding: 8px 6px;
+border: 3px solid var(--ink);
+background: var(--surface);
+color: var(--text);
+font-size: 13px;
+font-weight: 700;
+line-height: 1.2;
+letter-spacing: 0;
+text-align: center;
 }
 .layout-opt .lay-svg { height: 84px; max-height: none; width: auto; max-width: 100%; }
 @media (min-width: 600px) { :where(html:not(.is-turned)) .layout-grid { grid-template-columns: repeat(4, 1fr); } }
-
 .grid-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-bottom: 12px; }
 .grid-tile { aspect-ratio: 3 / 4; background: var(--line); overflow: hidden; }
 .grid-tile canvas { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* ---- styles/editor.css ---- */
-/* The editor: its layout and the workspace where the photos sit. */
-/* ---------- Editor ---------- */
-
 body[data-route="edit"] { overflow: hidden; background: var(--surface); }
 body[data-route="edit"] #app { padding: 0; max-width: none; }
-
 .editor {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-  height: 100dvh;
+position: fixed;
+inset: 0;
+display: flex;
+flex-direction: column;
+background: var(--bg);
+height: 100dvh;
 }
-
 .ed-top {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 0;
-  background: var(--hero);
-  padding: calc(var(--sa-t) + 6px) 8px 6px 4px;
-  border-bottom: 4px solid var(--accent);
+flex-shrink: 0;
+display: flex;
+align-items: center;
+gap: 0;
+background: var(--hero);
+padding: calc(var(--sa-t) + 6px) 8px 6px 4px;
+border-bottom: 4px solid var(--accent);
 }
 .ed-icon {
-  width: 34px;
-  height: 40px;
-  flex-shrink: 0;
-  border: none;
-  background: none;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  letter-spacing: 0;
+width: 34px;
+height: 40px;
+flex-shrink: 0;
+border: none;
+background: none;
+color: #fff;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 0;
+letter-spacing: 0;
 }
 .ed-icon svg { width: 22px; height: 22px; }
 .ed-icon:disabled { opacity: 0.3; cursor: default; }
 .ed-title {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: none;
-  color: #fff;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  padding: 2px 4px;
-  letter-spacing: 0;
+flex: 1;
+min-width: 0;
+border: none;
+background: none;
+color: #fff;
+text-align: left;
+display: flex;
+flex-direction: column;
+padding: 2px 4px;
+letter-spacing: 0;
 }
 .ed-name {
-  font-family: var(--font-title);
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  color: var(--accent);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+font-family: var(--font-title);
+font-size: 14px;
+text-transform: uppercase;
+letter-spacing: 0.3px;
+color: var(--accent);
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
 }
 .ed-sub {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.2px;
-  color: rgba(255, 255, 255, 0.82);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+font-size: 12px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.2px;
+color: rgba(255, 255, 255, 0.82);
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
 }
 .ed-export { min-height: 38px; padding: 8px 9px; margin-left: 4px; flex-shrink: 0; letter-spacing: 0.5px; }
-
-/* The workspace. touch-action: none hands every touch to the editor, which
-   pans, pinches and drags itself; a mouse wheel still scrolls it. */
 .ws {
-  flex: 1;
-  min-height: 0;
-  position: relative;
-  overflow: auto;
-  background: var(--canvas);
-  touch-action: none;
-  overscroll-behavior: none;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-  scrollbar-width: thin;
+flex: 1;
+min-height: 0;
+position: relative;
+overflow: auto;
+background: var(--canvas);
+touch-action: none;
+overscroll-behavior: none;
+-webkit-user-select: none;
+user-select: none;
+-webkit-touch-callout: none;
+scrollbar-width: thin;
 }
 .ws-inner { position: relative; }
 .strip { position: absolute; box-shadow: 0 2px 14px rgba(0, 0, 0, 0.3); }
 .strip-frames { position: absolute; inset: 0; overflow: hidden; }
 .strip-bands, .strip-seams, .strip-safe { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .strip-guides { position: absolute; inset: 0; pointer-events: none; }
-
 .fr { position: absolute; overflow: hidden; cursor: grab; }
 .fr img {
-  position: absolute;
-  left: 0;
-  top: 0;
-  max-width: none;
-  transform-origin: 0 0;
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-drag: none;
+position: absolute;
+left: 0;
+top: 0;
+max-width: none;
+transform-origin: 0 0;
+pointer-events: none;
+user-select: none;
+-webkit-user-drag: none;
 }
 .fr video {
-  position: absolute;
-  left: 0;
-  top: 0;
-  max-width: none;
-  object-fit: fill;
-  transform-origin: 0 0;
-  pointer-events: none;
+position: absolute;
+left: 0;
+top: 0;
+max-width: none;
+object-fit: fill;
+transform-origin: 0 0;
+pointer-events: none;
 }
 .fr-line { position: absolute; inset: 0; pointer-events: none; }
 .fr-empty {
-  position: absolute;
-  inset: 0;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px;
-  background: #fff;
-  color: #575757;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
-  text-align: center;
+position: absolute;
+inset: 0;
+display: none;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 6px;
+padding: 6px;
+background: #fff;
+color: #575757;
+box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+text-align: center;
 }
 .fr.is-empty .fr-empty { display: flex; }
 .fr-plus svg { width: 26px; height: 26px; display: block; }
@@ -968,115 +832,106 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 .fr.is-lifted { opacity: 0.4; }
 .drag-ghost.is-lift { width: 88px; height: 88px; }
 .fr.is-target::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 5px rgba(0, 0, 0, 0.55);
+content: '';
+position: absolute;
+inset: 0;
+box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 5px rgba(0, 0, 0, 0.55);
 }
-
 .border-band { position: absolute; }
 .seam {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  margin-left: -0.5px;
-  background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.9) 0 6px, rgba(0, 0, 0, 0.5) 6px 12px);
+position: absolute;
+top: 0;
+bottom: 0;
+width: 1px;
+margin-left: -0.5px;
+background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.9) 0 6px, rgba(0, 0, 0, 0.5) 6px 12px);
 }
 .safe-band {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.32);
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  text-align: center;
-  line-height: 1.2;
-  padding: 0 4px;
+position: absolute;
+display: flex;
+align-items: center;
+justify-content: center;
+overflow: hidden;
+background: rgba(0, 0, 0, 0.32);
+color: rgba(255, 255, 255, 0.92);
+font-size: 11px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 1px;
+text-align: center;
+line-height: 1.2;
+padding: 0 4px;
 }
 .safe-band.top { border-bottom: 1px dashed rgba(255, 255, 255, 0.85); }
 .safe-band.bottom { border-top: 1px dashed rgba(255, 255, 255, 0.85); }
-
 .guide { position: absolute; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4); }
 .guide.v { top: -14px; bottom: -14px; width: 1px; margin-left: -0.5px; }
 .guide.h { left: -14px; right: -14px; height: 1px; margin-top: -0.5px; }
-
 .ws-add {
-  position: absolute;
-  z-index: 3;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: none;
-  background: var(--paper);
-  color: var(--navy);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  letter-spacing: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  touch-action: manipulation;
+position: absolute;
+z-index: 3;
+width: 44px;
+height: 44px;
+border-radius: 50%;
+border: none;
+background: var(--paper);
+color: var(--navy);
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 0;
+letter-spacing: 0;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+touch-action: manipulation;
 }
 .ws-add svg { width: 24px; height: 24px; }
-
 .ws-labels { position: absolute; inset: 0; pointer-events: none; }
 .ws-del {
-  position: relative;
-  flex: none;
-  width: 26px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--canvas-label);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: auto;
-  touch-action: manipulation;
+position: relative;
+flex: none;
+width: 26px;
+height: 24px;
+padding: 0;
+border: none;
+background: none;
+color: var(--canvas-label);
+display: flex;
+align-items: center;
+justify-content: center;
+pointer-events: auto;
+touch-action: manipulation;
 }
 .ws-del::before { content: ''; position: absolute; inset: -8px -6px; }
 .ws-del svg { width: 17px; height: 17px; }
 .ws-label {
-  position: absolute;
-  height: 20px;
-  line-height: 20px;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--canvas-label);
+position: absolute;
+height: 20px;
+line-height: 20px;
+text-align: center;
+white-space: nowrap;
+overflow: hidden;
+font-size: 12px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 1px;
+color: var(--canvas-label);
 }
 .ws-label > span { overflow: hidden; text-overflow: clip; }
 
 /* ---- styles/editor-frames.css ---- */
-/* Frames in the editor: the one picked, its handles and x, the tray. */
-/* Padding on the left as wide as the trash keeps the words centred. */
 .ws-label.has-del { display: flex; align-items: center; justify-content: center; gap: 4px; padding-left: 30px; overflow: visible; }
-
-/* Selection: white with a dark edge, readable on any photo. */
 .sel { position: absolute; pointer-events: none; outline: 2px solid #fff; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.45); }
 .sel.is-photo { outline-style: dashed; }
 .sel.is-photo .handle { display: none; }
 .handle {
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.6);
-  pointer-events: auto;
-  touch-action: none;
+position: absolute;
+width: 14px;
+height: 14px;
+background: #fff;
+border: 1px solid rgba(0, 0, 0, 0.6);
+pointer-events: auto;
+touch-action: none;
 }
-/* A bigger target for fingers than the square you see. */
 .handle::before { content: ''; position: absolute; inset: -13px; }
 .h-nw { left: -8px; top: -8px; cursor: nwse-resize; }
 .h-n { left: calc(50% - 7px); top: -8px; cursor: ns-resize; }
@@ -1087,329 +942,294 @@ body[data-route="edit"] #app { padding: 0; max-width: none; }
 .h-sw { left: -8px; bottom: -8px; cursor: nesw-resize; }
 .h-w { left: -8px; top: calc(50% - 7px); cursor: ew-resize; }
 .sel.is-small .h-n, .sel.is-small .h-s, .sel.is-small .h-e, .sel.is-small .h-w { display: none; }
-/* The x that takes the photo out sits on the top-right corner, in place of
-   that corner's handle. White and black only, like the rest of the canvas. */
 .sel-x {
-  display: none;
-  position: absolute;
-  right: -13px;
-  top: -13px;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.6);
-  background: #fff;
-  color: #222;
-  padding: 0;
-  align-items: center;
-  justify-content: center;
-  pointer-events: auto;
-  touch-action: manipulation;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+display: none;
+position: absolute;
+right: -13px;
+top: -13px;
+width: 26px;
+height: 26px;
+border-radius: 50%;
+border: 1px solid rgba(0, 0, 0, 0.6);
+background: #fff;
+color: #222;
+padding: 0;
+align-items: center;
+justify-content: center;
+pointer-events: auto;
+touch-action: manipulation;
+box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 .sel-x::before { content: ''; position: absolute; inset: -9px; }
 .sel-x svg { width: 14px; height: 14px; stroke-width: 3; }
 .sel.has-photo .sel-x { display: flex; }
 .sel.has-photo .h-ne { display: none; }
-
 .ed-adjust {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 6px 12px 6px 16px;
-  background: var(--surface);
-  border-top: 3px solid var(--ink);
+flex-shrink: 0;
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 6px 12px 6px 16px;
+background: var(--surface);
+border-top: 3px solid var(--ink);
 }
 .ed-adjust input[type="range"] { flex: 1; min-width: 0; accent-color: var(--magenta); }
 .ed-adjust-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 .ed-adjust .small-btn { align-self: center; padding: 7px 12px; font-size: 13px; text-transform: uppercase; }
-
 .tray {
-  flex-shrink: 0;
-  position: relative;
-  z-index: 3;
-  touch-action: none;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 8px;
-  background: var(--surface);
-  border-top: 3px solid var(--ink);
+flex-shrink: 0;
+position: relative;
+z-index: 3;
+touch-action: none;
+display: flex;
+gap: 8px;
+align-items: center;
+padding: 8px;
+background: var(--surface);
+border-top: 3px solid var(--ink);
 }
 .tray-add {
-  flex-shrink: 0;
-  touch-action: manipulation;
-  width: 72px;
-  height: 72px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  padding: 0;
-  background: var(--accent);
-  color: var(--on-accent);
-  border: 2px solid var(--magenta);
-  font-family: var(--font-title);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+flex-shrink: 0;
+touch-action: manipulation;
+width: 72px;
+height: 72px;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 2px;
+padding: 0;
+background: var(--accent);
+color: var(--on-accent);
+border: 2px solid var(--magenta);
+font-family: var(--font-title);
+font-size: 10px;
+text-transform: uppercase;
+letter-spacing: 0.3px;
 }
 .tray-add svg { width: 24px; height: 24px; }
-/* The list reaches up over the canvas (see-through, and taps pass through)
-   so a swelling photo has room to grow without making the tray taller. */
 .tray-list {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  margin-top: -36px;
-  padding: 36px 2px 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  touch-action: none;
-  scrollbar-width: none;
-  pointer-events: none;
+flex: 1;
+min-width: 0;
+position: relative;
+display: flex;
+align-items: flex-end;
+gap: 6px;
+margin-top: -36px;
+padding: 36px 2px 0;
+overflow-x: auto;
+overflow-y: hidden;
+touch-action: none;
+scrollbar-width: none;
+pointer-events: none;
 }
 .tray-list::-webkit-scrollbar { display: none; }
 .tray-item {
-  position: relative;
-  flex-shrink: 0;
-  width: 72px;
-  height: 72px;
-  padding: 0;
-  border: none;
-  background: var(--line);
-  touch-action: none;
-  -webkit-touch-callout: none;
-  pointer-events: auto;
-  transform-origin: 50% 100%;
-  transition: transform 0.22s ease-out;
+position: relative;
+flex-shrink: 0;
+width: 72px;
+height: 72px;
+padding: 0;
+border: none;
+background: var(--line);
+touch-action: none;
+-webkit-touch-callout: none;
+pointer-events: auto;
+transform-origin: 50% 100%;
+transition: transform 0.22s ease-out;
 }
 .tray.is-swell .tray-item { transition: transform 0.06s linear; }
 .tray-hint { pointer-events: auto; align-self: center; }
 .tray-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; -webkit-user-drag: none; }
 .tray-item.is-used img { opacity: 0.5; }
 .tray-used {
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 20px;
-  height: 20px;
-  background: var(--hero);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+position: absolute;
+right: 3px;
+bottom: 3px;
+width: 20px;
+height: 20px;
+background: var(--hero);
+color: #fff;
+display: flex;
+align-items: center;
+justify-content: center;
 }
 .tray-used svg { width: 13px; height: 13px; }
 
 /* ---- styles/editor-video.css ---- */
-/* Videos marked on thumbs, in the tray and pickers, and in the export list. */
-/* Marks a video: on thumbs in the tray and pickers, and in the export list. */
 .tray-vid,
 .order-vid {
-  position: absolute;
-  left: 3px;
-  bottom: 3px;
-  width: 20px;
-  height: 20px;
-  background: var(--hero);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
+position: absolute;
+left: 3px;
+bottom: 3px;
+width: 20px;
+height: 20px;
+background: var(--hero);
+color: #fff;
+display: flex;
+align-items: center;
+justify-content: center;
+pointer-events: none;
 }
 .tray-vid svg,
 .order-vid svg { width: 13px; height: 13px; }
 .video-live { display: flex; justify-content: center; margin-top: 12px; }
 .video-live canvas { display: block; max-width: 100%; max-height: 240px; width: auto; height: auto; box-shadow: 0 0 0 1px var(--line); }
 .tray-hint { margin: 0; font-size: 12px; line-height: 1.25; color: var(--text-dim); }
-
 .ed-tools {
-  flex-shrink: 0;
-  display: flex;
-  background: var(--surface);
-  border-top: 3px solid var(--ink);
-  /* Close to the home bar, the way iPhone apps' own tab bars sit. */
-  padding: 2px 0 max(4px, calc(var(--sa-b) - 14px));
+flex-shrink: 0;
+display: flex;
+background: var(--surface);
+border-top: 3px solid var(--ink);
+padding: 2px 0 max(4px, calc(var(--sa-b) - 14px));
 }
 .tool {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 1px 4px;
-  border: none;
-  background: none;
-  color: var(--text);
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+flex: 1;
+min-width: 0;
+position: relative;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 2px;
+padding: 6px 1px 4px;
+border: none;
+background: none;
+color: var(--text);
+font-size: 10.5px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.3px;
 }
 .tool-icon svg { width: 21px; height: 21px; display: block; }
 .tool-label { white-space: nowrap; }
 .tool:disabled { opacity: 0.3; cursor: default; }
 .tool.is-on::before {
-  content: '';
-  position: absolute;
-  top: -7px;
-  left: 20%;
-  right: 20%;
-  height: 5px;
-  background: var(--accent);
+content: '';
+position: absolute;
+top: -7px;
+left: 20%;
+right: 20%;
+height: 5px;
+background: var(--accent);
 }
-
 .drag-ghost {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  pointer-events: none;
-  z-index: 300;
-  border: 2px solid #fff;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  opacity: 0.92;
+position: fixed;
+left: 0;
+top: 0;
+width: 64px;
+height: 64px;
+object-fit: cover;
+pointer-events: none;
+z-index: 300;
+border: 2px solid #fff;
+box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+opacity: 0.92;
 }
 
 /* ---- styles/toast.css ---- */
-/* The toast at the bottom of the screen. */
-/* ---------- Toast ---------- */
-
 .toast {
-  position: fixed;
-  left: 50%;
-  bottom: calc(24px + var(--sa-b));
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 528px;
-  background: var(--hero);
-  color: #fff;
-  border-left: 8px solid var(--accent);
-  padding: 12px 14px;
-  font-size: 15px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  z-index: 200;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+position: fixed;
+left: 50%;
+bottom: calc(24px + var(--sa-b));
+transform: translateX(-50%);
+width: calc(100% - 32px);
+max-width: 528px;
+background: var(--hero);
+color: #fff;
+border-left: 8px solid var(--accent);
+padding: 12px 14px;
+font-size: 15px;
+font-weight: 700;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+z-index: 200;
+box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 body[data-route="edit"] .toast { bottom: calc(136px + var(--sa-b)); }
 .toast.show { animation: slideUp 0.2s ease; }
 .toast-action {
-  border: 2px solid var(--accent);
-  background: none;
-  color: var(--accent);
-  padding: 6px 10px;
-  font-family: var(--font-title);
-  font-size: 13px;
-  text-transform: uppercase;
-  flex-shrink: 0;
+border: 2px solid var(--accent);
+background: none;
+color: var(--accent);
+padding: 6px 10px;
+font-family: var(--font-title);
+font-size: 13px;
+text-transform: uppercase;
+flex-shrink: 0;
 }
-
 .noscript { padding: 24px; text-align: center; }
 
 /* ---- styles/wide.css ---- */
-/* Wider screens and desktops. */
-/* ---------- Wider screens ---------- */
-
 @media (min-width: 600px) {
-  :where(html:not(.is-turned)) .sheet-overlay { align-items: center; padding: 24px; }
-  :where(html:not(.is-turned)) .sheet { max-height: calc(var(--vv-height, 100vh) * 0.88); border: 3px solid var(--ink); border-top: 4px solid var(--accent); }
-  :where(html:not(.is-turned)) .sheet-small { max-width: 460px; }
-  :where(html:not(.is-turned)) .sheet-export { max-width: 640px; }
+:where(html:not(.is-turned)) .sheet-overlay { align-items: center; padding: 24px; }
+:where(html:not(.is-turned)) .sheet { max-height: calc(var(--vv-height, 100vh) * 0.88); border: 3px solid var(--ink); border-top: 4px solid var(--accent); }
+:where(html:not(.is-turned)) .sheet-small { max-width: 460px; }
+:where(html:not(.is-turned)) .sheet-export { max-width: 640px; }
 }
-
 @media (min-width: 700px) {
-  :where(html:not(.is-turned)) .ed-tools, :where(html:not(.is-turned)) .tray { justify-content: center; }
-  :where(html:not(.is-turned)) .tool { flex: 0 0 96px; font-size: 11px; letter-spacing: 0.8px; }
-  :where(html:not(.is-turned)) .tray-list { flex: 0 1 auto; }
+:where(html:not(.is-turned)) .ed-tools, :where(html:not(.is-turned)) .tray { justify-content: center; }
+:where(html:not(.is-turned)) .tool { flex: 0 0 96px; font-size: 11px; letter-spacing: 0.8px; }
+:where(html:not(.is-turned)) .tray-list { flex: 0 1 auto; }
 }
-
-/* Desktop: content gets room. */
 @media (min-width: 900px) {
-  :where(html:not(.is-turned)) #app {
-    max-width: 920px;
-    padding: 0 32px 64px;
-  }
-
-  /* Edge to edge across the window, content still lined up with the
-     column below. 100% here is the column's own width. */
-  :where(html:not(.is-turned)) .hero-band {
-    width: 100vw;
-    margin-left: calc(50% - 50vw);
-    padding: 28px calc((100vw - 100%) / 2) 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-  }
-  :where(html:not(.is-turned)) .hero-band .brand-row { margin-bottom: 0; flex: 1; min-width: 0; }
-  :where(html:not(.is-turned)) .hero-band .hero-cta { width: auto; min-width: 260px; }
-
-  :where(html:not(.is-turned)) .toast { bottom: 24px; }
-  :where(html:not(.is-turned)) body[data-route="edit"] .toast { left: 50%; bottom: 190px; }
-
-  :where(html:not(.is-turned)) .card-list:has(> .draft-card), :where(html:not(.is-turned)) .card-list:has(> .tpl-card) { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); }
+:where(html:not(.is-turned)) #app {
+max-width: 920px;
+padding: 0 32px 64px;
+}
+:where(html:not(.is-turned)) .hero-band {
+width: 100vw;
+margin-left: calc(50% - 50vw);
+padding: 28px calc((100vw - 100%) / 2) 24px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 24px;
+}
+:where(html:not(.is-turned)) .hero-band .brand-row { margin-bottom: 0; flex: 1; min-width: 0; }
+:where(html:not(.is-turned)) .hero-band .hero-cta { width: auto; min-width: 260px; }
+:where(html:not(.is-turned)) .toast { bottom: 24px; }
+:where(html:not(.is-turned)) body[data-route="edit"] .toast { left: 50%; bottom: 190px; }
+:where(html:not(.is-turned)) .card-list:has(> .draft-card), :where(html:not(.is-turned)) .card-list:has(> .tpl-card) { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); }
 }
 
 /* ---- styles/notebook.css ---- */
-/* The notebook: its frame, the sideways iPhone, the float and its shadow. */
-/* ---------- The notebook ---------- */
-/* A flat card notebook with white pages, in the color picked in Options.
-   Everything else is Berry Blade black on white. These come after the
-   dark-mode tokens so the notebook always wins. */
 @font-face {
-  font-family: "Klee One";
-  src: url("../fonts/klee-one-latin.woff") format("woff"); /* Klee One, resized inside the file to Mansalva's width and line height (Safari has no ascent-override), so no layout moved */
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
+font-family: "Klee One";
+src: url("../fonts/klee-one-latin.woff") format("woff");
+font-weight: 400;
+font-style: normal;
+font-display: swap;
 }
-@font-face { font-family: "Kaisei Decol"; src: url("../fonts/kaisei-decol-500-latin.woff2") format("woff2"); font-weight: 500; font-display: swap; size-adjust: 85.4%; } /* the headers, in capitals: Kaisei Decol Medium, sized so its capitals stand as tall as Klee One's */
+@font-face { font-family: "Kaisei Decol"; src: url("../fonts/kaisei-decol-500-latin.woff2") format("woff2"); font-weight: 500; font-display: swap; size-adjust: 85.4%; }
 :root[data-book] {
-  color-scheme: light;
-  --ink: #313d45;
-  --hero: #313d45;
-  --on-ink: #fff;
-  --accent: #313d45;
-  --on-accent: #fff;
-  --magenta: #313d45;
-  --text: #313d45;
-  --text-dim: rgba(49, 61, 69, 0.66);
-  /* A very soft grey behind everything (less light than white, and it still
-     reads as white), and paper one shade lighter: the notebook's pages, the
-     sheets, fields and buttons on them. White lettering stays white, and so
-     do marks drawn over photos and anything that shows the export itself. */
-  --bg: #f3f3f3;
-  --paper: #ffffff; /* the open notebook's pages: plain white */
-  --surface: var(--paper);
-  --line: #d6dadd;
-  --field: var(--paper);
-  --overlay: rgba(49, 61, 69, 0.42);
-  --canvas: var(--bg);
-  --canvas-label: #313d45;
-  --font-hand: "Klee One", "Bradley Hand", "Noteworthy", cursive;
-  --font-title: var(--font-hand);
-  --font-body: var(--font-hand);
-  --book-cover: url(../art/orange-cover.webp);
-  --book-block: url(../art/orange-block.webp);
-  --book-back: #d9641a;
-  --book-rim: #ec701e; /* the frame's coloured band, measured off its art */
-  --book-pale: #fbe2d2; /* a fifth of the colour on white: the pale tab */
-  --book-shadow: 0 16px 34px rgba(60, 40, 20, 0.2), 0 3px 8px rgba(60, 40, 20, 0.14);
+color-scheme: light;
+--ink: #313d45;
+--hero: #313d45;
+--on-ink: #fff;
+--accent: #313d45;
+--on-accent: #fff;
+--magenta: #313d45;
+--text: #313d45;
+--text-dim: rgba(49, 61, 69, 0.66);
+--bg: #f3f3f3;
+--paper: #ffffff;
+--surface: var(--paper);
+--line: #d6dadd;
+--field: var(--paper);
+--overlay: rgba(49, 61, 69, 0.42);
+--canvas: var(--bg);
+--canvas-label: #313d45;
+--font-hand: "Klee One", "Bradley Hand", "Noteworthy", cursive;
+--font-title: var(--font-hand);
+--font-body: var(--font-hand);
+--book-cover: url(../art/orange-cover.webp);
+--book-block: url(../art/orange-block.webp);
+--book-back: #d9641a;
+--book-rim: #ec701e;
+--book-pale: #fbe2d2;
+--book-shadow: 0 16px 34px rgba(60, 40, 20, 0.2), 0 3px 8px rgba(60, 40, 20, 0.14);
 }
 :root[data-book="mango"] { --book-cover: url(../art/mango-cover.webp); --book-block: url(../art/mango-block.webp); --book-back: #e0b012; --book-rim: #f9c614; --book-pale: #fef4d0; }
 :root[data-book="berry"] { --book-cover: url(../art/berry-cover.webp); --book-block: url(../art/berry-block.webp); --book-back: #a80a73; --book-rim: #bf0b83; --book-pale: #f2cee6; }
@@ -1417,148 +1237,127 @@ body[data-route="edit"] .toast { bottom: calc(136px + var(--sa-b)); }
 :root[data-book="ocean"] { --book-cover: url(../art/ocean-cover.webp); --book-block: url(../art/ocean-block.webp); --book-back: #1f5095; --book-rim: #235caa; --book-pale: #d3deee; }
 :root[data-book="leaf"] { --book-cover: url(../art/leaf-cover.webp); --book-block: url(../art/leaf-block.webp); --book-back: #249073; --book-rim: #28a583; --book-pale: #d4ede7; }
 :root[data-book="ink"] { --book-cover: url(../art/ink-cover.webp); --book-block: url(../art/ink-block.webp); --book-back: #2a353c; --book-rim: #303d44; --book-pale: #d6d8da; }
-
-/* The notebook's frame, the same in the contents and every chapter. */
 :root {
-  --sa-t: env(safe-area-inset-top);
-  --sa-b: env(safe-area-inset-bottom);
-  --nb-t: max(var(--sa-t), 10px);
-  --nb-b: max(calc(var(--sa-b) + 2px), 10px);
-  --nb-rim: 0px; /* no notebook edge round the open pages */
-  --head: "Kaisei Decol", "Klee One", Georgia, serif; /* headers, always in capitals */
-  --lh: 32px; /* a slide's label sits this far above it */
-  --ink-deep: color-mix(in srgb, var(--book-rim) 78%, #000);
+--sa-t: env(safe-area-inset-top);
+--sa-b: env(safe-area-inset-bottom);
+--nb-t: max(var(--sa-t), 10px);
+--nb-b: max(calc(var(--sa-b) + 2px), 10px);
+--nb-rim: 0px;
+--head: "Kaisei Decol", "Klee One", Georgia, serif;
+--lh: 32px;
+--ink-deep: color-mix(in srgb, var(--book-rim) 78%, #000);
 }
 html.is-short { --nb-b: 10px; }
-/* The handwriting has one weight: no smeared fake bold. */
 html { background: var(--bg); font-synthesis: none; -webkit-font-synthesis: none; }
-/* For a moment as the iPhone app opens (components/screen-fit.js): taller than the screen, so
-   iOS measures the screen again. */
 html.ios-nudge body { min-height: calc(var(--screen-h, 100vh) + 160px); overflow: visible; }
-/* A sideways iPhone (components/upright.js): the page is laid out at its upright
-   size and drawn a quarter turn round, so it stays the way up it is in your
-   hand. The phone's top edge keeps the top's room and the bottom a home bar's
-   worth, as upright. */
 html.is-turned {
-  --sa-t: max(env(safe-area-inset-left), env(safe-area-inset-right));
-  --sa-b: min(max(env(safe-area-inset-left), env(safe-area-inset-right)), 34px);
-  --nb-b: max(calc(var(--sa-b) + 2px), 10px);
-  overflow: hidden;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
+--sa-t: max(env(safe-area-inset-left), env(safe-area-inset-right));
+--sa-b: min(max(env(safe-area-inset-left), env(safe-area-inset-right)), 34px);
+--nb-b: max(calc(var(--sa-b) + 2px), 10px);
+overflow: hidden;
+-webkit-text-size-adjust: 100%;
+text-size-adjust: 100%;
 }
 html.is-turned body {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: var(--turn-w);
-  height: var(--turn-h);
-  min-height: 0;
-  margin: 0;
-  overflow: hidden;
-  transform-origin: 0 0;
+position: fixed;
+top: 0;
+left: 0;
+width: var(--turn-w);
+height: var(--turn-h);
+min-height: 0;
+margin: 0;
+overflow: hidden;
+transform-origin: 0 0;
 }
 html.is-turned-l body { transform: translateY(var(--turn-w)) rotate(-90deg); }
 html.is-turned-r body { transform: translateX(var(--turn-h)) rotate(90deg); }
-
 body[data-route="book"] { overflow: hidden; background: var(--bg); }
 body[data-route="book"] #app { padding: 0; max-width: none; }
-
 .nb {
-  position: fixed;
-  inset: 0;
-  background: var(--bg);
-  perspective: 1100px;
-  perspective-origin: 50% 28%;
-  overflow: hidden;
-  transition: opacity 0.2s;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-  touch-action: manipulation;
+position: fixed;
+inset: 0;
+background: var(--bg);
+perspective: 1100px;
+perspective-origin: 50% 28%;
+overflow: hidden;
+transition: opacity 0.2s;
+-webkit-user-select: none;
+user-select: none;
+-webkit-touch-callout: none;
+touch-action: manipulation;
 }
-/* On the fade: opacity here, not on the book, or its 3D would flatten. */
 .nb.is-waiting { opacity: 0; }
 .nb-float {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 0;
-  height: 0;
-  transform-style: preserve-3d;
+position: absolute;
+left: 50%;
+top: 50%;
+width: 0;
+height: 0;
+transform-style: preserve-3d;
 }
 .nb[data-mode="closed"] .nb-float { animation: nb-float 5.2s ease-in-out infinite; }
 @keyframes nb-float {
-  0%, 100% { transform: translateY(-7px) rotateZ(-0.7deg) rotateY(-2deg); }
-  50% { transform: translateY(7px) rotateZ(0.7deg) rotateY(2deg); }
+0%, 100% { transform: translateY(-7px) rotateZ(-0.7deg) rotateY(-2deg); }
+50% { transform: translateY(7px) rotateZ(0.7deg) rotateY(2deg); }
 }
-/* The shadow lies on a floor under the book, turned the same way and seen
-   through the same perspective, so it runs along the book's bottom edge. */
 .nb-ground {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: var(--W);
-  height: calc(var(--W) * 0.36);
-  transform-origin: 0 0;
-  transform: rotateY(calc(-20deg + var(--spin, 0rad))) translate3d(calc(var(--W) / -2 + var(--shut-x, 0px)), calc(var(--H) / 2 + var(--W) * 0.11), calc(var(--W) * -0.26)) rotateX(90deg);
-  pointer-events: none;
-  transition: opacity 0.4s;
+position: absolute;
+left: 50%;
+top: 50%;
+width: var(--W);
+height: calc(var(--W) * 0.36);
+transform-origin: 0 0;
+transform: rotateY(calc(-20deg + var(--spin, 0rad))) translate3d(calc(var(--W) / -2 + var(--shut-x, 0px)), calc(var(--H) / 2 + var(--W) * 0.11), calc(var(--W) * -0.26)) rotateX(90deg);
+pointer-events: none;
+transition: opacity 0.4s;
 }
 .nb-ground::before {
-  content: '';
-  position: absolute;
-  inset: 6% 3%;
-  border-radius: 10px;
-  background: rgba(40, 42, 48, 0.36);
-  filter: blur(calc(var(--W) * 0.04));
-  animation: nb-ground 5.2s ease-in-out infinite;
+content: '';
+position: absolute;
+inset: 6% 3%;
+border-radius: 10px;
+background: rgba(40, 42, 48, 0.36);
+filter: blur(calc(var(--W) * 0.04));
+animation: nb-ground 5.2s ease-in-out infinite;
 }
 .nb:not([data-mode="closed"]) .nb-ground { opacity: 0; }
 .nb:not([data-mode="closed"]) .nb-ground::before { animation: none; }
-/* In time with the float: lighter and wider while the book is up. */
 @keyframes nb-ground {
-  0%, 100% { transform: scale(1.04); opacity: 0.62; }
-  50% { transform: scale(0.97); opacity: 0.92; }
+0%, 100% { transform: scale(1.04); opacity: 0.62; }
+50% { transform: scale(0.97); opacity: 0.92; }
 }
-/* Its middle on the same line as the middles of the contents' bottom icons:
-   their row sits on the frame, and an icon's middle is 38.5px up from the
-   row's foot (row and button padding, the label, the gap, half the icon). */
 .nb-sun {
-  position: fixed;
-  left: 50%;
-  bottom: calc(max(30px, calc(var(--sa-b) + 6px)) - 24px); /* its middle where the bar's icon is */
-  width: 48px;
-  height: 48px;
-  margin-left: -24px;
-  padding: 13.5px;
-  border: none;
-  background: none;
-  color: var(--text);
-  transition: opacity 0.25s;
+position: fixed;
+left: 50%;
+bottom: calc(max(30px, calc(var(--sa-b) + 6px)) - 24px);
+width: 48px;
+height: 48px;
+margin-left: -24px;
+padding: 13.5px;
+border: none;
+background: none;
+color: var(--text);
+transition: opacity 0.25s;
 }
-/* The same size as the contents' bottom icons. */
 .nb-sun svg { width: 21px; height: 21px; display: block; }
 .nb:not([data-mode="closed"]) ~ .nb-sun { opacity: 0; pointer-events: none; }
 .opt-colors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 8px; margin-top: 10px; }
 .opt-color {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-  border: none;
-  background: none;
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 13px;
-  letter-spacing: 0;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 8px;
+padding: 8px 0;
+border: none;
+background: none;
+color: var(--text);
+font-family: var(--font-body);
+font-size: 13px;
+letter-spacing: 0;
 }
 .opt-gap { margin-top: 18px; }
 
 /* ---- styles/options.css ---- */
-/* Options' labels. */
-/* Options (pages/options.js): its labels as Ref Notebook's, in the handwriting. */
 .sheet-options .field-label { margin-bottom: 0; font-size: 17px; font-weight: 400; letter-spacing: 0.3px; text-transform: none; }
 .opt-wide { display: block; width: 100%; margin-top: 8px; }
 .opt-seg { display: flex; margin-top: 8px; border: 1px solid var(--text); border-radius: 8px; overflow: hidden; }
@@ -1568,21 +1367,21 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .sheet .modal-cta.secondary { background: var(--paper); color: var(--text); font-family: var(--font-body); font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; border: 1px solid var(--text); border-radius: 8px; }
 .choice-heading { margin-top: 10px; }
 .opt-book {
-  width: 48px;
-  height: 65px;
-  border-radius: 0 5px 5px 0;
-  background: center / 100% 100% no-repeat;
+width: 48px;
+height: 65px;
+border-radius: 0 5px 5px 0;
+background: center / 100% 100% no-repeat;
 }
 .opt-color[aria-pressed="true"] .opt-book { outline: 1.5px solid var(--text); outline-offset: 3px; }
 .nb-book {
-  position: absolute;
-  left: 0;
-  top: calc(var(--H) / -2);
-  width: var(--W);
-  height: var(--H);
-  transform-origin: 0 50%;
-  transform-style: preserve-3d;
-  transition: transform 0.72s cubic-bezier(0.45, 0.05, 0.25, 1);
+position: absolute;
+left: 0;
+top: calc(var(--H) / -2);
+width: var(--W);
+height: var(--H);
+transform-origin: 0 50%;
+transform-style: preserve-3d;
+transition: transform 0.72s cubic-bezier(0.45, 0.05, 0.25, 1);
 }
 .nb-block,
 .nb-leaf,
@@ -1590,42 +1389,33 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-inside { position: absolute; inset: 0; }
 
 /* ---- styles/cover.css ---- */
-/* The notebook's cover and its edge, shut and open. */
-/* The edge is drawn at the width it ends up on screen, so the zoomed page
-   lands exactly on the contents' frame. */
 .nb-block,
 .nb-inside::before {
-  box-sizing: border-box;
-  border-style: solid;
-  border-width: var(--ry) var(--rx) var(--ry) 0;
-  border-image: var(--book-block) 46 46 46 1 fill / var(--ry) var(--rx) var(--ry) 0 stretch;
+box-sizing: border-box;
+border-style: solid;
+border-width: var(--ry) var(--rx) var(--ry) 0;
+border-image: var(--book-block) 46 46 46 1 fill / var(--ry) var(--rx) var(--ry) 0 stretch;
 }
 .nb-block { transition: box-shadow 0.3s, visibility 0s; }
-/* Shut, the inside isn't drawn at all, so it can never show before the cover
-   has painted. It goes once the cover has swung closed. */
 .nb-inside { transition: visibility 0s; }
 .nb[data-mode="closed"] .nb-block { visibility: hidden; transition: box-shadow 0.3s, visibility 0s 0.82s; }
 .nb[data-mode="closed"] .nb-inside { visibility: hidden; transition: visibility 0s 0.82s; }
 .nb:not([data-mode="closed"]) .nb-block { box-shadow: var(--book-shadow); }
 .nb-leaf {
-  transform: rotateY(0deg) translateZ(1px);
-  transform-origin: 0 50%;
-  transform-style: preserve-3d;
-  transition: transform 0.82s cubic-bezier(0.45, 0.05, 0.25, 1);
+transform: rotateY(0deg) translateZ(1px);
+transform-origin: 0 50%;
+transform-style: preserve-3d;
+transition: transform 0.82s cubic-bezier(0.45, 0.05, 0.25, 1);
 }
 .nb-front {
-  background: var(--book-back) var(--book-cover) center / 100% 100% no-repeat;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+background: var(--book-back) var(--book-cover) center / 100% 100% no-repeat;
+transform-style: preserve-3d;
+backface-visibility: hidden;
+-webkit-backface-visibility: hidden;
 }
-/* Open at a page from the start, the cover's art waits until the book shuts (pages/book.js). */
 .nb.cover-later .nb-front { background-image: none; }
 
 /* ---- styles/stickers.css ---- */
-/* Stickers on the notebook's cover. */
-/* Stickers. Each is cut off at the cover's edge, curves away there, and the
-   next bit wraps round the edge, standing at right angles to the cover. */
 .nb-stickers, .nb-sticker-edges, .nb-stick-clip, .nb-fold { position: absolute; inset: 0; pointer-events: none; }
 .nb-stickers { transform: translateZ(0.2px); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .nb-sticker-edges { transform-style: preserve-3d; }
@@ -1637,19 +1427,18 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb-fold.is-top { transform-origin: 50% 0; transform: rotateX(90deg); clip-path: inset(-1.3% 0 100% 0); }
 .nb-fold.is-bottom { transform-origin: 50% 100%; transform: rotateX(-90deg); clip-path: inset(100% 0 -1.3% 0); }
 .nb-sticker {
-  position: absolute;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 1px 2px rgba(58, 38, 16, 0.32), 0 0 1px rgba(58, 38, 16, 0.3);
+position: absolute;
+aspect-ratio: 1;
+transform: translate(-50%, -50%);
+box-shadow: 0 1px 2px rgba(58, 38, 16, 0.32), 0 0 1px rgba(58, 38, 16, 0.3);
 }
 .nb-sticker img { display: block; width: 100%; height: 100%; border-radius: inherit; }
-/* A little raised: light along the top of the paper, shade along the bottom. */
 .nb-sticker::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(58, 38, 16, 0.14);
+content: '';
+position: absolute;
+inset: 0;
+border-radius: inherit;
+box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(58, 38, 16, 0.14);
 }
 .nb-bend { position: absolute; inset: 0; border-radius: inherit; }
 .nb-fold .nb-sticker { box-shadow: none; }
@@ -1662,27 +1451,27 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb.is-sticking .nb-tabhits { display: none; }
 .nb-stickpad { position: absolute; inset: 0; z-index: 7; touch-action: none; }
 .nb-stick-bar {
-  position: absolute;
-  left: 50%;
-  bottom: calc(var(--sa-b) + 14px);
-  width: 200px;
-  margin-left: -100px;
-  text-align: center;
+position: absolute;
+left: 50%;
+bottom: calc(var(--sa-b) + 14px);
+width: 200px;
+margin-left: -100px;
+text-align: center;
 }
 .nb-stick-hint { margin: 0 0 6px; font-size: 15px; color: var(--text); pointer-events: none; }
 .opt-shapes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .opt-shape {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 18px 0 14px;
-  border: 1px solid var(--text);
-  border-radius: 8px;
-  background: none;
-  color: var(--text);
-  font-family: var(--font-title);
-  font-size: 17px;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 10px;
+padding: 18px 0 14px;
+border: 1px solid var(--text);
+border-radius: 8px;
+background: none;
+color: var(--text);
+font-family: var(--font-title);
+font-size: 17px;
 }
 .opt-shape i { width: 56px; height: 56px; border: 2px solid var(--text); }
 .opt-shape i.is-circle { border-radius: 50%; }
@@ -1691,13 +1480,13 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .crop-stage { position: relative; overflow: hidden; touch-action: none; background: var(--paper); }
 .crop-stage canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .crop-hole {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 0 999px rgba(255, 255, 255, 0.74);
-  outline: 1.5px solid var(--text);
-  pointer-events: none;
+position: absolute;
+left: 50%;
+top: 50%;
+transform: translate(-50%, -50%);
+box-shadow: 0 0 0 999px rgba(255, 255, 255, 0.74);
+outline: 1.5px solid var(--text);
+pointer-events: none;
 }
 .crop-hole.is-circle { border-radius: 50%; }
 .crop-hint { text-align: center; margin: 8px 0 10px; }
@@ -1705,67 +1494,60 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .opt-sticker { padding: 0; border: none; background: none; }
 .opt-sticker img { display: block; width: 100%; box-shadow: 0 1px 3px rgba(58, 38, 16, 0.4); }
 .nb-inside {
-  transform: rotateY(180deg);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+transform: rotateY(180deg);
+backface-visibility: hidden;
+-webkit-backface-visibility: hidden;
 }
 .nb-inside::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  box-shadow: var(--book-shadow);
-  transform: scaleX(-1);
+content: '';
+position: absolute;
+inset: 0;
+box-shadow: var(--book-shadow);
+transform: scaleX(-1);
 }
-/* The page's edge (see .nb-open > span::after), drawn at the size it ends up
-   on screen. The inside of the cover has its outer edge on the left. */
 .nb-block,
 .nb-inside { --ex: calc(var(--rx) / 10); --ey: calc(var(--ry) / 10); }
 .nb .nb-inside::after {
-  top: calc(var(--ey) * 7);
-  bottom: calc(var(--ey) * 7);
-  left: calc(var(--ex) * 7);
-  right: 0;
-  border-radius: calc(var(--ex) * 20) 0 0 calc(var(--ex) * 20) / calc(var(--ey) * 20) 0 0 calc(var(--ey) * 20);
-  clip-path: inset(calc(var(--ey) * -3) 0 calc(var(--ey) * -5) calc(var(--ex) * -6.5) round calc(var(--ex) * 9) 0 0 calc(var(--ex) * 9));
+top: calc(var(--ey) * 7);
+bottom: calc(var(--ey) * 7);
+left: calc(var(--ex) * 7);
+right: 0;
+border-radius: calc(var(--ex) * 20) 0 0 calc(var(--ex) * 20) / calc(var(--ey) * 20) 0 0 calc(var(--ey) * 20);
+clip-path: inset(calc(var(--ey) * -3) 0 calc(var(--ey) * -5) calc(var(--ex) * -6.5) round calc(var(--ex) * 9) 0 0 calc(var(--ex) * 9));
 }
 
 /* ---- styles/cover-depth.css ---- */
-/* The shut notebook seen in depth: its sheets, sides, spine and tabs. */
-/* The thickness of the shut book: thin sheets stacked behind the cover, seen
-   down the right side. They close up flat as the book opens. */
 .nb-stack { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
 .nb-stack i,
 .nb-stack b {
-  position: absolute;
-  transform: translateZ(calc(var(--i) * var(--W) * -0.0112));
-  transition: transform 0.6s, visibility 0s 0.6s;
+position: absolute;
+transform: translateZ(calc(var(--i) * var(--W) * -0.0112));
+transition: transform 0.6s, visibility 0s 0.6s;
 }
 .nb-stack i {
-  top: 0.9%;
-  bottom: 0.9%;
-  right: 1.2%;
-  width: 26%;
-  border-radius: 0 calc(var(--W) * 0.034) calc(var(--W) * 0.034) 0;
-  background: var(--paper);
+top: 0.9%;
+bottom: 0.9%;
+right: 1.2%;
+width: 26%;
+border-radius: 0 calc(var(--W) * 0.034) calc(var(--W) * 0.034) 0;
+background: var(--paper);
 }
 .nb-stack i:nth-child(even) { background: #e4e4e4; }
-/* The sides that only show once the notebook is turned: the spine, and the
-   tops and bottoms of the pages. */
 .nb-box { position: absolute; text-decoration: none; visibility: hidden; }
 .nb.is-turning .nb-box { visibility: visible; }
 .nb-box.is-spine { left: 1px; top: 0; bottom: 0; width: calc(var(--W) * 0.1904); transform-origin: 0 50%; transform: rotateY(90deg); background: var(--book-back); }
 .nb-box.is-top, .nb-box.is-bottom {
-  left: 1px;
-  right: 1.2%;
-  height: calc(var(--W) * 0.1904);
-  background: repeating-linear-gradient(to bottom, var(--paper) 0, var(--paper) calc(var(--W) * 0.0112), #e4e4e4 calc(var(--W) * 0.0112), #e4e4e4 calc(var(--W) * 0.0224));
+left: 1px;
+right: 1.2%;
+height: calc(var(--W) * 0.1904);
+background: repeating-linear-gradient(to bottom, var(--paper) 0, var(--paper) calc(var(--W) * 0.0112), #e4e4e4 calc(var(--W) * 0.0112), #e4e4e4 calc(var(--W) * 0.0224));
 }
 .nb-box.is-top { top: 0.9%; transform-origin: 50% 0; transform: translateZ(-3px) rotateX(-90deg); }
 .nb-box.is-bottom { bottom: 0.9%; transform-origin: 50% 100%; transform: translateZ(-3px) rotateX(90deg); }
 .nb-stack b {
-  inset: 0;
-  border-radius: 0 calc(var(--W) * 0.044) calc(var(--W) * 0.044) 0;
-  background: var(--book-back);
+inset: 0;
+border-radius: 0 calc(var(--W) * 0.044) calc(var(--W) * 0.044) 0;
+background: var(--book-back);
 }
 .nb[data-mode="closed"] .nb-stack i,
 .nb[data-mode="closed"] .nb-stack b { transition: transform 0.6s, visibility 0s; }
@@ -1777,7 +1559,6 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb.no-anim .nb-leaf,
 .nb.no-anim .nb-stack i,
 .nb.no-anim .nb-stack b { transition: none; }
-
 .nb.is-turning .nb-book { transition: none; }
 .nb[data-mode="closed"] { touch-action: none; }
 .nb[data-mode="closed"] .nb-book { transform: rotateX(var(--tilt, 0rad)) rotateY(calc(-20deg + var(--spin, 0rad))) translate(calc(var(--W) / -2 + var(--shut-x, 0px)), 0) scale(1); }
@@ -1785,33 +1566,29 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb[data-mode="toc"].at-right .nb-book,
 .nb[data-mode="new"] .nb-book { transform: rotateY(0deg) translate(var(--new-x), var(--toc-y)) scale(var(--kx), var(--ky)); }
 .nb:not([data-mode="closed"]) .nb-leaf { transform: rotateY(-180deg) translateZ(1px); }
-
-
-/* The two tabs, on sheets of their own, seen from outside with their names. */
 .nb-side-tabs { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; transition: opacity 0.25s; }
 .nb-side-tabs i {
-  position: absolute;
-  left: 98%;
-  top: calc(22% + var(--t) * 29%);
-  width: 8%;
-  height: 27%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0 calc(var(--W) * 0.02) calc(var(--W) * 0.02) 0;
-  background: var(--text);
-  transform: translateZ(calc(var(--i) * var(--W) * -0.0112));
+position: absolute;
+left: 98%;
+top: calc(22% + var(--t) * 29%);
+width: 8%;
+height: 27%;
+display: flex;
+align-items: center;
+justify-content: center;
+border-radius: 0 calc(var(--W) * 0.02) calc(var(--W) * 0.02) 0;
+background: var(--text);
+transform: translateZ(calc(var(--i) * var(--W) * -0.0112));
 }
 .nb-side-tabs i span {
-  text-align: center;
-  writing-mode: vertical-rl;
-  white-space: nowrap;
-  font-family: var(--font-title);
-  font-size: calc(var(--W) * 0.036);
-  line-height: 1;
-  color: #fff;
+text-align: center;
+writing-mode: vertical-rl;
+white-space: nowrap;
+font-family: var(--font-title);
+font-size: calc(var(--W) * 0.036);
+line-height: 1;
+color: #fff;
 }
-/* The New chapter tab: a very pale shade of the notebook's colour. */
 .nb-side-tabs i.is-new { background: var(--book-pale); }
 .nb-side-tabs i.is-new span { color: var(--text); }
 .nb:not([data-mode="closed"]) .nb-side-tabs { opacity: 0; visibility: hidden; }
@@ -1819,48 +1596,40 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .nb:not([data-mode="closed"]) .nb-tabhits { display: none; }
 
 /* ---- styles/contents.css ---- */
-/* The home page (round 2, 01-home): a plain paper page that scrolls, the
-   band at its top (band.css), then the list: each layout a row 76px high
-   with a hairline, a strip of its first slides in a white box, its name
-   (18px), "N slides · date" (14px, quiet) and its ... menu. No bar at the
-   foot: the notebooks button is in the band, and a swipe right shuts it. */
 .nb-toc {
-  position: absolute;
-  inset: 0;
-  background: var(--paper);
-  opacity: 0;
-  transition: opacity 0.22s;
+position: absolute;
+inset: 0;
+background: var(--paper);
+opacity: 0;
+transition: opacity 0.22s;
 }
 .nb.is-reading .nb-toc { opacity: 1; }
 .nb-toc[hidden] { display: none; }
-/* Installed, the sun shows once iOS has its height right (components/screen-fit.js
-   adds .settled), so it never shows high and then drops. */
 @media (display-mode: standalone) { html:not(.settled) .nb-sun { visibility: hidden; } }
 .toc-page {
-  --side: max(16px, calc((100vw - 560px) / 2));
-  position: absolute;
-  inset: 0;
-  box-sizing: border-box;
-  padding: 0 var(--side) calc(var(--sa-b) + 24px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  touch-action: pan-y;
-  font-family: var(--ui);
-  color: var(--text);
+--side: max(16px, calc((100vw - 560px) / 2));
+position: absolute;
+inset: 0;
+box-sizing: border-box;
+padding: 0 var(--side) calc(var(--sa-b) + 24px);
+overflow-y: auto;
+overscroll-behavior: contain;
+touch-action: pan-y;
+font-family: var(--ui);
+color: var(--text);
 }
 .toc-row { display: flex; align-items: center; gap: 4px; min-height: 76px; border-bottom: 1px solid var(--line); }
 .toc-open {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 10px 0;
-  color: var(--text);
-  text-decoration: none;
-  -webkit-user-drag: none;
+flex: 1;
+min-width: 0;
+display: flex;
+align-items: center;
+gap: 14px;
+padding: 10px 0;
+color: var(--text);
+text-decoration: none;
+-webkit-user-drag: none;
 }
-/* The first slides, side by side in a white box with a hairline. */
 .toc-strip { flex-shrink: 0; display: flex; padding: 4px; border-radius: 6px; background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--line); }
 .toc-strip img { display: block; height: 37.5px; width: auto; max-width: 160px; }
 .toc-blank { display: block; width: 30px; height: 37.5px; background: #EFEFEA; }
@@ -1873,101 +1642,85 @@ body[data-route="book"] #app { padding: 0; max-width: none; }
 .toc-tip .text-btn { font-size: inherit; }
 
 /* ---- styles/editor-page.css ---- */
-/* The editor on its notebook page: the pages, the name, the bottom bar,
-   the guides, its sheets and the PDF preview. */
-/* The editor: the photos on plain white, the full width of the screen. */
-/* Pinned by its edges, not 100dvh: on iOS 26 100dvh stops a status bar short
-   of the bottom of the screen. Everything sits inside the notebook's frame. */
 .editor { --ed-in: 16px; height: auto; padding: var(--nb-t) 0 var(--nb-b); background: var(--paper); }
 body[data-route="edit"] { background: var(--paper); }
 .ws { z-index: 1; background: none; scrollbar-width: none; }
 .ws::-webkit-scrollbar { display: none; }
 .ws-inner { overflow: hidden; }
-/* Measures the room the pages have (pages/editor.js); nothing shows. */
 .nb-open { position: absolute; left: 0; top: var(--nb-t); bottom: var(--nb-b); pointer-events: none; visibility: hidden; }
-/* The 3D book's two open pages: plain white paper with rounded outer
-   corners, a band of the notebook's colour round them. --ex and --ey are one
-   screen pixel across and down once the book has zoomed in (js/book.js). The
-   big ring of the notebook's colour hides the art's soft inner edge. */
 .nb-block::after,
 .nb-inside::after { background: var(--paper); }
 .nb-block::after,
 .nb-inside::after {
-  content: '';
-  position: absolute;
-  top: calc(var(--ey) * -3);
-  bottom: calc(var(--ey) * -3);
-  left: 0;
-  right: calc(var(--ex) * -3);
-  border-radius: 0 calc(var(--ex) * 20) calc(var(--ex) * 20) 0 / 0 calc(var(--ey) * 20) calc(var(--ey) * 20) 0;
-  box-shadow:
-    0 0 0 calc((var(--ex) + var(--ey)) * 30) var(--book-rim);
-  clip-path: inset(calc(var(--ey) * -3) calc(var(--ex) * -6.5) calc(var(--ey) * -5) 0 round 0 calc(var(--ex) * 9) calc(var(--ex) * 9) 0);
-  pointer-events: none;
+content: '';
+position: absolute;
+top: calc(var(--ey) * -3);
+bottom: calc(var(--ey) * -3);
+left: 0;
+right: calc(var(--ex) * -3);
+border-radius: 0 calc(var(--ex) * 20) calc(var(--ex) * 20) 0 / 0 calc(var(--ey) * 20) calc(var(--ey) * 20) 0;
+box-shadow:
+0 0 0 calc((var(--ex) + var(--ey)) * 30) var(--book-rim);
+clip-path: inset(calc(var(--ey) * -3) calc(var(--ex) * -6.5) calc(var(--ey) * -5) 0 round 0 calc(var(--ex) * 9) calc(var(--ex) * 9) 0);
+pointer-events: none;
 }
 .ws-labels { z-index: 1; }
 .ws-label { height: 26px; line-height: 26px; font-family: var(--font-body); font-size: 16px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--text); }
 .ws-label.has-del { gap: 4px; padding-left: 34px; }
 .ws-del { width: 30px; height: 26px; color: var(--text); }
 .ws-del svg { width: 21px; height: 21px; }
-/* The chapter's name, written under the photos. Tap to rename. */
 .ed-name { position: absolute; z-index: 3; left: 66px; right: 66px; height: 34px; display: flex; justify-content: center; pointer-events: none; }
 .ed-name button {
-  max-width: 100%;
-  padding: 0 10px;
-  border: none;
-  border-radius: 8px;
-  background: none;
-  color: var(--text);
-  font-family: var(--font-hand);
-  font-size: 21px;
-  letter-spacing: 0;
-  line-height: 34px;
-  pointer-events: auto;
-  touch-action: manipulation;
+max-width: 100%;
+padding: 0 10px;
+border: none;
+border-radius: 8px;
+background: none;
+color: var(--text);
+font-family: var(--font-hand);
+font-size: 21px;
+letter-spacing: 0;
+line-height: 34px;
+pointer-events: auto;
+touch-action: manipulation;
 }
 .ed-name.is-over button { background: var(--paper); }
 .ed-name span { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-
-/* The bottom bar: no band, just Berry Blade black on the white page. */
 .tray,
 .ed-tools {
-  z-index: 3;
-  background: none;
-  border-top: none;
-  margin-left: var(--ed-in);
-  margin-right: var(--ed-in);
+z-index: 3;
+background: none;
+border-top: none;
+margin-left: var(--ed-in);
+margin-right: var(--ed-in);
 }
 .tray { padding: 8px 0; }
 .ed-tools { position: relative; padding: 2px 0 4px; }
 .ed-adjust { position: relative; z-index: 3; margin-left: var(--ed-in); margin-right: var(--ed-in); }
 .ed-tools .tool {
-  color: var(--text);
-  padding-bottom: 2px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
+color: var(--text);
+padding-bottom: 2px;
+font-family: var(--font-body);
+font-size: 13px;
+font-weight: 500;
+text-transform: none;
+letter-spacing: 0;
 }
 .ed-tools .tool.is-on::before { top: -2px; height: 2px; background: var(--text); }
 .tool-sm { flex: 0 0 34px; justify-content: center; padding: 6px 0; }
 .tray-hint { color: var(--text); }
 .tray-add {
-  background: var(--paper);
-  color: var(--text);
-  border: 1.5px solid var(--text);
-  border-radius: 6px;
-  font-family: var(--font-body);
-  font-size: 12px;
-  text-transform: none;
-  letter-spacing: 0;
+background: var(--paper);
+color: var(--text);
+border: 1.5px solid var(--text);
+border-radius: 6px;
+font-family: var(--font-body);
+font-size: 12px;
+text-transform: none;
+letter-spacing: 0;
 }
 .ws-add { background: var(--paper); color: var(--text); border: 1.5px solid var(--text); box-shadow: none; }
-/* While a photo is moved: the frame's middle lines, shown when it catches. */
 .guide.in-frame { background: var(--text); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85); }
-
-/* Sheets: white, with thin lines. */
 .sheet { border-top: none; background: var(--paper); }
 .sheet-header { background: var(--paper); border-bottom: 1px solid var(--line); }
 .sheet-header h2 { color: var(--text); font-family: var(--head); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
@@ -1979,13 +1732,11 @@ body[data-route="edit"] { background: var(--paper); }
 .order-note { background: none; color: var(--text-dim); border: none; padding: 0 0 4px; font-family: var(--font-body); font-size: 14px; letter-spacing: 0; text-transform: none; }
 .order-note b { color: var(--text); font-family: inherit; font-weight: 600; text-transform: none; }
 .sheet .primary { background: var(--paper); color: var(--text); font-family: var(--font-body); font-weight: 600; letter-spacing: 0; text-transform: none; border: 1.5px solid var(--text); border-radius: 8px; }
-
-/* The PDF preview: the whole screen on a phone, a big panel on a computer. */
 .sheet.sheet-pdf { max-width: none; height: var(--vv-height, 100svh); max-height: none; }
 .sheet-pdf .sheet-header { padding-top: calc(14px + var(--sa-t)); }
 .sheet-pdf .sheet-body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 @media (min-width: 600px) {
-  :where(html:not(.is-turned)) .sheet.sheet-pdf { max-width: 900px; height: calc(var(--vv-height, 100vh) * 0.92); }
+:where(html:not(.is-turned)) .sheet.sheet-pdf { max-width: 900px; height: calc(var(--vv-height, 100vh) * 0.92); }
 }
 .pdfv-notice { flex-shrink: 0; width: 100%; margin: 0; padding: 10px 16px; border: none; background: var(--surface); color: var(--text); font-size: 14px; line-height: 1.3; text-align: left; letter-spacing: 0; text-transform: none; }
 .pdfv-notice b { font-weight: 600; }
@@ -2006,8 +1757,6 @@ body[data-route="edit"] { background: var(--paper); }
 .pdfv-thumb { width: 48px; height: 48px; flex-shrink: 0; object-fit: cover; }
 
 /* ---- styles/header-band.css ---- */
-/* ===== Figtree for the words, Archivo Black for the older headings that are left (user, 11-12). The round 2 band and its colours are in band.css and band-colors.css. Names you wrote and the slides' labels stay as written. ===== */
-/* Figtree: one file holding every weight; "Figtree Semibold" is the same file, for the older labels */
 @font-face { font-family: "Figtree"; src: url("../fonts/figtree-latin.woff2") format("woff2"); font-weight: 300 900; font-display: swap; size-adjust: 96.5%; }
 @font-face { font-family: "Figtree Semibold"; src: url("../fonts/figtree-latin.woff2") format("woff2"); font-weight: 600; font-display: swap; size-adjust: 96.5%; }
 @font-face { font-family: "Archivo Black"; src: url("../fonts/archivo-black-latin.woff2") format("woff2"); font-weight: 400; font-display: swap; }
@@ -2017,22 +1766,14 @@ body[data-route="edit"] { background: var(--paper); }
 .field-label, .sheet-options .field-label { font: 600 15px/1.3 "Figtree Semibold", var(--ui); text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); }
 
 /* ---- styles/band-colors.css ---- */
-/* The notebook colours on the band (DESIGN.md 4.2), the same seven as The
-   Eye and Ref: the band itself, its partner (the title, ring buttons,
-   hairline and mark), the colour of small text on it, and the four steps
-   under it (75, 50, 25 and 10% on paper). Picked in Options (data-book on
-   <html>); berry when nothing is picked (round 2, Layouts). Buttons, chips
-   and ticks (--ink) take the band colour with its small-text colour. The
-   round 2 text colours are here too: berry blade black and its quiet grey,
-   on the round 2 paper (over notebook.css's white pages), fields white. */
 :root, :root[data-book] {
-  --paper: #FAFAF7;
-  --field: #FFFFFF;
-  --text: #313D45;
-  --dim: #5C666D;
-  --text-dim: var(--dim);
-  --line: #E1E1DC;
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='.14'/%3E%3C/svg%3E");
+--paper: #FAFAF7;
+--field: #FFFFFF;
+--text: #313D45;
+--dim: #5C666D;
+--text-dim: var(--dim);
+--line: #E1E1DC;
+--grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='.14'/%3E%3C/svg%3E");
 }
 :root[data-book="mango"] { --band: #FFD100; --partner: #313D45; --band-small: #313D45; --step1: #FEDB3E; --step2: #FCE67C; --step3: #FBF0B9; --step4: #FAF6DE; }
 :root[data-book="orange"] { --band: #FF8A3D; --partner: #313D45; --band-small: #313D45; --step1: #FEA66C; --step2: #FCC29A; --step3: #FBDEC8; --step4: #FAEFE4; }
@@ -2044,62 +1785,39 @@ body[data-route="edit"] { background: var(--paper); }
 :root, :root[data-book] { --ink: var(--band); --on-ink: var(--band-small); }
 
 /* ---- styles/band.css ---- */
-/* The round 2 band, as in Ref and The Eye (DESIGN.md 9.1), on top of the
-   home page: the notebook's colour from the top of the screen, 92px under
-   the safe area, with its grain; the title (34px light capitals) and the
-   ring buttons on one line; the rising mark (three bars) at its foot; the
-   label line (the place, a hairline, the date); then four steps fading into
-   the paper. The list starts 53px under the band. The band scrolls with the
-   page and runs to the screen's sides; --side is the page's own margin.
-   (components/band.js draws it.) The short band is for pages inside (the
-   new layout guide, export): back, the name on the hairline, a ring. */
 .band {
-  position: relative; flex: none; display: flex; align-items: flex-start; gap: 8px; box-sizing: border-box;
-  height: calc(92px + var(--sa-t)); margin: 0 calc(-1 * var(--side, 16px)) 53px; padding: calc(var(--sa-t) + 8px) calc(var(--side, 16px) - 8px) 0 var(--side, 16px);
-  background: var(--grain) 0 0 / 160px 160px, var(--band); background-blend-mode: overlay, normal; color: var(--partner);
+position: relative; flex: none; display: flex; align-items: flex-start; gap: 8px; box-sizing: border-box;
+height: calc(92px + var(--sa-t)); margin: 0 calc(-1 * var(--side, 16px)) 53px; padding: calc(var(--sa-t) + 8px) calc(var(--side, 16px) - 8px) 0 var(--side, 16px);
+background: var(--grain) 0 0 / 160px 160px, var(--band); background-blend-mode: overlay, normal; color: var(--partner);
 }
 .band::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 41.4px; pointer-events: none;
-  background: linear-gradient(var(--step1) 0 14px, var(--step2) 14px 25.2px, var(--step3) 25.2px 34.2px, var(--step4) 34.2px); }
+background: linear-gradient(var(--step1) 0 14px, var(--step2) 14px 25.2px, var(--step3) 25.2px 34.2px, var(--step4) 34.2px); }
 .band-title { flex: 1; min-width: 0; margin: 0; padding: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;
-  font: 300 34px/40px var(--ui); letter-spacing: .04em; text-transform: uppercase; color: var(--partner); }
+font: 300 34px/40px var(--ui); letter-spacing: .04em; text-transform: uppercase; color: var(--partner); }
 .band-btns { display: flex; flex: none; }
 .band-mark { position: absolute; left: var(--side, 16px); bottom: 0; width: 80px; height: 40px; pointer-events: none; }
 .band-mark .mk-p { fill: var(--partner); }
 .band-mark .mk-w { fill: var(--paper); }
 .band-line { position: absolute; left: calc(var(--side, 16px) + 92px); right: var(--side, 16px); top: calc(var(--sa-t) + 68px); display: flex; align-items: center; gap: 10px; margin: 0;
-  font: 500 11px/14px var(--ui); letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; color: var(--band-small); }
+font: 500 11px/14px var(--ui); letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; color: var(--band-small); }
 .band-line b { font-weight: 700; }
 .band-rule { flex: 1; height: 1px; background: var(--partner); }
 .band-date { font-variant-numeric: tabular-nums; }
-/* A ring button (DESIGN.md 8): a 44px target, a 40px ring 1.5px thick. */
 .ring-btn { display: flex; align-items: center; justify-content: center; flex: none; width: 44px; height: 44px; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; }
 .ring-btn > span { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; }
-/* The notebooks button is the suite's: Layouts on its own has no shelf to go back to. */
 html:not(.df-suite) [data-books] { display: none; }
-
-/* A list's heading on the page: its name in small capitals, a count, an
-   action at the right, a navy rule under it. */
 .list-head { flex: none; display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
 .list-head h2 { margin: 0; font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--text); }
 .list-head h2 span { font-weight: 500; color: var(--dim); font-variant-numeric: tabular-nums; }
 .list-act { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 8px; margin-right: -8px; border: 0; background: none;
-  font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--band-on-paper, var(--ink)); cursor: pointer; }
+font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--band-on-paper, var(--ink)); cursor: pointer; }
 .list-act svg { width: 16px; height: 16px; stroke-width: 2; }
 .list-rule { flex: none; border-top: 1px solid var(--text); }
-
-/* The short band: 56px under the safe area, back and a ring at the right,
-   the name on the hairline between them, then two steps. */
 .band.band-short { height: calc(56px + var(--sa-t)); justify-content: space-between; margin-bottom: 26px; padding: calc(var(--sa-t) + 6px) calc(var(--side, 16px) - 8px) 0; }
 .band-short::after { height: 18px; background: linear-gradient(var(--step1) 0 10px, var(--step3) 10px); }
 .band-short .band-line { left: calc(var(--side, 16px) + 48px); right: calc(var(--side, 16px) + 48px); top: calc(var(--sa-t) + 21px); }
 
 /* ---- styles/sheets.css ---- */
-/* Sheets in the round 2 look, as Ref's (DESIGN.md 9.5): white, rising from
-   the bottom, the title in small capitals and a ring to close it; rows 52px
-   with a hairline, the one in use bold, Delete in crimson; the buttons 48px,
-   radius 8, in button type: the main one in the notebook's colour, the
-   other outlined, Delete in crimson. Every sheet (components/sheet.js)
-   wears it; it comes after sheet.css and buttons.css, which it reframes. */
 .sheet-overlay { background: rgba(49, 61, 69, .5); }
 .sheet { border-top: 0; border-radius: 20px 20px 0 0; background: #FFFFFF; color: var(--text); font-family: var(--ui); }
 .sheet-header { padding: 25px 8px 0 16px; border-bottom: 0; background: none; }
@@ -2115,12 +1833,10 @@ html:not(.df-suite) [data-books] { display: none; }
 .btn.primary { border: 0; background: var(--ink); color: var(--on-ink); }
 .btn.secondary { border: 0; box-shadow: inset 0 0 0 1.5px var(--text); background: none; color: var(--text); }
 .btn.danger { border: 0; background: #A1062A; color: #FFFFFF; }
-/* The wide buttons at the foot of a sheet, the same. */
 .modal-cta { height: 48px; padding: 0 20px; border: 0; border-radius: 8px; font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; }
 .sheet :is(.btn, .modal-cta).primary { border: 0; border-radius: 8px; background: var(--ink); color: var(--on-ink); font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; }
 .sheet .modal-cta.secondary { border: 0; border-radius: 8px; box-shadow: inset 0 0 0 1.5px var(--text); background: none; color: var(--text); font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; }
 .sheet-footer { border-top: 1px solid var(--line); background: #FFFFFF; }
-/* Choices (a ... menu): rows, the one in use bold, Delete in crimson. */
 .choice-list { gap: 0; }
 .choice { min-height: 52px; padding: 6px 0; border: 0; border-bottom: 1px solid #E1E1DC; border-radius: 0; background: none; color: var(--text); }
 .choice.current { background: none; color: var(--text); border-color: #E1E1DC; }
@@ -2131,17 +1847,9 @@ html:not(.df-suite) [data-books] { display: none; }
 .field-label, .choice-heading { font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
 
 /* ---- styles/options-sheet.css ---- */
-/* Options (round 2, 07-options), as Ref's: the notebook colours as swatches
-   (the band with its partner's line and half circle, ticked when picked;
-   the same seven as The Eye and Ref), then rows in groups under small quiet
-   names: a name, a quiet line under it, a chevron. On its own, Always start
-   is a segmented switch with the picked part in the notebook's colour. After
-   options.css and sheets.css, which it reframes. */
 .opt-sheet .opt-label { display: block; margin: 0 0 10px; font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
 .opt-sheet .opt-label.opt-gap { margin-top: 24px; }
 .opt-sheet .opt-label.opt-gap:has(+ .opt-rows) { margin-bottom: 0; }
-
-/* The notebook colours. */
 .opt-sheet .opt-colors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 12px; margin: 0; }
 .opt-sheet .opt-color { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 0; color: var(--text); }
 .opt-swatch { position: relative; display: block; height: 52px; border-radius: 8px; overflow: hidden; background: var(--sw); }
@@ -2159,17 +1867,13 @@ html:not(.df-suite) [data-books] { display: none; }
 [data-swatch="ocean"] { --sw: #0A4FD6; --sw-p: #FFAFAB; }
 [data-swatch="leaf"] { --sw: #14BFA0; --sw-p: #A1062A; }
 [data-swatch="ink"] { --sw: #313D45; --sw-p: #FFD100; }
-
-/* Always start: a track, the picked part in the notebook colour. */
 .opt-sheet .opt-seg { display: flex; height: 44px; margin: 0; padding: 3px; box-sizing: border-box; border-radius: 10px; background: #EFEFEA; }
 .opt-sheet .opt-seg button { flex: 1 1 0; min-width: 0; height: auto; padding: 0 6px; border: 0; border-radius: 8px; background: none; font: 400 15px/18px var(--ui); color: var(--dim); white-space: nowrap; }
 .opt-sheet .opt-seg button.on { background: var(--band); color: var(--band-small); font-weight: 500; }
-
-/* Rows: a name, a quiet line under it, a chevron (or a switch). */
 .opt-rows { margin: 0; }
 .opt-row {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 52px; margin: 0; padding: 6px 0;
-  box-sizing: border-box; border: 0; border-bottom: 1px solid #E1E1DC; background: none; color: var(--text); text-align: left; cursor: pointer;
+display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 52px; margin: 0; padding: 6px 0;
+box-sizing: border-box; border: 0; border-bottom: 1px solid #E1E1DC; background: none; color: var(--text); text-align: left; cursor: pointer;
 }
 .opt-row-words { display: flex; flex-direction: column; min-width: 0; }
 .opt-row-name { font: 400 17px/22px var(--ui); }
@@ -2177,10 +1881,6 @@ html:not(.df-suite) [data-books] { display: none; }
 .opt-chevron { flex: none; width: 16px; height: 16px; fill: none; stroke: #9AA3A8; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---- styles/sheet-page.css ---- */
-/* A sheet that is a page of its own (round 2: the new layout guide and
-   Export): over the whole screen, on paper, with the short band at the top
-   instead of the sheet's header, a scrolling middle with the page's title
-   and words, and its buttons at the foot. */
 .sheet.sheet-page { --side: 16px; width: 100%; max-width: none; height: var(--vv-height, 100svh); max-height: none; border-radius: 0; background: var(--paper); animation: none; }
 .sheet-page .sheet-header { display: none; }
 .sheet-page .sheet-body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
@@ -2192,14 +1892,6 @@ html:not(.df-suite) [data-books] { display: none; }
 .page-foot[hidden] { display: none; }
 
 /* ---- styles/new-layout-guide.css ---- */
-/* The new layout guide (round 2, 02-new-layout-size, 03-new-layout-template):
-   a page of its own (sheet-page.css) with the short band (back, NEW LAYOUT,
-   close), the step marks named underneath (as in Ref's and The Eye's
-   guides), the step's title and question, its cards, and Back / Next at the
-   foot. pages/new-layout.js draws it. */
-
-/* The marks: done = solid 14px, this one = 22px with a dot, still to come =
-   an open 13px ring. The line is inked up to this step. */
 .guide-marks { position: relative; height: 50px; margin-top: 2px; }
 .guide-mark-row { display: flex; align-items: center; height: 28px; }
 .guide-mark { flex: none; box-sizing: border-box; width: 13px; height: 13px; border: 1.5px solid #9AA3A8; border-radius: 50%; background: var(--paper); }
@@ -2212,20 +1904,15 @@ html:not(.df-suite) [data-books] { display: none; }
 .guide-mark-name { position: absolute; top: 0; font: 700 10px/12px var(--ui); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; color: var(--dim); }
 .guide-mark-name.reached { color: var(--text); }
 .guide-mark-name.mid { transform: translateX(-50%); }
-
-/* The step's field and words (its title and question are in sheet-page.css). */
 .guide-small { margin: 16px 0 0; font: 400 15px/21px var(--ui); color: var(--dim); }
 .guide-group { margin: 18px 0 8px; font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
 .page-ask + .guide-group { margin-top: 0; }
 .guide-input {
-  display: block; width: 100%; box-sizing: border-box; height: 52px; margin: 0; padding: 0 14px; border: 0; border-radius: 8px;
-  background: #FFFFFF; box-shadow: inset 0 0 0 1px #E1E1DC; font: 400 17px/22px var(--ui); color: var(--text); outline: none; -webkit-appearance: none;
+display: block; width: 100%; box-sizing: border-box; height: 52px; margin: 0; padding: 0 14px; border: 0; border-radius: 8px;
+background: #FFFFFF; box-shadow: inset 0 0 0 1px #E1E1DC; font: 400 17px/22px var(--ui); color: var(--text); outline: none; -webkit-appearance: none;
 }
 .guide-input:focus { box-shadow: inset 0 0 0 2px var(--text); }
 .guide-input::placeholder { color: #9AA3A8; }
-
-/* Sizes: white cards four across, each with its shape at its true
-   proportion (in the notebook's colour once picked), its name and size. */
 .size-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .size-card { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; padding: 12px 6px 10px; border: 0; border-radius: 12px; background: #FFFFFF; color: var(--text); letter-spacing: 0; text-transform: none; cursor: pointer; }
 .size-card[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--text); }
@@ -2235,9 +1922,6 @@ html:not(.df-suite) [data-books] { display: none; }
 .size-name { font: 400 14px/18px var(--ui); }
 .size-card[aria-checked="true"] .size-name { font-weight: 500; }
 .size-sub { min-height: 15px; font: 400 12px/15px var(--ui); color: var(--dim); font-variant-numeric: tabular-nums; }
-
-/* Templates: white cards two across, a two-slide spread with a dashed seam,
-   the name, and a ... menu at the corner for the saved ones. */
 .tpl-picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .tpl-pick { position: relative; min-width: 0; padding: 14px 10px 10px; border-radius: 12px; background: #FFFFFF; }
 .tpl-pick.on { box-shadow: inset 0 0 0 2px var(--text); }
@@ -2251,30 +1935,18 @@ html:not(.df-suite) [data-books] { display: none; }
 .tpl-pick-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 14px/18px var(--ui); }
 .tpl-pick.on .tpl-pick-name { font-weight: 500; }
 .tpl-pick-more { position: absolute; right: 0; top: 0; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; background: none; color: var(--dim); cursor: pointer; }
-
-/* Back (outlined) and Next (the notebook's colour), at the foot. */
 .guide-foot .btn { flex: 1 1 0; min-width: 0; white-space: nowrap; }
 .guide-foot .btn.primary { flex-grow: 1.3; }
 
 /* ---- styles/editor-look.css ---- */
-/* The editor in the round 2 look (04-editor, 05-editor-box-selected): no
-   band, the whole screen for the slides. A slim line at the top (LAYOUTS
-   and which slides show) over a 2px rule in the notebook's colour; the
-   slides on paper with a soft shadow, labelled SLIDE 1, SLIDE 2 above; the
-   name, the spread dots and ADD A SLIDE under them; the tray with + PHOTOS,
-   ticks on used shots and a play mark on videos; every tool named under its
-   icon. A picked box has a ring in the notebook's colour, round handles and
-   an x above its corner. The last layer for the editor, after every older one. */
 .editor { background: var(--paper); }
 .ed-line {
-  flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; height: 26px; margin: 0; padding: 11px 16px 0;
-  border-bottom: 2px solid var(--ink); font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); white-space: nowrap;
+flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; height: 26px; margin: 0; padding: 11px 16px 0;
+border-bottom: 2px solid var(--ink); font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); white-space: nowrap;
 }
 .ed-line b { font-weight: 700; letter-spacing: .14em; color: var(--band-on-paper, var(--ink)); }
 .ed-line span { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .nb-open { top: calc(var(--nb-t) + 39px); }
-
-/* The slides: their own shadow behind them, labels small and quiet. */
 .strip { box-shadow: none; }
 .strip-shadow { position: absolute; box-shadow: 0 2px 6px rgba(49, 61, 69, .15); pointer-events: none; }
 .ws-label { justify-content: flex-start; text-align: left; font: 700 10px/26px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); font-variant-numeric: tabular-nums; }
@@ -2284,8 +1956,6 @@ html:not(.df-suite) [data-books] { display: none; }
 .fr-empty { background: #EFEFEA; box-shadow: none; color: var(--dim); }
 .fr-empty .fr-plus { display: none; }
 .fr-hint { font: 400 11px/14px var(--ui); letter-spacing: 0; text-transform: none; }
-
-/* Under the slides: the name (tap to rename), the dots, Add a slide. */
 .ed-under { position: absolute; z-index: 3; left: 16px; right: 16px; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
 .ed-under > button { pointer-events: auto; touch-action: manipulation; }
 .ed-name-btn { max-width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: 300 20px/24px var(--ui); letter-spacing: 0; text-transform: none; }
@@ -2298,8 +1968,6 @@ html:not(.df-suite) [data-books] { display: none; }
 .ed-add { display: inline-flex; align-items: center; gap: 6px; height: 44px; margin-top: 16px; padding: 0 8px; border: 0; background: none; font: 700 13px/16px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--band-on-paper, var(--ink)); }
 .ed-add svg { width: 14px; height: 14px; stroke-width: 2.4; }
 .ed-add[hidden] { display: none; }
-
-/* The tray: + PHOTOS ringed in the notebook's colour, the shots 52px. */
 .tray { gap: 6px; margin: 0; padding: 10px 16px 12px; border-top: 1px solid #E1E1DC; background: var(--paper); }
 .tray-add { width: 52px; height: 52px; gap: 2px; border: 0; border-radius: 4px; background: none; box-shadow: inset 0 0 0 1.5px var(--ink); color: var(--band-on-paper, var(--ink)); font: 700 10px/12px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
 .tray-add svg { width: 18px; height: 18px; }
@@ -2307,13 +1975,9 @@ html:not(.df-suite) [data-books] { display: none; }
 .tray-item.is-used img { opacity: 1; }
 .tray-used { top: 3px; right: 3px; bottom: auto; width: 16px; height: 16px; border-radius: 50%; background: var(--ink); color: var(--on-ink); }
 .tray-used svg { width: 10px; height: 10px; stroke-width: 3.5; }
-/* A video: a small white play mark at the corner. */
 .tray-vid { left: 4px; bottom: 4px; width: 0; height: 0; background: none; border-left: 9px solid #FFFFFF; border-top: 6px solid transparent; border-bottom: 6px solid transparent; filter: drop-shadow(0 0 1px rgba(0, 0, 0, .45)); }
 .tray-vid svg { display: none; }
 .tray-hint { font: 400 13px/17px var(--ui); color: var(--dim); }
-
-/* The tools: each with its name under it; Export in the notebook's colour,
-   Delete in crimson. */
 .ed-tools { margin: 0; padding: 4px 2px 0; border-top: 1px solid #E1E1DC; background: var(--paper); }
 .ed-tools .tool { flex: 1 1 0; height: 56px; justify-content: center; gap: 4px; padding: 0; color: var(--text); font: 700 9px/11px var(--ui); letter-spacing: .06em; text-transform: uppercase; }
 .ed-tools .tool .tool-icon svg { width: 22px; height: 22px; }
@@ -2321,9 +1985,6 @@ html:not(.df-suite) [data-books] { display: none; }
 .ed-tools .tool.is-danger { color: #A1062A; }
 .ed-tools .tool:disabled { opacity: .35; }
 .ed-tools .tool.is-on::before { top: -4px; left: 25%; right: 25%; height: 2px; background: var(--ink); }
-
-/* A picked box: a 2px ring in the notebook's colour, round handles on its
-   edges, and the x that takes its photo out above the corner. */
 .sel { outline: 0; box-shadow: 0 0 0 2px var(--ink); }
 .sel.is-photo { box-shadow: none; outline: 2px dashed var(--ink); outline-offset: 0; }
 .handle { width: 10px; height: 10px; border: 0; border-radius: 50%; background: #FFFFFF; box-shadow: inset 0 0 0 2px var(--ink); }
@@ -2339,53 +2000,39 @@ html:not(.df-suite) [data-books] { display: none; }
 .sel-x svg { width: 12px; height: 12px; stroke-width: 2.6; }
 
 /* ---- styles/export.css ---- */
-/* Export in the round 2 look (06-export): the slides four across, numbered
-   in posting order in the notebook's colour; a left-out one fades and loses
-   its number. Under them how many go, and the Printable PDF row; the save
-   button at the foot says how many. Also the progress bar while they're made. */
 .progress { height: 4px; margin: 8px 0 0; border: 0; border-radius: 2px; background: #E1E1DC; overflow: hidden; }
 .progress-bar { border-radius: 2px; background: var(--ink); }
-
 .sheet-page .order-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 2px 0 0; }
 .sheet-page .order-grid li { border-radius: 4px; overflow: hidden; background: #EFEFEA; }
 .sheet-page .order-grid img { border: 0; }
 .sheet-page .order-grid li.is-off, .order-ghost.is-off { opacity: .3; }
 .sheet-page .order-grid li.is-off img, .order-ghost.is-off img { opacity: 1; }
 .sheet-page .order-num, .order-ghost .order-num {
-  left: 5px; top: 5px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 10px;
-  background: var(--ink); color: var(--on-ink); font: 700 11px/1 var(--ui); font-variant-numeric: tabular-nums;
+left: 5px; top: 5px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 10px;
+background: var(--ink); color: var(--on-ink); font: 700 11px/1 var(--ui); font-variant-numeric: tabular-nums;
 }
 .sheet-page .order-num:empty { display: flex; }
 .sheet-page li.is-off .order-num, .order-ghost.is-off .order-num { background: #9AA3A8; }
-/* Left out is said by the fade; the words stay for screen readers. */
 .sheet-page .order-off, .sheet-page li.is-off .order-off, .order-ghost .order-off {
-  display: block; left: 0; top: 0; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); transform: none; white-space: nowrap;
+display: block; left: 0; top: 0; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); transform: none; white-space: nowrap;
 }
-/* A video: a small white play mark at the corner, as in the tray. */
 .sheet-page .order-vid, .order-ghost .order-vid { left: 6px; bottom: 6px; width: 0; height: 0; background: none; border-left: 9px solid #FFFFFF; border-top: 6px solid transparent; border-bottom: 6px solid transparent; filter: drop-shadow(0 0 1px rgba(0, 0, 0, .45)); }
 .sheet-page .order-vid svg, .order-ghost .order-vid svg { display: none; }
 .order-count { margin: 12px 0 0; font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); font-variant-numeric: tabular-nums; }
 .sheet-page .tip { margin: 16px 0 0; padding-left: 12px; border-left: 3px solid var(--ink); font: 400 15px/21px var(--ui); color: var(--dim); }
 .sheet-page .video-live { margin-top: 20px; }
-
-/* Printable PDF: a white row with its icon, name, what it does and a chevron. */
 .exp-row { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 20px; padding: 14px; border: 0; border-radius: 12px; background: #FFFFFF; color: var(--text); text-align: left; letter-spacing: 0; text-transform: none; cursor: pointer; }
 .exp-row-icon { display: flex; color: var(--band-on-paper, var(--ink)); }
 .exp-row-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 .exp-row-name { font: 400 17px/22px var(--ui); }
 .exp-row-sub { font: 400 14px/19px var(--ui); color: var(--dim); }
 .exp-row-go { display: flex; color: #9AA3A8; }
-
-/* The foot: the save button, and what to tap in the share sheet. */
 .exp-foot { flex-direction: column; }
 .exp-foot .btn { width: 100%; }
 .exp-hint { margin: 0; text-align: center; font: 400 13px/17px var(--ui); color: var(--dim); }
 .exp-hint b { font-weight: 600; color: var(--text); }
 
 /* ---- styles/posts.css ---- */
-/* Posts made from a shoot's finals (round 2, connect/03 and 04): the slip's
-   posts on the home list (pages/posts-slip.js) and the Two posts page
-   (pages/posts.js). The slip itself: styles/shared/connect.css. */
 :root { --df-slip-main: var(--band); --df-slip-main-text: var(--band-small); }
 .toc-page .df-slip { margin: 12px 0 18px; }
 .cs-slip-posts { display: flex; align-items: flex-end; gap: 18px; margin-top: 14px; }
@@ -2397,7 +2044,6 @@ html:not(.df-suite) [data-books] { display: none; }
 .cs-slip-stack.is-many::before { left: 6px; top: 6px; z-index: -1; background: #E1E1DC; }
 .cs-slip-stack.is-many::after { left: 12px; top: 0; z-index: -2; }
 .cs-slip-what { font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
-
 .posts-tag { display: flex; }
 .posts-title { margin-top: 12px; }
 .posts-label { display: block; margin: 22px 0 0; font: 500 11px/14px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
