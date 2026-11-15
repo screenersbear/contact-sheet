@@ -7,8 +7,8 @@
 // its own still has them. Edit those, then run the sync.
 //
 // Each notebook keeps its own database, named for it: ref-notebook,
-// contact-sheet, the-eye's starky-moodboards (its photos; its shoots are in
-// localStorage, dailies_state_v1) and overthoughts. What one notebook hands
+// contact-sheet, rounds, the-eye's starky-moodboards (its photos; its shoots
+// are in localStorage, dailies_state_v1). What one notebook hands
 // another (a Ref board sent to a shoot in The Eye) goes in a database of its
 // own, df-links, as a link saying where it came from and where it went:
 // { id, fromApp, fromId, toApp, toId, type, createdAt }.
@@ -58,7 +58,6 @@
   const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } },
   };
   // ---------- Where the notebooks are ----------
   const inSuite = () => !!window.DF_SUITE;

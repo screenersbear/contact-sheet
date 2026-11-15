@@ -4,9 +4,7 @@
   'use strict';
   const parts = window.DFDataParts;
   const {
-    open, rows, getOne, putMany, deleteOne, hasText, nowIso, todayStr, uid, overthoughts,
-    linkId, reflectionId, saveReflections, dropReflections, reflections, eyeState,
-    eyeShootName, eyeBackupFile, readEyeFile, journalMoved, somethingToMove, moveJournal,
+    open, rows, getOne, putMany, deleteOne, hasText, nowIso, todayStr, uid, eyeState, eyeShootName,
     exportDb, importDb, sizeText, zipBackup, backupSteps, isZipFile, restoreZip, linksWhere,
     getLink, saveLink, linkPictures, dropLinks, pictureUrl, boardFile, readBoardFile, saveFile,
     pickFiles, pickFile, inSuite, notebookUrl, cleanHandle, personKeys, findPerson, maybePairs,
@@ -16,9 +14,7 @@
 
   window.DFData = {
     open, rows, getOne, putMany, deleteOne, hasText, todayStr, uid, nowIso,
-    overthoughts, reflectionId, linkId, saveReflections, dropReflections, reflections,
-    eyeState, eyeShootName, eyeBackupFile, readEyeFile,
-    journalMoved, somethingToMove, moveJournal,
+    eyeState, eyeShootName,
     exportDb, importDb, saveFile, pickFile, pickFiles,
     zipBackup, backupSteps, isZipFile, restoreZip, sizeText,
     inSuite, notebookUrl,
