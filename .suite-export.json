@@ -17,7 +17,7 @@
   "art/orange-cover.webp": "8fcb91da31a06f2f566a8d19f54ccbfb3fed261474a0028ab6cf958b626adaa8",
   "built/app.css": "4f83767b37bf53d4a6fea97e86de41143cb8470546ad3be1632e3d0dbfa1a88f",
   "built/app.js": "f1a2fd04963d6c3453d66ea8afa444961bcd39563c3cef9d400a6be5077b2d41",
-  "built/shared-data.js": "5cabc322e3d99e00239dce708b02d3e5b5542a7cf1fde1257ebf823f0490a0d7",
+  "built/shared-data.js": "6e293b8896f95a5c9eae90d7318fdfa7915b6f1ab07854d4ab0cf96da7e65c6f",
   "components/band.js": "34a81d0a95b47cc17dcd3d2c4a259add5fac4604ba3c443340cca8673a297c19",
   "components/dialogs.js": "342322868e722d46ef7286daff515e3e35c8c08944b562342566615b739d941c",
   "components/frame.js": "8418fb30835704cac6c1ba0a6feebf24e4ade6f98e19a2acced9f2b7db59f1fa",
@@ -50,7 +50,7 @@
   "data/people-out.js": "df9b58e73e1040a4d68aea7efb41d1135c699b4872f531f79e7175a34a3c14ed",
   "data/photos.js": "063843dee7c161d06c3363bdd31f9fdc4aac632e89ac1a2131aeec48b051e67a",
   "data/print-check.js": "db6fdef0f3bbd167fc76af882b88ee2d7418c675949e1658857b32fa04d948bf",
-  "data/shared/asks.js": "9906659371d2b31dd3cfa24b41c21f0186e7a99b23870b0663bc87e6d32bf501",
+  "data/shared/asks.js": "6503bf0132b3b38641c3382b74f3d26b21c55a732122447c7828879acf06a01c",
   "data/shared/backup-books.js": "abd345549aefedf98367eeb55d7222052036a506bc5c4d800cf97c2412eeb912",
   "data/shared/backup-json.js": "70e89992c35cedbb6b2c5cf5fa2740b98b6ad483416871f3f45946d814a71380",
   "data/shared/backups.js": "a877014e7d1a3a41e14c4521dbdb46ff39d0065dba13ff039373d8c95dfa8dad",
@@ -157,7 +157,7 @@
   "styles/toast.css": "435192209a304082ee468478c43202798af8f46864719cbc48c4b5b236305b1c",
   "styles/top-bar.css": "c5ea772c2e51e56b9729d3f4804e4a191c1bdfba2b9db039ae44d6dd21b64658",
   "styles/wide.css": "5a3034b58572cca76d606c96cfe3af86303630c138dcb47122a9254ef1f302a5",
-  "sw.js": "926b29a3cc43a1ba1682811b814a5eebb9f839be4bcf6cb44d3085184b4ad005"
+  "sw.js": "5b0f0db88bd347eaf5f1b4f3c6f679f8910577f59c19f4e533e9ba3bfa248ef5"
  },
  "keep": [
   ".DS_Store",
@@ -174,6 +174,6 @@
  ],
  "name": "Contact Sheet",
  "notebook": "contact-sheet",
- "suite": "3fa26fc",
+ "suite": "7a8524c",
  "suite_folder": "../Documenting Fictions"
 }
