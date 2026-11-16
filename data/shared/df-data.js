@@ -9,7 +9,8 @@
     getLink, saveLink, linkPictures, dropLinks, pictureUrl, boardFile, readBoardFile, saveFile,
     pickFiles, pickFile, inSuite, notebookUrl, cleanHandle, personKeys, findPerson, maybePairs,
     peopleAll, getPerson, gatherPeople, answerSame, editPerson, personFor, personUrl,
-    PEOPLE_APPS, pictureOf, shootPeople, publishThings, thingsAll, personView, searchIn, searchAll
+    PEOPLE_APPS, pictureOf, shootPeople, publishThings, thingsAll, personView, searchIn, searchAll,
+    askRounds, roundsAsks, doneWithAsks
   } = parts;
 
   window.DFData = {
@@ -21,5 +22,6 @@
     linksWhere, getLink, saveLink, linkPictures, dropLinks, pictureUrl, boardFile, readBoardFile,
     cleanHandle, personKeys, findPerson, maybePairs, peopleAll, getPerson, gatherPeople, answerSame,
     editPerson, personFor, personUrl, PEOPLE_APPS, pictureOf, shootPeople, publishThings, thingsAll, personView, searchIn, searchAll,
+    askRounds, roundsAsks, doneWithAsks,
   };
 })();

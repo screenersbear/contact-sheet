@@ -17,7 +17,7 @@
   "art/orange-cover.webp": "8fcb91da31a06f2f566a8d19f54ccbfb3fed261474a0028ab6cf958b626adaa8",
   "built/app.css": "4f83767b37bf53d4a6fea97e86de41143cb8470546ad3be1632e3d0dbfa1a88f",
   "built/app.js": "f1a2fd04963d6c3453d66ea8afa444961bcd39563c3cef9d400a6be5077b2d41",
-  "built/shared-data.js": "dbaa66f69f7335ad0a7618c010187f3985112e4cd1ce1681f43f8aeb53b3d6a1",
+  "built/shared-data.js": "5cabc322e3d99e00239dce708b02d3e5b5542a7cf1fde1257ebf823f0490a0d7",
   "components/band.js": "34a81d0a95b47cc17dcd3d2c4a259add5fac4604ba3c443340cca8673a297c19",
   "components/dialogs.js": "342322868e722d46ef7286daff515e3e35c8c08944b562342566615b739d941c",
   "components/frame.js": "8418fb30835704cac6c1ba0a6feebf24e4ade6f98e19a2acced9f2b7db59f1fa",
@@ -50,12 +50,13 @@
   "data/people-out.js": "df9b58e73e1040a4d68aea7efb41d1135c699b4872f531f79e7175a34a3c14ed",
   "data/photos.js": "063843dee7c161d06c3363bdd31f9fdc4aac632e89ac1a2131aeec48b051e67a",
   "data/print-check.js": "db6fdef0f3bbd167fc76af882b88ee2d7418c675949e1658857b32fa04d948bf",
+  "data/shared/asks.js": "9906659371d2b31dd3cfa24b41c21f0186e7a99b23870b0663bc87e6d32bf501",
   "data/shared/backup-books.js": "abd345549aefedf98367eeb55d7222052036a506bc5c4d800cf97c2412eeb912",
   "data/shared/backup-json.js": "70e89992c35cedbb6b2c5cf5fa2740b98b6ad483416871f3f45946d814a71380",
   "data/shared/backups.js": "a877014e7d1a3a41e14c4521dbdb46ff39d0065dba13ff039373d8c95dfa8dad",
   "data/shared/basics.js": "1f5f0d9ca025e791f342bed833811b2f82f97ff33be02e6003842d193a1ad688",
   "data/shared/connect.js": "e3557d3183b16452921f002b4771a0f03657ab3153095086c6ad3e7edfec2f94",
-  "data/shared/df-data.js": "dc3e6370c961c0015472717e17872f5b2b055048ba6e0d3cdda2289871f9d540",
+  "data/shared/df-data.js": "da8099b8772c2b622bd7175e7c9671615c0ebc931166aa7e4f87cad3cabf8bb5",
   "data/shared/files.js": "91a0debd73ccbf11a7dfa841860fedc40811e0f4f1c64fba0becc4502af99c36",
   "data/shared/json-backup.js": "5a8ac58bad5aa818e5333357c00bd1270548f93cd8257f7d9b98a63a5654f8e9",
   "data/shared/links.js": "27f657c3091982cde9cc83e8255e724e03bed09c2d6dce2c664e84509e7d4d39",
@@ -75,7 +76,7 @@
   "data/templates.js": "1d38b23728a031d98ae3b111ba0e66a8c263beb832edcd1ef7fb6a2d018b76d4",
   "data/videoexport.js": "4f2facc8c1471322d183c76a4db67ff45de40abd03ed7fd25eaada6557ea6625",
   "data/zip.js": "4f298d7018597d3884ca0f3ca74c8af3b79c4a953b251f0f9838a473dc910d82",
-  "files.txt": "9b4ca875551d0767cfc0557b1e37f7ce8f2a7c05f23a78c11026c34020426ab3",
+  "files.txt": "4c96cdf588436bd0b91c8a9e07510a232d8f73598a6e7601efb1bc77025dccb6",
   "fonts/ArchivoBlack-OFL.txt": "3173acd82f8c6159b5b1037b539fcbd4edff68e65c2ea8b9412b5a5ca97b08ff",
   "fonts/Figtree-OFL.txt": "140d37233e7f3ce7313798befa9600893bcceaf41a55fa0fa5ad52f7f657a268",
   "fonts/KaiseiDecol-OFL.txt": "6c5445d4febbf6d84025b874a85c51e7e4bfa7495279eccdb4c317a6de857b46",
@@ -156,7 +157,7 @@
   "styles/toast.css": "435192209a304082ee468478c43202798af8f46864719cbc48c4b5b236305b1c",
   "styles/top-bar.css": "c5ea772c2e51e56b9729d3f4804e4a191c1bdfba2b9db039ae44d6dd21b64658",
   "styles/wide.css": "5a3034b58572cca76d606c96cfe3af86303630c138dcb47122a9254ef1f302a5",
-  "sw.js": "d163775154e45a870643fa681cfc4c9457ef630d8574c252d3f3b9550bf1e9c7"
+  "sw.js": "926b29a3cc43a1ba1682811b814a5eebb9f839be4bcf6cb44d3085184b4ad005"
  },
  "keep": [
   ".DS_Store",
@@ -173,6 +174,6 @@
  ],
  "name": "Contact Sheet",
  "notebook": "contact-sheet",
- "suite": "d424d62",
+ "suite": "3fa26fc",
  "suite_folder": "../Documenting Fictions"
 }
