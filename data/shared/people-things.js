@@ -101,6 +101,25 @@
   });
   const thingsAll = () => withPeople(async (db) => (await rows(db, 'things')).map(([, t]) => t));
 
+  // A notebook deleted someone (Rounds' DELETE, 16 Nov; f: as it lists
+  // them). Its things with them go now, and their record too, unless another
+  // notebook still has them: then only this notebook's find of them goes.
+  // Returns 'gone', 'kept', or null when the list never had them.
+  const forgetPerson = (app, f) => withPeople(async (db) => {
+    const sig = sigOf(f);
+    const r = (await rows(db, 'people')).map(([, x]) => x).find((x) => x.sigs.includes(sig));
+    if (!r) return null;
+    const things = (await rows(db, 'things')).map(([, t]) => t);
+    const mine = things.filter((t) => t.app === app && t.people.some((p) => sigOf(p) === sig));
+    const kept = { ...r, sigs: r.sigs.filter((x) => x !== sig), updatedAt: nowIso() };
+    const still = things.some((t) => !mine.includes(t) && isIn(kept, t));
+    const tx = db.transaction(['things', 'people'], 'readwrite');
+    mine.forEach((t) => tx.objectStore('things').delete(t.key));
+    if (still) tx.objectStore('people').put(kept); else tx.objectStore('people').delete(r.id);
+    await finish(tx);
+    return still ? 'kept' : 'gone';
+  });
+
   // ---------- For the person page ----------
   // The things a person is in: someone in them was placed with this person.
   const isIn = (person, t) => t.people.some((p) => person.sigs.includes(sigOf(p)));
@@ -157,5 +176,5 @@
     return { ...found, people: found.people.map((person) => ({ person, role: roleOf(person, things), rounds: roundsOf(person) })) };
   }
 
-  Object.assign(parts, { PEOPLE_APPS: APPS, pictureOf, shootPeople, cleanThing, publishThings, thingsAll, thingsFor, roleOf, personView, searchIn, searchAll });
+  Object.assign(parts, { PEOPLE_APPS: APPS, pictureOf, shootPeople, cleanThing, publishThings, thingsAll, forgetPerson, thingsFor, roleOf, personView, searchIn, searchAll });
 })();
