@@ -9,7 +9,7 @@
     getLink, saveLink, linkPictures, dropLinks, pictureUrl, boardFile, readBoardFile, saveFile,
     pickFiles, pickFile, inSuite, notebookUrl, cleanHandle, personKeys, findPerson, maybePairs,
     peopleAll, getPerson, gatherPeople, answerSame, editPerson, personFor, personUrl,
-    PEOPLE_APPS, pictureOf, shootPeople, publishThings, thingsAll, forgetPerson, personView, searchIn, searchAll,
+    PEOPLE_APPS, pictureOf, shootPeople, publishThings, thingsAll, thingsFor, roleOf, forgetPerson, personView, searchIn, searchAll,
     askRounds, roundsAsks, doneWithAsks
   } = parts;
 
@@ -21,7 +21,7 @@
     inSuite, notebookUrl,
     linksWhere, getLink, saveLink, linkPictures, dropLinks, pictureUrl, boardFile, readBoardFile,
     cleanHandle, personKeys, findPerson, maybePairs, peopleAll, getPerson, gatherPeople, answerSame,
-    editPerson, personFor, personUrl, PEOPLE_APPS, pictureOf, shootPeople, publishThings, thingsAll, forgetPerson, personView, searchIn, searchAll,
+    editPerson, personFor, personUrl, PEOPLE_APPS, pictureOf, shootPeople, publishThings, thingsAll, thingsFor, roleOf, forgetPerson, personView, searchIn, searchAll,
     askRounds, roundsAsks, doneWithAsks,
   };
 })();
